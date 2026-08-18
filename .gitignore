@@ -1,2 +1,6 @@
 .DS_Store
 *.pdf
+*.docx
+*.pages
+_hors_repo/
+grille-transition-lumiia*.html
