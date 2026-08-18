@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v1.0 -->
+<!-- LUMIIA RECRUTE — v1.1 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -105,7 +105,7 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem">v1.0</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem">v1.1</span></h1>
   <div id="adm-login" class="card" style="margin-top:16px;max-width:380px">
     <div class="mut">Connexion admin</div>
     <input id="adm-mail" type="email" placeholder="email" autocomplete="username">
@@ -119,7 +119,10 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v1.0";
+var VERSION = "v1.1";
+/* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
+   Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
+var JOUR_ACTIF = false;
 var FB_CFG = {
   apiKey: "AIzaSyDXkJzBPkV6Uad56WBqL0fCKgjMIPQS-YE",
   authDomain: "lumiia-live.firebaseapp.com",
@@ -176,8 +179,8 @@ var DEFAULTS = {
       "Le bruit de la scie" ] }
   ],
   offre_nuit: {
-    titre: "BAR & ACCUEIL",
-    texte: "Soirs et week-ends. Tu sers, tu accueilles, tu expliques les jeux, tu laces des rollers, tu remets d'aplomb la salle \u00e0 la fin \u2014 et tu mets l'ambiance en m\u00eame temps. On cherche des gens polyvalents : le bar et l'accueil, c'est le m\u00eame poste ici.\n\nExp\u00e9rience du bar appr\u00e9ci\u00e9e, pas obligatoire. Le sourire, si."
+    titre: "ACCUEIL, BAR & ANIMATION",
+    texte: "Trois postes, tous polyvalents : accueil, bar, snacking, animation des jeux, installation au studio, entretien, d\u00e9cor.\n\n\u2022 1 poste de 24h \u2014 jeudi, vendredi, samedi \u2014 \u00e0 partir du 10 septembre.\n\u2022 2 postes de 35h \u2014 du mercredi au dimanche \u2014 \u00e0 partir du 23 octobre, pour l'ouverture du premier \u00e9tage.\n\nCe qu'on ne te cache pas : le service se termine tard les vendredis et samedis, et le permis B est demand\u00e9 \u2014 la voiture, c'est la n\u00f4tre.\n\nNiveau II de la convention HCR : 1 277 \u20ac brut par mois pour le 24h, 1 863 \u20ac pour les 35h. Repas fourni chaque jour travaill\u00e9.\n\nCDI, ou CDD selon ta situation. Aucun dipl\u00f4me requis, on forme sur place. \u00c9volution possible vers des postes de responsable."
   },
   offre_jour: {
     titre: "ATELIER / TRAVAUX",
@@ -221,9 +224,9 @@ function route(){
   var q = window.location.search;
   if(q.indexOf("admin") > -1){ $("app").style.display="none"; $("admin").style.display="block"; initAdmin(); return; }
   if(q.indexOf("tv") > -1){ $("app").style.display="none"; $("tv").style.display="block"; initTv(); return; }
-  S.parcours = (q.indexOf("jour") > -1) ? "jour" : (q.indexOf("nuit") > -1 ? "nuit" : "");
+  S.parcours = (JOUR_ACTIF && q.indexOf("jour") > -1) ? "jour" : "nuit";
   loadCfg(function(){
-    if(!S.parcours) return screenChoix();
+    if(JOUR_ACTIF && !q.indexOf("nuit") && !S.parcours) return screenChoix();
     screenIntro();
   });
 }
@@ -247,7 +250,7 @@ function screenIntro(){
   $("tagline").textContent = nuit ? "bar & accueil \u00b7 on recrute" : "atelier & travaux \u00b7 on recrute";
   var h = '<div class="card">';
   if(nuit){
-    h += '<div class="big" style="color:var(--lime)">TU VEUX<br>BOSSER ICI ?</div>'
+    h += '<div class="big" style="color:var(--lime)">ES-TU LUMIIA<br>TEAM COMPATIBLE ?</div>'
       + '<div class="mut" style="margin-top:12px">5 questions, 3 mini-jeux, 2 minutes chrono. \u00c0 la fin, tu vois l\u2019offre et tu d\u00e9cides.</div>'
       + '<div class="dim" style="margin-top:12px">Et si tu ne cherches pas de taf : joue quand m\u00eame, les meilleurs scores passent sur l\u2019\u00e9cran du bar.</div>'
       + '<button class="btn" id="go">C\u2019EST PARTI</button>';
@@ -687,7 +690,7 @@ function screenOffre(){
 function screenForm(){
   var nuit = S.parcours === "nuit";
   var dispos = nuit
-    ? ["Soirs en semaine","Vendredi / samedi","Dimanche","Journ\u00e9e aussi"]
+    ? ["Jeudi soir","Vendredi soir","Samedi soir","Mercredi \u2192 dimanche (35h)","Je peux finir \u00e0 3h du matin"]
     : ["Temps plein","Temps partiel","Ponctuel / chantiers"];
   var h = '<div class="card">'
     + '<div class="step">Derni\u00e8re \u00e9tape</div>'
@@ -698,6 +701,8 @@ function screenForm(){
     + '<label class="f">Email (facultatif)</label><input id="f-mail" type="email" autocomplete="email">'
     + '<label class="f">Tes dispos</label><div class="chips" id="f-dispos">';
   for(var i=0;i<dispos.length;i++) h += '<div class="chip" data-v="' + esc(dispos[i]) + '">' + esc(dispos[i]) + '</div>';
+  h += '</div><label class="f">Permis B</label><div class="chips" id="f-permis">'
+    + '<div class="chip" data-v="Oui">Oui</div><div class="chip" data-v="En cours">En cours</div><div class="chip" data-v="Non">Non</div>';
   h += '</div>'
     + '<label class="f">Un mot pour nous (facultatif)</label><textarea id="f-mot" rows="3"></textarea>'
     + '<button class="btn" id="f-go">ENVOYER</button>'
@@ -705,6 +710,11 @@ function screenForm(){
   view(h);
   var chips = document.querySelectorAll("#f-dispos .chip");
   for(var k=0;k<chips.length;k++) chips[k].onclick = function(){ this.classList.toggle("on"); };
+  var pchips = document.querySelectorAll("#f-permis .chip");
+  for(var k2=0;k2<pchips.length;k2++) pchips[k2].onclick = function(){
+    for(var z=0;z<pchips.length;z++) pchips[z].classList.remove("on");
+    this.classList.add("on");
+  };
   $("f-go").onclick = function(){
     var nom = ($("f-nom").value||"").trim();
     var tel = ($("f-tel").value||"").trim();
@@ -717,6 +727,7 @@ function screenForm(){
       parcours: S.parcours, nom: nom, tel: tel,
       email: ($("f-mail").value||"").trim(),
       dispos: d.join(", "),
+      permis: (document.querySelector("#f-permis .chip.on")||{getAttribute:function(){return "";}}).getAttribute("data-v") || "",
       mot: ($("f-mot").value||"").trim(),
       score: S.score, quiz: S.quiz, jeux: S.games,
       ts: Date.now(), statut: "nouveau"
@@ -805,8 +816,8 @@ function admRender(){
   var h = '<div class="adm-sec"><h2>Offres</h2>'
     + '<label class="f">Titre \u2014 parcours NUIT</label><input id="a-on-t" value="' + esc(CFG.offre_nuit.titre) + '">'
     + '<label class="f">Texte \u2014 parcours NUIT</label><textarea id="a-on-x" rows="6">' + esc(CFG.offre_nuit.texte) + '</textarea>'
-    + '<label class="f">Titre \u2014 parcours JOUR</label><input id="a-oj-t" value="' + esc(CFG.offre_jour.titre) + '">'
-    + '<label class="f">Texte \u2014 parcours JOUR</label><textarea id="a-oj-x" rows="6">' + esc(CFG.offre_jour.texte) + '</textarea>'
+    + (JOUR_ACTIF ? ('<label class="f">Titre \u2014 parcours JOUR</label><input id="a-oj-t" value="' + esc(CFG.offre_jour.titre) + '">'
+    + '<label class="f">Texte \u2014 parcours JOUR</label><textarea id="a-oj-x" rows="6">' + esc(CFG.offre_jour.texte) + '</textarea>') : '<div class="dim" style="margin-top:10px">Parcours JOUR (atelier / travaux) d\u00e9sactiv\u00e9. Ses contenus sont conserv\u00e9s : repasser JOUR_ACTIF a true dans le code le r\u00e9active.</div>')
     + '</div>'
     + '<div class="adm-sec"><h2>Mini-jeux actifs</h2><div class="chips" id="a-games">';
   var gk = ["shaker","service","prenoms","plateau"];
@@ -815,7 +826,7 @@ function admRender(){
   }
   h += '</div><div class="dim" style="margin-top:8px">Le parcours enchaine Shaker, Service, puis un des deux autres au hasard.</div></div>'
     + admQuizEditor("quiz_nuit", "Quiz \u2014 parcours NUIT")
-    + admQuizEditor("quiz_jour", "Quiz \u2014 parcours JOUR")
+    + (JOUR_ACTIF ? admQuizEditor("quiz_jour", "Quiz \u2014 parcours JOUR") : "")
     + '<button class="btn" id="a-save" style="max-width:320px">ENREGISTRER</button>'
     + '<div class="adm-sec"><h2>Candidats</h2><button class="btn sec" id="a-csv" style="max-width:220px">Export CSV</button><div id="a-cand"></div></div>'
     + '<div class="adm-sec"><h2>Classement</h2><div id="a-sc"></div></div>'
@@ -823,7 +834,7 @@ function admRender(){
   $("adm-body").innerHTML = h;
 
   var base = window.location.origin + window.location.pathname;
-  $("a-links").innerHTML = "Affiche NUIT : <b>" + base + "?nuit</b><br>Affiche JOUR : <b>" + base + "?jour</b><br>\u00c9cran du bar : <b>" + base + "?tv</b>";
+  $("a-links").innerHTML = "Lien public (QR des affiches) : <b>https://www.lumiia.fr/link</b><br>App directe : <b>" + base + "?nuit</b><br>\u00c9cran du bar : <b>" + base + "?tv</b>" + (JOUR_ACTIF ? "<br>Affiche JOUR : <b>" + base + "?jour</b>" : "");
 
   var chips = document.querySelectorAll("#a-games .chip");
   for(var k=0;k<chips.length;k++) chips[k].onclick = function(){ this.classList.toggle("on"); };
@@ -856,12 +867,12 @@ function admCandidats(v){
   var arr = [];
   for(var k in v){ var o = v[k]; o._k = k; arr.push(o); }
   arr.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
-  var h = '<table><tr><th>Date</th><th>Parcours</th><th>Nom</th><th>T\u00e9l</th><th>Dispos</th><th>Score</th><th>Mot</th></tr>';
+  var h = '<table><tr><th>Date</th><th>Parcours</th><th>Nom</th><th>T\u00e9l</th><th>Dispos</th><th>Permis</th><th>Score</th><th>Mot</th></tr>';
   for(var i=0;i<arr.length;i++){
     var c = arr[i], d = new Date(c.ts||0);
     h += '<tr><td>' + d.toLocaleDateString("fr-FR") + ' ' + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) + '</td>'
       + '<td>' + esc(c.parcours) + '</td><td><b>' + esc(c.nom) + '</b><br><span class="dim">' + esc(c.email||"") + '</span></td>'
-      + '<td>' + esc(c.tel) + '</td><td>' + esc(c.dispos||"") + '</td><td>' + (c.score||0) + '</td><td>' + esc(c.mot||"") + '</td></tr>';
+      + '<td>' + esc(c.tel) + '</td><td>' + esc(c.dispos||"") + '</td><td>' + esc(c.permis||"") + '</td><td>' + (c.score||0) + '</td><td>' + esc(c.mot||"") + '</td></tr>';
   }
   h += '</table>';
   if(!arr.length) h = '<div class="dim">Aucune candidature pour l\u2019instant.</div>';
@@ -887,11 +898,11 @@ function admScores(v){
 }
 
 function admCsv(){
-  var rows = [["date","parcours","nom","tel","email","dispos","score","mot","quiz"]];
+  var rows = [["date","parcours","nom","tel","email","dispos","permis","score","mot","quiz"]];
   for(var k in LAST_CAND){
     var c = LAST_CAND[k];
     var q = (c.quiz||[]).map(function(x){ return x.q + " >> " + x.r; }).join(" | ");
-    rows.push([ new Date(c.ts||0).toLocaleString("fr-FR"), c.parcours||"", c.nom||"", c.tel||"", c.email||"", c.dispos||"", c.score||0, (c.mot||"").replace(/\n/g," "), q ]);
+    rows.push([ new Date(c.ts||0).toLocaleString("fr-FR"), c.parcours||"", c.nom||"", c.tel||"", c.email||"", c.dispos||"", c.permis||"", c.score||0, (c.mot||"").replace(/\n/g," "), q ]);
   }
   var csv = rows.map(function(r){
     return r.map(function(f){ return '"' + String(f).replace(/"/g,'""') + '"'; }).join(";");
