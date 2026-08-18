@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v2.0 -->
+<!-- LUMIIA RECRUTE — v2.1 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -136,8 +136,8 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 .cmp{width:100%;border-collapse:collapse;font-size:.82rem;}
 .cmp th{position:sticky;top:0;background:var(--panel);z-index:2;}
 .cmp td{vertical-align:middle;}
-.bar{height:9px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;min-width:70px;}
-.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--lime));}
+.cbar{height:9px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;min-width:70px;}
+.cbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--lime));}
 .pill2{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.72rem;border:1px solid var(--bd);margin:1px 2px 1px 0;}
 .pill2.hot{border-color:var(--lime);color:var(--lime);}
 .pill2.no{border-color:var(--danger);color:var(--danger);}
@@ -176,7 +176,7 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem">v2.0</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem">v2.1</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -196,7 +196,7 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v2.0";
+var VERSION = "v2.1";
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
 var JOUR_ACTIF = false;
@@ -499,13 +499,18 @@ function runShaker(api){
   hitline.style.top = LINE + "px";
   stage.appendChild(track); stage.appendChild(hitline);
 
-  // le shaker : il bascule a chaque temps
-  var shaker = el('<div style="position:absolute;left:50%;font-size:4.4rem;margin-left:-34px;transform-origin:50% 90%;">\uD83E\uDD44</div>');
-  shaker.style.top = (LINE - 96) + "px";
+  // le shaker : dessine, il bascule a chaque temps
+  var shaker = el('<div style="position:absolute;left:50%;width:74px;height:104px;margin-left:-37px;transform-origin:50% 92%;">'
+    + '<div style="position:absolute;left:11px;top:0;width:52px;height:20px;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,#e8e2f5,#9c95bd)"></div>'
+    + '<div style="position:absolute;left:15px;top:20px;width:44px;height:10px;background:linear-gradient(180deg,#b9b2d6,#8079a3)"></div>'
+    + '<div style="position:absolute;left:6px;top:30px;width:62px;height:70px;border-radius:8px 8px 16px 16px;background:linear-gradient(160deg,#f2eefc,#a29ac4 55%,#6f689154);box-shadow:inset -8px 0 14px rgba(0,0,0,.25)"></div>'
+    + '<div style="position:absolute;left:16px;top:40px;width:10px;height:44px;border-radius:99px;background:rgba(255,255,255,.55);filter:blur(1px)"></div>'
+    + '</div>');
+  shaker.style.top = (LINE - 132) + "px";
   stage.appendChild(shaker);
 
-  var halo = el('<div style="position:absolute;left:50%;width:130px;height:130px;margin-left:-65px;border-radius:50%;border:3px solid var(--mag);opacity:.5"></div>');
-  halo.style.top = (LINE - 120) + "px";
+  var halo = el('<div style="position:absolute;left:50%;width:150px;height:150px;margin-left:-75px;border-radius:50%;border:3px solid var(--mag);opacity:.45"></div>');
+  halo.style.top = (LINE - 150) + "px";
   stage.appendChild(halo);
 
   var fb = el('<div style="position:absolute;left:0;right:0;text-align:center;font-family:\'Bebas Neue\';font-size:1.9rem;letter-spacing:.06em;opacity:0;transition:opacity .12s"></div>');
@@ -532,7 +537,7 @@ function runShaker(api){
     var e = now - t0;
     var ph = ((e % period) + period) % period / period;
     var sc = 1 + 0.30 * Math.max(0, 1 - ph*2.6);
-    shaker.style.transform = "rotate(" + (Math.sin(e/period*Math.PI*2) * 17).toFixed(1) + "deg) scale(" + sc.toFixed(3) + ")";
+    shaker.style.transform = "rotate(" + (Math.sin(e/period*Math.PI*2) * 22).toFixed(1) + "deg) translateY(" + (Math.max(0,1-ph*2.6)*-9).toFixed(1) + "px) scale(" + sc.toFixed(3) + ")";
     halo.style.transform = "scale(" + (0.72 + 0.42*Math.max(0,1-ph*2.2)).toFixed(3) + ")";
     halo.style.borderColor = ph < 0.16 ? "var(--lime)" : "var(--mag)";
     for(var i=dots.length-1;i>=0;i--){
@@ -540,8 +545,8 @@ function runShaker(api){
       var dt = d.t - now;
       var y = LINE - (dt / (period*2.6)) * (LINE + 40);
       d.el.style.top = (y - 11) + "px";
-      d.el.style.opacity = dt < -260 ? 0 : 1;
-      if(dt < -400){ d.el.remove(); dots.splice(i,1); }
+      d.el.style.opacity = dt < 0 ? Math.max(0, 1 + dt/160) : 1;
+      if(dt < -170){ d.el.remove(); dots.splice(i,1); }
     }
     while(dots.length < 4){ newDot(nextBeat); nextBeat++; }
     requestAnimationFrame(anim);
@@ -703,6 +708,9 @@ function runService(api){
     clearInterval(spawnT); clearInterval(patT);
     api.finish();
   });
+  var vigie = setInterval(function(){
+    if(!document.body.contains(stage)){ done = true; clearInterval(spawnT); clearInterval(patT); clearInterval(vigie); }
+  }, 500);
 }
 
 /* ── JEU 3 : LA COMMANDE ── (memoire + rendu de monnaie) */
@@ -760,15 +768,16 @@ function runCommande(api){
     var choisi = {};
     var h = '<div style="position:absolute;inset:0;padding:12px;overflow:auto">'
       + '<div style="font-family:\'Bebas Neue\';font-size:1.2rem;letter-spacing:.14em;color:var(--cyan);text-align:center">REFAIS LA COMMANDE</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px">';
+      + '<div class="dim" style="text-align:center;font-size:.8rem;margin-top:2px">Touche un article autant de fois qu’il a été commandé</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px">';
     CARTE.forEach(function(c, k){
-      h += '<div class="opt cmd-it" data-n="' + c.nom + '" style="text-align:center;margin-top:0">'
-        + '<div style="font-size:2.4rem;line-height:1">' + c.ico + '</div>'
-        + '<div style="font-family:\'Bebas Neue\';font-size:1rem;letter-spacing:.05em">' + c.nom + '</div>'
-        + '<div style="color:var(--dim);font-size:.8rem">' + c.prix + ' €</div>'
-        + '<div class="qte" style="font-family:\'Bebas Neue\';font-size:1.5rem;color:var(--lime);margin-top:2px">0</div></div>';
+      h += '<div class="opt cmd-it" data-n="' + c.nom + '" style="text-align:center;margin-top:0;padding:8px 4px">'
+        + '<div style="font-size:1.8rem;line-height:1">' + c.ico + '</div>'
+        + '<div style="font-family:\'Bebas Neue\';font-size:.82rem;letter-spacing:.04em">' + c.nom + '</div>'
+        + '<div style="color:var(--dim);font-size:.7rem">' + c.prix + ' €</div>'
+        + '<div class="qte" style="font-family:\'Bebas Neue\';font-size:1.35rem;color:var(--lime);line-height:1.1">0</div></div>';
     });
-    h += '</div><button class="btn" id="cmd-ok" style="margin-top:14px">C’EST BON</button></div>';
+    h += '</div><button class="btn" id="cmd-ok" style="margin-top:12px">C’EST BON</button></div>';
     stage.innerHTML = h;
 
     var its = stage.querySelectorAll(".cmd-it");
@@ -803,10 +812,10 @@ function runCommande(api){
       + '<div style="font-family:\'Bebas Neue\';font-size:1.2rem;letter-spacing:.14em;color:var(--cyan)">LA MONNAIE</div>'
       + '<div style="margin-top:12px;color:var(--soft)">Total : <b style="color:var(--tx)">' + total + ' €</b><br>Le client donne <b style="color:var(--or)">' + donne + ' €</b></div>'
       + '<div style="font-family:\'Bebas Neue\';font-size:1.1rem;letter-spacing:.1em;margin-top:14px;color:var(--dim)">COMPOSE CE QUE TU RENDS</div>'
-      + '<div id="mtot" style="font-family:\'Bebas Neue\';font-size:2.6rem;color:var(--lime);margin:6px 0">0 €</div>'
+      + '<div id="mtot" style="font-family:\'Bebas Neue\';font-size:2.2rem;color:var(--lime);margin:4px 0">0 €</div>'
       + '<div style="display:flex;flex-wrap:wrap;gap:9px;justify-content:center">';
     PIECES.forEach(function(p){
-      h += '<button class="opt mon" data-v="' + p + '" style="width:auto;min-width:76px;text-align:center;margin-top:0"><b style="font-size:1.3rem">' + p + ' €</b></button>';
+      h += '<button class="opt mon" data-v="' + p + '" style="width:auto;min-width:64px;text-align:center;margin-top:0;padding:9px 10px"><b style="font-size:1.2rem">' + p + ' €</b></button>';
     });
     h += '</div><button class="btn sec mini" id="m-raz" style="margin-top:12px">Effacer</button>'
       + '<button class="btn" id="m-ok" style="margin-top:8px">JE RENDS</button></div>';
@@ -1495,13 +1504,13 @@ function admCandidats(v){
     h += '<tr data-k="' + c._k + '" style="cursor:pointer">'
       + '<td><span class="pill2 ' + (complet ? "hot" : "wip") + '">' + (complet ? "complet" : ("étape " + (c.etape||1))) + '</span></td>'
       + '<td><b>' + esc(c.nom||"—") + '</b><br><span class="dim">' + esc(c.tel||"") + '</span></td>'
-      + '<td><div class="bar"><i style="width:' + Math.round(e/((CFG.experiences||[]).length||10)*100) + '%"></i></div><span class="dim">' + e + ' domaines · ' + esc(c.anciennete||"—") + '</span></td>'
-      + '<td><div class="bar"><i style="width:' + Math.round(sv/nSav*100) + '%"></i></div><span class="dim">' + sv + ' / ' + nSav + '</span></td>'
+      + '<td><div class="cbar"><i style="width:' + Math.round(e/((CFG.experiences||[]).length||10)*100) + '%"></i></div><span class="dim">' + e + ' domaines · ' + esc(c.anciennete||"—") + '</span></td>'
+      + '<td><div class="cbar"><i style="width:' + Math.round(sv/nSav*100) + '%"></i></div><span class="dim">' + sv + ' / ' + nSav + '</span></td>'
       + '<td>' + (sit.length ? sit.map(function(x){ return '<span class="pill2">' + (Number(x)+1) + '</span>'; }).join("") : '<span class="dim">—</span>') + '</td>'
       + '<td>' + (jours.length ? ('<b>' + jours.length + '</b> créneaux<br><span class="dim">' + soirs + ' soirs</span>') : '<span class="dim">—</span>') + '</td>'
       + '<td><span class="pill2 ' + (c.permis === "Oui" ? "hot" : (c.permis === "Non" ? "no" : "")) + '">' + esc(c.permis||"—") + '</span></td>'
       + '<td>' + (c.media_url ? (c.media_type === "video" ? "🎬" : "🎙️") : '<span class="dim">—</span>') + '</td>'
-      + '<td><div class="bar"><i style="width:' + Math.round((c.score||0)/maxSc*100) + '%"></i></div><span class="dim">' + (c.score||0) + '</span></td>'
+      + '<td><div class="cbar"><i style="width:' + Math.round((c.score||0)/maxSc*100) + '%"></i></div><span class="dim">' + (c.score||0) + '</span></td>'
       + '<td class="dim">' + d.toLocaleDateString("fr-FR") + '<br>' + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) + '</td></tr>';
   });
   h += '</table><div class="dim" style="margin-top:8px">Clique une ligne pour la fiche complète. La photo n’apparaît pas ici : elle sert à reconnaître la personne, pas à trier.</div>';
