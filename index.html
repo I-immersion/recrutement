@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v2.1 -->
+<!-- LUMIIA RECRUTE — v2.2 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -176,7 +176,7 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem">v2.1</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem">v2.2</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -196,7 +196,7 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v2.1";
+var VERSION = "v2.2";
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
 var JOUR_ACTIF = false;
@@ -493,7 +493,7 @@ function runShaker(api){
   stage.appendChild(el('<div style="position:absolute;left:0;right:0;top:10px;text-align:center;font-family:\'Bebas Neue\';font-size:1.3rem;letter-spacing:.1em;color:var(--cyan)">SECOUE SUR LE TEMPS</div>'));
 
   // piste : les marqueurs descendent vers la ligne de frappe
-  var LINE = H * 0.62;
+  var LINE = H * 0.52;
   var track = el('<div style="position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.10) 30%,rgba(255,255,255,.10))"></div>');
   var hitline = el('<div style="position:absolute;left:12%;right:12%;height:3px;border-radius:2px;background:var(--lime);box-shadow:0 0 14px var(--lime)"></div>');
   hitline.style.top = LINE + "px";
@@ -506,18 +506,18 @@ function runShaker(api){
     + '<div style="position:absolute;left:6px;top:30px;width:62px;height:70px;border-radius:8px 8px 16px 16px;background:linear-gradient(160deg,#f2eefc,#a29ac4 55%,#6f689154);box-shadow:inset -8px 0 14px rgba(0,0,0,.25)"></div>'
     + '<div style="position:absolute;left:16px;top:40px;width:10px;height:44px;border-radius:99px;background:rgba(255,255,255,.55);filter:blur(1px)"></div>'
     + '</div>');
-  shaker.style.top = (LINE - 132) + "px";
+  shaker.style.top = (LINE + 16) + "px";
   stage.appendChild(shaker);
 
   var halo = el('<div style="position:absolute;left:50%;width:150px;height:150px;margin-left:-75px;border-radius:50%;border:3px solid var(--mag);opacity:.45"></div>');
-  halo.style.top = (LINE - 150) + "px";
+  halo.style.top = (LINE - 2) + "px";
   stage.appendChild(halo);
 
   var fb = el('<div style="position:absolute;left:0;right:0;text-align:center;font-family:\'Bebas Neue\';font-size:1.9rem;letter-spacing:.06em;opacity:0;transition:opacity .12s"></div>');
-  fb.style.top = (LINE + 22) + "px";
+  fb.style.top = (LINE - 52) + "px";
   stage.appendChild(fb);
 
-  stage.appendChild(el('<div style="position:absolute;left:0;right:0;bottom:14px;text-align:center;color:var(--dim);font-size:.85rem">Tape n\u2019importe o\u00f9 quand la bille touche la ligne verte</div>'));
+  stage.appendChild(el('<div style="position:absolute;left:0;right:0;bottom:8px;text-align:center;color:var(--dim);font-size:.8rem">Tape n\u2019importe o\u00f9 quand la bille touche la ligne verte</div>'));
 
   var dots = [];
   function newDot(beatIndex){
