@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v2.3 -->
+<!-- LUMIIA RECRUTE — v2.4 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -179,7 +179,7 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v2.3</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v2.4</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -199,7 +199,7 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v2.3";
+var VERSION = "v2.4";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -218,30 +218,33 @@ try { firebase.initializeApp(FB_CFG); db = firebase.database(); auth = firebase.
 
 var DEFAULTS = {
   quiz_nuit: [
-    { q: "Il est 23h47. Trois personnes t'appellent en même temps.", o: [
-      "Je hurle « J'ARRIVE » avec le sourire",
-      "Je sers celui qui attend depuis le plus longtemps",
-      "Je fais signe aux deux autres, je finis ce que j'ai commencé" ] },
-    { q: "Un groupe attend son escape game, la salle précédente a 10 min de retard.", o: [
-      "Je les installe au bar et je leur offre l'attente",
-      "Je leur explique franchement et je donne une heure précise",
-      "Je vais accélérer la sortie de l'autre groupe" ] },
-    { q: "Un client demande les règles d'un jeu que tu ne connais pas.", o: [
-      "J'improvise, personne ne verra rien",
-      "Je lis la règle avec lui, en 2 min c'est plié",
-      "Je démonte la boîte pour comprendre le mécanisme" ] },
-    { q: "Quelqu'un a clairement trop bu et recommande une tournée.", o: [
-      "Je sers, il est sympa, ça ira",
-      "Je refuse et je lui propose autre chose",
-      "Je vais chercher quelqu'un plutôt que de trancher seul" ] },
-    { q: "Il faut refixer un décor qui s'est décroché avant l'ouverture.", o: [
-      "Je prends la visseuse, c'est fait en 10 min",
-      "Je regarde comment c'était monté, puis je le refais",
-      "Ce n'est pas mon poste, je préviens" ] },
-    { q: "Sois honnête. Ta plus grande qualité.", o: [
-      "Je fais du bruit",
-      "Je fais du lien",
-      "Je fais des trucs solides" ] }
+    { q: "Un client arrive au bar et vous dit : « Je veux exactement la même chose que la dernière fois. » Que faites-vous ?", o: [
+      "Je lui demande ce qu'il avait pris.",
+      "Je prétends m'en souvenir.",
+      "Je lui pose quelques questions pour l'aider à retrouver sa commande.",
+      "Je lui sers un verre d'eau et j'attends que sa mémoire revienne." ] },
+    { q: "Il est 22h. Le lieu est plein mais l'ambiance est étrangement calme. Vous faites quoi ?", o: [
+      "Rien, ce n'est pas mon rôle.",
+      "J'échange avec quelques clients pour comprendre l'ambiance.",
+      "Je modifie l'ambiance sonore ou lumineuse.",
+      "Je lance une interaction ou une animation spontanée." ] },
+    { q: "Si vous pouviez choisir un super-pouvoir pour travailler chez LUMIIA, lequel prendriez-vous ?", o: [
+      "Lire dans les pensées des clients.",
+      "Me dédoubler pendant les rushs.",
+      "Arrêter le temps quand tout s'accélère.",
+      "Faire rire instantanément n'importe qui." ] },
+    { q: "Vous avez un bouton magique. Si vous appuyez dessus, tous les clients deviennent parfaitement sages et disciplinés. Vous faites quoi ?", o: [
+      "J'appuie immédiatement.",
+      "J'appuie seulement en cas de problème.",
+      "Je préfère ne pas y toucher.",
+      "Je cache le bouton pour être sûr que personne ne l'utilise." ] },
+    { q: "Une famille vient pour jouer, un groupe d'amis veut commander au bar, et une équipe attend des explications pour une activité. Votre premier réflexe ?", o: [
+      "Je m'occupe du groupe qui attend depuis le plus longtemps.",
+      "Je demande rapidement de l'aide à un collègue.",
+      "J'accueille tout le monde et j'organise les priorités.",
+      "J'improvise et je gère au fur et à mesure." ] },
+    { q: "Vous prenez le contrôle de la playlist pendant 30 minutes. Quels sont les 3 premiers morceaux que vous lancez ?",
+      libre: true, ph: "Trois titres, ou trois ambiances. Comme tu veux.", o: [] }
   ],
   quiz_jour: [
     { q: "La visseuse à percussion, c'est surtout pour :", o: [
@@ -397,6 +400,20 @@ function screenQuiz(){
   var h = '<div class="card">'
     + '<div class="step">Question ' + (S.qi+1) + ' / ' + qs.length + '</div>'
     + '<div class="q">' + esc(q.q) + '</div>';
+
+  /* question a reponse libre : pas de boutons, une zone de texte */
+  if(q.libre){
+    h += '<textarea id="q-libre" rows="4" placeholder="' + esc(q.ph || "\u00c0 toi d\u2019\u00e9crire.") + '"></textarea>'
+      + '<button class="btn" id="q-ok">CONTINUER</button>'
+      + '</div>';
+    view(h);
+    $("q-ok").onclick = function(){
+      S.quiz.push({ q: q.q, r: ($("q-libre").value || "").trim(), libre: true });
+      S.qi++; screenQuiz();
+    };
+    return;
+  }
+
   for(var i=0;i<q.o.length;i++){
     h += '<button class="opt" data-i="' + i + '">' + esc(q.o[i]) + '</button>';
   }
@@ -1647,9 +1664,10 @@ function admQuizEditor(key, titre){
   var qs = CFG[key] || [];
   var h = '<div class="adm-sec"><h2>' + titre + '</h2>';
   for(var i=0;i<qs.length;i++){
-    h += '<div class="qed"><label class="f">Question ' + (i+1) + '</label>'
+    h += '<div class="qed"><label class="f">Question ' + (i+1) + (qs[i].libre ? ' — réponse libre' : '') + '</label>'
       + '<input data-k="' + key + '" data-i="' + i + '" data-f="q" value="' + esc(qs[i].q) + '">';
-    for(var j=0;j<qs[i].o.length;j++){
+    if(qs[i].libre) h += '<div class="dim" style="margin-top:6px">Le candidat écrit lui-même. Pas de réponses à saisir.</div>';
+    for(var j=0;j<(qs[i].o||[]).length;j++){
       h += '<input data-k="' + key + '" data-i="' + i + '" data-f="o" data-j="' + j + '" value="' + esc(qs[i].o[j]) + '">';
     }
     h += '</div>';
@@ -1789,6 +1807,11 @@ function admFiche(c){
     if(sit[i] === undefined || sit[i] === "") return;
     sh += '<div style="margin-top:10px"><div class="dim">' + esc(s2.q) + '</div><b>→ ' + esc(s2.o[Number(sit[i])] || "?") + '</b></div>';
   });
+  var qh = "";
+  (c.quiz || []).forEach(function(qq){
+    if(!qq || !qq.r) return;
+    qh += '<div style="margin-top:10px"><div class="dim">' + esc(qq.q) + '</div><b>→ ' + nl2br(qq.r) + '</b></div>';
+  });
   var med = c.media_url
     ? (c.media_type === "video"
         ? '<video src="' + esc(c.media_url) + '" controls style="max-width:100%;border-radius:10px;margin-top:8px"></video>'
@@ -1807,6 +1830,7 @@ function admFiche(c){
     + bloc("Un dernier mot", c.mot)
     + '<div style="margin-top:14px"><div class="stepno">EXPÉRIENCE — ' + esc(c.anciennete||"—") + '</div>' + (pills(c.experiences) || '<span class="dim">—</span>') + '</div>'
     + '<div style="margin-top:14px"><div class="stepno">SAVOIR-FAIRE</div>' + (pills(c.savoirs) || '<span class="dim">—</span>') + '</div>'
+    + '<div style="margin-top:14px"><div class="stepno">QUIZ</div>' + (qh || '<span class="dim">—</span>') + '</div>'
     + '<div style="margin-top:14px"><div class="stepno">MISES EN SITUATION</div>' + (sh || '<span class="dim">—</span>') + '</div>'
     + '<div style="margin-top:14px"><div class="stepno">DISPONIBILITÉS</div>' + (pills(c.grille) || '<span class="dim">—</span>') + '</div>'
     + '<div style="margin-top:14px"><div class="stepno">ENREGISTREMENT</div>' + med + '</div>'
@@ -1836,7 +1860,7 @@ function admScores(v){
 
 function admCsv(){
   var rows = [["date","statut","etape","nom","tel","email","anciennete","experiences","savoirs",
-               "situations","dispos","permis","transport","rappel","media","score","pourquoi","portrait","mot"]];
+               "situations","dispos","permis","transport","rappel","media","score","pourquoi","portrait","mot","quiz"]];
   for(var k in LAST_CAND){
     var c = LAST_CAND[k];
     rows.push([
@@ -1844,7 +1868,8 @@ function admCsv(){
       c.anciennete||"", (c.experiences||"").replace(/\|/g,", "), (c.savoirs||"").replace(/\|/g,", "),
       (c.situations||"").replace(/\|/g,", "), (c.grille||"").replace(/\|/g,", "), c.permis||"", c.transport||"",
       c.rappel||"", c.media_url||"", c.score||0,
-      (c.pourquoi||"").replace(/\n/g," "), (c.portrait||"").replace(/\n/g," "), (c.mot||"").replace(/\n/g," ")
+      (c.pourquoi||"").replace(/\n/g," "), (c.portrait||"").replace(/\n/g," "), (c.mot||"").replace(/\n/g," "),
+      (c.quiz||[]).map(function(q){ return (q && q.r) ? (q.q + " → " + q.r) : ""; }).filter(Boolean).join(" // ").replace(/\n/g," ")
     ]);
   }
   var csv = rows.map(function(r){
