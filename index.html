@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v3.0 -->
+<!-- LUMIIA RECRUTE — v3.1 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -318,7 +318,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v3.0</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v3.1</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -338,7 +338,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v3.0";
+var VERSION = "v3.1";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -407,16 +407,16 @@ var DEFAULTS = {
       "Voir le truc fini", "Le café de 10h", "Le bruit de la scie" ] }
   ],
   offre_nuit: {
-    titre: "LES 3 POSTES",
-    texte: "Trois postes, tous polyvalents : accueil, bar, snacking, animation des jeux, installation au studio, entretien, décor.\n\nCe qu'on ne vous cache pas : le service se termine tard les vendredis et samedis, et le permis B est demandé — la voiture, c'est la nôtre.\n\nCDI, ou CDD selon votre situation. Aucun diplôme requis, on forme sur place. Évolution possible vers des postes de responsable."
+    titre: "TROIS POSTES",
+    texte: "LUMIIA est un complexe de loisirs immersif à Aouste-sur-Sye, à 5 minutes de Crest : bar, karaoké, défoule room, chasses au trésor, concerts, et des studios de production audio et vidéo. C'est pour ces activités qu'on recrute dès que possible un premier poste de 24 heures.\n\nLe 23 octobre, on ouvre le premier étage : escape game, roller disco, laser game et salle de spectacle. C'est pour cette ouverture qu'on cherche deux postes supplémentaires de 35 heures.\n\nLes trois postes sont polyvalents : accueil, bar, snacking, animation des jeux, installation au studio, entretien, décor. Une équipe dynamique, dans un lieu où aucune semaine ne ressemble à la précédente. De la rigueur, de l'autonomie, de la créativité et pas mal de folie aussi.\n\nCes postes sont proposés en CDI ; un CDD est envisageable selon votre situation. Rémunération au niveau II de la convention HCR, auxquels s'ajoutent les repas et, pour le poste du soir, les contreparties du travail de nuit. Formation assurée à la prise de poste, et perspectives d'évolution.\n\nOn est aussi très intéressés par les profils créatifs : partagez-nous vos expériences, projets, vidéos, créations, ou tout ce qui peut nous permettre de découvrir votre univers.\n\nPas de CV. Vous postulez directement à la fin du jeu, on vous rappelle ensuite."
   },
   offre_jour: {
     titre: "ATELIER / TRAVAUX",
     texte: "En journée, du lundi au vendredi. On construit, on répare, on aménage : agencement, petite menuiserie, peinture, montage, maintenance des espaces de jeu.\n\nAutonome, soigneux, capable de bosser seul comme en équipe. Vous rentrez chez vous avant que la musique commence."
   },
   postes: [
-    { code: "24h", t: "24 h — 3 soirs", d: "Jeudi, vendredi, samedi. À partir du 10 septembre.", s: "1 277 € brut / mois" },
-    { code: "35h", t: "35 h — mercredi → dimanche", d: "À partir du 23 octobre, pour l'ouverture du premier étage.", s: "1 863 € brut / mois" }
+    { code: "24h", t: "24 h — un poste", d: "Trois à quatre journées ou soirées par semaine. Dès que possible.", s: "1 277 € brut / mois" },
+    { code: "35h", t: "35 h — deux postes", d: "Du mercredi au dimanche, journées et soirées. À partir du 23 octobre.", s: "1 863 € brut / mois" }
   ],
   experiences: [
     "Bar / service", "Restauration / cuisine", "Serveur en salle", "Snacking, fast-food, food-truck",
@@ -510,7 +510,7 @@ var DEFAULT_TXT = {
   offre_sur:        "On recrute",
   offre_btn_oui:    "ÇA M’INTÉRESSE, JE POSTULE",
   offre_btn_non:    "Non merci, je jouais juste",
-  offre_btn_dl:     "TÉLÉCHARGER L’OFFRE",
+  offre_btn_dl:     "TÉLÉCHARGER L’OFFRE EN PDF",
 
   /* — Étape 1 : contact — */
   e1_titre:         "D’abord, comment on vous joint ?",
@@ -1836,11 +1836,10 @@ function screenOffre(){
   var cards = "";
   if(S.parcours === "nuit" && CFG.postes){
     CFG.postes.forEach(function(p){
-      cards += '<div style="border:1px solid var(--bd);border-radius:14px;padding:14px;margin-top:10px;background:rgba(255,255,255,.03)">'
-        + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
-        + '<div class="bebas" style="font-size:1.35rem;color:var(--cyan)">' + esc(p.t) + '</div>'
-        + '<div class="bebas" style="font-size:1.15rem;color:var(--lime);white-space:nowrap">' + esc(p.s) + '</div></div>'
-        + '<div class="dim" style="margin-top:4px">' + esc(p.d) + '</div></div>';
+      cards += '<div style="border:1px solid var(--bd);border-radius:14px;padding:14px 16px;margin-top:10px;background:rgba(255,255,255,.03)">'
+        + '<div class="bebas" style="font-size:1.5rem;color:var(--cyan);line-height:1.05">' + esc(p.t) + '</div>'
+        + '<div class="bebas" style="font-size:1.25rem;color:var(--lime);margin-top:2px">' + esc(p.s) + '</div>'
+        + '<div class="dim" style="margin-top:6px;line-height:1.45">' + esc(p.d) + '</div></div>';
     });
   }
   view('<div class="card">'
@@ -1857,56 +1856,19 @@ function screenOffre(){
   $("o-no").onclick = function(){ screenFin(false); };
 }
 
-/* Document autonome, sobre et imprimable : le candidat le garde, l'ouvre dans
-   n'importe quel navigateur et peut l'imprimer ou l'enregistrer en PDF. */
-function offreHTML(){
-  var o = S.parcours === "nuit" ? CFG.offre_nuit : CFG.offre_jour;
-  var cartes = "";
-  if(S.parcours === "nuit"){
-    (CFG.postes || []).forEach(function(p){
-      cartes += '<div class="poste"><div class="pt">' + esc(p.t) + '</div>'
-        + '<div class="ps">' + esc(p.s) + '</div>'
-        + '<div class="pd">' + esc(p.d) + '</div></div>';
-    });
-  }
-  return '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
-    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
-    + '<title>LUMIIA \u2014 ' + esc(o.titre) + '</title><style>'
-    + 'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;'
-    + 'color:#16202e;background:#fff;margin:0;padding:34px 22px 60px;line-height:1.6;}'
-    + '.w{max-width:680px;margin:0 auto;}'
-    + 'h1{font-size:1.1rem;letter-spacing:.28em;text-transform:uppercase;color:#6b7a8d;margin:0 0 6px;font-weight:600;}'
-    + 'h2{font-size:2rem;margin:0 0 4px;line-height:1.15;}'
-    + '.sig{color:#6b7a8d;font-style:italic;margin-bottom:26px;}'
-    + '.poste{border:1px solid #d3dae4;border-radius:9px;padding:14px 16px;margin-top:12px;}'
-    + '.pt{font-weight:800;font-size:1.05rem;}'
-    + '.ps{font-weight:800;color:#0d6b3a;margin-top:2px;}'
-    + '.pd{color:#5a6a7d;font-size:.94rem;margin-top:2px;}'
-    + '.txt{margin-top:26px;white-space:pre-wrap;}'
-    + '.cta{margin-top:30px;padding:16px 18px;border:2px solid #16202e;border-radius:9px;}'
-    + '.cta b{display:block;font-size:1.05rem;}'
-    + 'footer{margin-top:34px;padding-top:14px;border-top:1px solid #e3e8ef;color:#6b7a8d;font-size:.86rem;}'
-    + '@media print{body{padding:0;} .cta{border-width:1px;}}'
-    + '</style></head><body><div class="w">'
-    + '<h1>LUMIIA recrute</h1>'
-    + '<h2>' + esc(o.titre) + '</h2>'
-    + '<div class="sig">Un lieu d\u00e9cal\u00e9, vivant, improbable.</div>'
-    + cartes
-    + '<div class="txt">' + esc(o.texte) + '</div>'
-    + '<div class="cta"><b>Pour postuler</b>https://www.lumiia.fr/link</div>'
-    + '<footer>LUMIIA \u2014 complexe de loisirs immersif. Document g\u00e9n\u00e9r\u00e9 depuis le jeu du recrutement.</footer>'
-    + '</div></body></html>';
-}
+/* L'offre téléchargeable est un vrai PDF, mis en page à part et déposé à côté de
+   index.html dans le dépôt. Le lien porte download ET target : si le navigateur
+   honore download il enregistre le fichier, sinon il l'ouvre dans un onglet. */
+var PDF_OFFRE = "offre-lumiia.pdf";
 function telechargerOffre(){
   try {
-    var blob = new Blob([offreHTML()], { type:"text/html;charset=utf-8" });
     var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "LUMIIA-offre-emploi.html";
+    a.href = PDF_OFFRE;
+    a.download = "LUMIIA-offre-emploi.pdf";
+    a.target = "_blank"; a.rel = "noopener";
     document.body.appendChild(a); a.click();
-    setTimeout(function(){ a.remove(); }, 400);
-    toast("Offre téléchargée");
-  } catch(e){ toast("Téléchargement impossible sur ce navigateur"); }
+    setTimeout(function(){ a.remove(); }, 500);
+  } catch(e){ window.open(PDF_OFFRE, "_blank"); }
 }
 
 /* ══════════════════════════════════════

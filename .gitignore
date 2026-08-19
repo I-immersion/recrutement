@@ -4,3 +4,4 @@
 *.pages
 _hors_repo/
 grille-transition-lumiia*.html
+!offre-lumiia.pdf
