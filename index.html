@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v3.8 -->
+<!-- LUMIIA RECRUTE — v3.9 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -298,6 +298,14 @@ body.adm{background:#0d1117;}
 .pitch{border:1px solid var(--bd);border-left:4px solid var(--violet);border-radius:14px;
   padding:16px 16px 18px;margin-top:18px;background:linear-gradient(160deg,rgba(168,85,247,.08),rgba(255,255,255,.02));}
 .pitch.ok{border-left-color:var(--ok);background:linear-gradient(160deg,rgba(74,222,128,.10),rgba(255,255,255,.02));}
+.ovl{position:fixed;inset:0;background:rgba(5,0,26,.80);z-index:70;display:flex;align-items:center;
+  justify-content:center;padding:22px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);}
+.ovlbox{width:100%;max-width:420px;background:linear-gradient(160deg,rgba(20,9,50,.99),rgba(11,5,32,.99));
+  border:1px solid var(--bd);border-radius:18px;padding:22px;}
+.ovlt{font-family:'Bebas Neue';font-size:1.7rem;letter-spacing:.05em;color:var(--lime);}
+.ovlx{margin-top:10px;font-size:.95rem;line-height:1.55;color:var(--soft);}
+.pmode{width:100%;margin-top:10px;font-size:.8rem;line-height:1.45;color:var(--dim);}
+.pitch .pbtns .btn.alt{opacity:.66;}
 .pitch.ko{border-left-color:var(--danger);background:linear-gradient(160deg,rgba(255,68,68,.10),rgba(255,255,255,.02));}
 .pitch .pnum .pko{margin-left:auto;font-family:'Nunito';font-size:.78rem;font-weight:900;color:var(--danger);
   letter-spacing:.02em;}
@@ -462,7 +470,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v3.8</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v3.9</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -482,7 +490,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v3.8";
+var VERSION = "v3.9";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -798,6 +806,21 @@ document.addEventListener("pointerdown", function(ev){
   if(!t) return;
   if(t.classList.contains("btn")) SFX.click(); else SFX.soft();
 }, true);
+/* Une question franche, dans la charte, plutot que le confirm() du navigateur :
+   celui-ci bloque tout et ne dit pas de quelle application il vient. */
+function demander(titre, texte, labelOui, cbOui){
+  var o = el('<div class="ovl"><div class="ovlbox">'
+    + '<div class="ovlt"></div><div class="ovlx"></div>'
+    + '<button class="btn" data-o="1"></button>'
+    + '<button class="btn sec" data-o="0">Annuler</button></div></div>');
+  o.querySelector(".ovlt").textContent = titre;
+  o.querySelector(".ovlx").textContent = texte;
+  var oui = o.querySelector('[data-o="1"]');
+  oui.textContent = labelOui;
+  oui.onclick = function(){ o.remove(); cbOui(); };
+  o.querySelector('[data-o="0"]').onclick = function(){ o.remove(); };
+  document.body.appendChild(o);
+}
 function toast(m){ var t=el('<div class="toast"></div>'); t.textContent=m; document.body.appendChild(t); setTimeout(function(){t.remove();},2200); }
 function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
 
@@ -2157,6 +2180,36 @@ var ETAPES = 7;
 /* Les 4 emplacements d'enregistrement : 3 pitchs + le dernier mot.
    Chaque emplacement stocke <slot>_url et <slot>_type dans la fiche candidat. */
 var SLOTS = { p1:"pitch1", p2:"pitch2", p3:"pitch3", mot:"motmedia" };
+
+/* Un emplacement ne garde qu'UNE reponse : soit l'audio, soit la video.
+   Enregistrer une video sur une question deja repondue en audio remplaçait
+   l'audio sans rien dire — d'ou l'impression que l'enregistrement avait
+   disparu. Les trois fonctions ci-dessous rendent ce choix lisible :
+   le libelle du bouton dit ce qui se passera, et le remplacement se confirme. */
+function libMedia(video, typ, fait){
+  var ico = video ? "🎬" : "🎙️";
+  var mien = (typ === (video ? "video" : "audio"));
+  if(fait && mien) return "✓ " + ico + " Votre réponse — refaire";
+  if(fait)         return ico + " Passer en " + (video ? "vidéo" : "audio");
+  return ico + " Répondre en " + (video ? "vidéo" : "audio");
+}
+function clsMedia(video, typ, fait){
+  if(!fait) return "";
+  return (typ === (video ? "video" : "audio")) ? " done" : " alt";
+}
+function noteMedia(typ){
+  if(!typ) return "";
+  return "Une seule réponse est conservée par question. Vous avez répondu en "
+    + (typ === "video" ? "vidéo" : "audio")
+    + " — choisir l’autre format remplacera cet enregistrement.";
+}
+function avantRemplacer(fait, typ, video, go){
+  if(!fait || typ === (video ? "video" : "audio")){ go(); return; }
+  demander("Remplacer votre réponse ?",
+    "Vous avez déjà répondu en " + (typ === "video" ? "vidéo" : "audio") + ". "
+    + "Une seule réponse est conservée : le nouvel enregistrement remplacera l’ancien.",
+    "Enregistrer en " + (video ? "vidéo" : "audio"), go);
+}
 var REC_MAX = 60;   /* secondes par enregistrement */
 
 /* ══════════════════════════════════════
@@ -2419,12 +2472,13 @@ function screenEtape6(){
       + '<div class="pq">' + esc(q) + '</div>'
       + (err ? '<div class="dim" style="margin-top:8px;color:var(--danger)">' + esc(motifEnvoi(err)) + '</div>' : '')
       + '<div class="pbtns">'
-      + '<button class="btn sec mini' + (fait && typ === "audio" ? " done" : "") + '" data-slot="' + slot + '" data-video="0" data-q="' + i + '">'
-      +   (fait && typ === "audio" ? "✓ 🎙️ Audio — refaire" : "🎙️ Audio") + '</button>'
-      + '<button class="btn sec mini' + (fait && typ === "video" ? " done" : "") + '" data-slot="' + slot + '" data-video="1" data-q="' + i + '">'
-      +   (fait && typ === "video" ? "✓ 🎬 Vidéo — refaire" : "🎬 Vidéo") + '</button>'
+      + '<button class="btn sec mini' + clsMedia(false, typ, fait) + '" data-slot="' + slot + '" data-video="0" data-q="' + i + '">'
+      +   esc(libMedia(false, typ, fait)) + '</button>'
+      + '<button class="btn sec mini' + clsMedia(true, typ, fait) + '" data-slot="' + slot + '" data-video="1" data-q="' + i + '">'
+      +   esc(libMedia(true, typ, fait)) + '</button>'
       + (fait ? '<button class="btn sec mini sup" data-sup="' + slot + '">🗑 Supprimer</button>' : '')
       + '</div>'
+      + (fait ? '<div class="pmode">' + esc(noteMedia(typ)) + '</div>' : '')
       + (fait ? '<div class="pprev">' + (typ === "video"
           ? '<video src="' + esc(fait) + '" controls playsinline preload="none"></video>'
           : '<audio src="' + esc(fait) + '" controls preload="none"></audio>') + '</div>' : '')
@@ -2438,7 +2492,9 @@ function screenEtape6(){
     var slot = this.getAttribute("data-slot");
     var video = this.getAttribute("data-video") === "1";
     var qi = parseInt(this.getAttribute("data-q"), 10);
-    screenRec(slot, video, (CFG.pitchs||[])[qi], "LES PITCHS DU GAME", screenEtape6);
+    avantRemplacer(CAND.data[slot + "_url"], CAND.data[slot + "_type"], video, function(){
+      screenRec(slot, video, (CFG.pitchs||[])[qi], "LES PITCHS DU GAME", screenEtape6);
+    });
   };
   var sups = document.querySelectorAll("[data-sup]");
   for(var j=0;j<sups.length;j++) sups[j].onclick = function(){
@@ -2479,9 +2535,12 @@ function screenEtape7(){
     + '<textarea id="e7-mot" rows="3">' + esc(CAND.data.mot||"") + '</textarea>'
     + '<div class="media' + (fait ? " ok" : "") + '">'
     + '<div class="dim" id="e7-mst">' + (fait ? (CAND.data[slot + "_type"] === "video" ? "Vidéo enregistrée ✓" : "Audio enregistré ✓") : T("e7_mot_note")) + '</div>'
-    + '<button class="btn sec mini" id="e7-aud">' + (fait && CAND.data[slot + "_type"] === "audio" ? "✓ 🎙️ Audio — refaire" : "🎙️ Audio") + '</button>'
-    + '<button class="btn sec mini" id="e7-vid">' + (fait && CAND.data[slot + "_type"] === "video" ? "✓ 🎬 Vidéo — refaire" : "🎬 Vidéo") + '</button>'
+    + '<button class="btn sec mini' + clsMedia(false, CAND.data[slot + "_type"], fait) + '" id="e7-aud">'
+    +   esc(libMedia(false, CAND.data[slot + "_type"], fait)) + '</button>'
+    + '<button class="btn sec mini' + clsMedia(true, CAND.data[slot + "_type"], fait) + '" id="e7-vid">'
+    +   esc(libMedia(true, CAND.data[slot + "_type"], fait)) + '</button>'
     + (fait ? '<button class="btn sec mini sup" id="e7-sup">🗑 Supprimer</button>' : '')
+    + (fait ? '<div class="pmode">' + esc(noteMedia(CAND.data[slot + "_type"])) + '</div>' : '')
     + '</div>'
     + '<div class="chips" style="margin-top:22px"><div class="chip' + (CAND.data.offre_mail === false ? '' : ' on') + '" id="e7-mail">' + esc(T("e7_mail")) + '</div></div>'
     + '<button class="btn" id="e7-go">' + esc(T("e7_btn")) + '</button>'
@@ -2492,8 +2551,14 @@ function screenEtape7(){
   for(var i=0;i<cxs.length;i++) cxs[i].onclick = function(){ this.classList.toggle("on"); };
   $("e7-mail").onclick = function(){ this.classList.toggle("on"); };
   function sauveMot(){ candSave({ mot:($("e7-mot").value||"").trim() }); }
-  $("e7-aud").onclick = function(){ sauveMot(); screenRec(slot, false, "Un dernier mot ?", "UN DERNIER MOT", screenEtape7); };
-  $("e7-vid").onclick = function(){ sauveMot(); screenRec(slot, true,  "Un dernier mot ?", "UN DERNIER MOT", screenEtape7); };
+  function recMot(video){
+    sauveMot();
+    avantRemplacer(CAND.data[slot + "_url"], CAND.data[slot + "_type"], video, function(){
+      screenRec(slot, video, "Un dernier mot ?", "UN DERNIER MOT", screenEtape7);
+    });
+  }
+  $("e7-aud").onclick = function(){ recMot(false); };
+  $("e7-vid").onclick = function(){ recMot(true); };
   if($("e7-sup")) $("e7-sup").onclick = function(){
     var patch = {}; patch[slot + "_url"] = null; patch[slot + "_type"] = null; patch[slot + "_err"] = null;
     CAND.data[slot + "_url"] = null; CAND.data[slot + "_type"] = null; CAND.data[slot + "_err"] = null;
