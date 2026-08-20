@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v3.9 -->
+<!-- LUMIIA RECRUTE — v4.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -304,6 +304,8 @@ body.adm{background:#0d1117;}
   border:1px solid var(--bd);border-radius:18px;padding:22px;}
 .ovlt{font-family:'Bebas Neue';font-size:1.7rem;letter-spacing:.05em;color:var(--lime);}
 .ovlx{margin-top:10px;font-size:.95rem;line-height:1.55;color:var(--soft);}
+.duo{display:flex;gap:10px;flex-wrap:wrap;}
+.duo .btn{flex:1 1 150px;width:auto;padding:15px 12px;font-size:1.15rem;}
 .pmode{width:100%;margin-top:10px;font-size:.8rem;line-height:1.45;color:var(--dim);}
 .pitch .pbtns .btn.alt{opacity:.66;}
 .pitch.ko{border-left-color:var(--danger);background:linear-gradient(160deg,rgba(255,68,68,.10),rgba(255,255,255,.02));}
@@ -470,7 +472,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v3.9</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.0</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -490,7 +492,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v3.9";
+var VERSION = "v4.0";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -737,6 +739,10 @@ var DEFAULT_TXT = {
   fin_modifier:     "MODIFIER MES INFORMATIONS",
   fin_modifier_note:"Vous pouvez revenir sur cet appareil et corriger votre candidature tant que nous n’avons pas clos les modifications.",
   fin_modif_close:  "Les modifications ne sont plus possibles : nous étudions les candidatures.",
+  fin_fermer:       "FERMER",
+  fin_close_t:      "À BIENTÔT.",
+  fin_close_x:      "Vous pouvez fermer cette page. Votre candidature est enregistrée, nous revenons vers vous.",
+  fin_close_btn:    "Revenir à l’accueil",
   acc_envoyee_t:    "VOTRE CANDIDATURE\nEST BIEN ARRIVÉE",
   acc_envoyee_s:    "Vous pouvez la revoir et la corriger si besoin.",
 
@@ -764,7 +770,7 @@ var TXT_GROUPES = [
   { g:"Étape 5 — vous",    cles:["e5_titre","e5_sous","e5_lbl_a","e5_lbl_b"] },
   { g:"Étape 6 — les pitchs",   cles:["e6_titre","e6_sous","e6_note","rec_note","rec_pret","rec_mode_audio","rec_mode_video","rec_btn_audio","rec_btn_video","rec_ok_audio","rec_ok_video"] },
   { g:"Étape 7 — rappel",  cles:["e7_titre","e7_sous","e7_lbl_mot","e7_mot_note","e7_mail","e7_btn"] },
-  { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","acc_envoyee_t","acc_envoyee_s"] },
+  { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","acc_envoyee_t","acc_envoyee_s"] },
   { g:"Boutons communs",   cles:["btn_continuer","btn_retour","bandeau"] }
 ];
 
@@ -2755,17 +2761,34 @@ function screenFin(candidat){
   if(candidat){
     h += recapCandidature();
     if(!CFG.modif_bloquee){
-      h += '<button class="btn" id="fin-mod">' + esc(T("fin_modifier")) + '</button>'
+      h += '<div class="duo">'
+        + '<button class="btn" id="fin-mod">' + esc(T("fin_modifier")) + '</button>'
+        + '<button class="btn sec" id="fin-close">' + esc(T("fin_fermer")) + '</button></div>'
         + '<div class="dim" style="margin-top:8px;line-height:1.45">' + Tb("fin_modifier_note") + '</div>';
     } else {
-      h += '<div class="dim" style="margin-top:14px;line-height:1.45">' + Tb("fin_modif_close") + '</div>';
+      h += '<div class="dim" style="margin-top:14px;line-height:1.45">' + Tb("fin_modif_close") + '</div>'
+        + '<button class="btn" id="fin-close">' + esc(T("fin_fermer")) + '</button>';
     }
   }
   h += '<button class="btn sec" id="fin-re">' + esc(T("fin_btn")) + '</button></div>';
   view(h);
-  if($("fin-mod")) $("fin-mod").onclick = function(){ screenContact(); };
+  if($("fin-mod"))   $("fin-mod").onclick   = function(){ screenContact(); };
+  if($("fin-close")) $("fin-close").onclick = function(){ screenFerme(); };
   SFX.win();
   $("fin-re").onclick = function(){ S.qi=0; S.quiz=[]; S.score=0; S.games=[]; screenIntro(); };
+}
+
+/* Un navigateur n'autorise pas une page a se fermer elle-meme, sauf si c'est
+   lui qui l'a ouverte. « Fermer » mene donc a une vraie fin de parcours :
+   plus rien a faire, et l'ecran le dit — plutot qu'un bouton qui ne fait rien. */
+function screenFerme(){
+  view('<div class="card center">'
+    + '<div style="font-size:3rem">👋</div>'
+    + '<div class="big" style="color:var(--lime)">' + Tb("fin_close_t") + '</div>'
+    + '<div class="mut" style="margin-top:12px">' + Tb("fin_close_x") + '</div>'
+    + '<button class="btn sec" id="fc-re">' + esc(T("fin_close_btn")) + '</button></div>');
+  $("fc-re").onclick = function(){ S.qi=0; S.quiz=[]; S.score=0; S.games=[]; screenIntro(); };
+  try { window.close(); } catch(e){}
 }
 
 /* ══════════ VUE TV — classement projeté ══════════ */
