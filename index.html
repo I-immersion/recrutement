@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.0 -->
+<!-- LUMIIA RECRUTE — v5.1 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -437,6 +437,11 @@ body.adm{background:#0d1117;}
 .fiche .pdet summary{cursor:pointer;color:#58a6ff;font-size:.86rem;font-weight:900;}
 .fiche .pgrp{margin-top:12px;color:#58a6ff;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:900;}
 
+.fiche .pnon{margin-top:12px;border-top:1px dashed #303a48;padding-top:10px;}
+.fiche .pnont{color:#7d8b9c;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;
+  font-weight:900;margin-bottom:7px;}
+.fiche .pill2.off{background:transparent;border-color:#2a323d;color:#6b7787;font-weight:400;}
+
 /* ── fiche candidat, panneau opaque ── */
 .fiche{position:fixed;inset:0;background:rgba(1,4,9,.78);z-index:200;overflow:auto;padding:24px 12px 70px;}
 .fiche .inner{max-width:880px;margin:0 auto;background:#161b22;color:#e6edf3;border:1px solid #303a48;border-radius:12px;
@@ -515,7 +520,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.0</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.1</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -535,7 +540,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.0";
+var VERSION = "v5.1";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -866,7 +871,7 @@ function Tb(cle, vars){ return nl2br(T(cle, vars)); }
 
 
 /* ══════════ ETAT ══════════ */
-var S = { parcours: "nuit", quiz: [], games: [], score: 0, prenom: "", qi: 0, gi: 0, gameList: [] };
+var S = { parcours: "nuit", quiz: [], games: [], score: 0, prenom: "", qi: 0, gi: 0, gameList: [], versContact: false };
 
 /* ══════════ UTIL ══════════ */
 function $(id){ return document.getElementById(id); }
@@ -1196,6 +1201,9 @@ function screenQuiz(){
 }
 
 function afterQuiz(){
+  /* Quiz lance depuis le bouton « je postule » : on revient au formulaire, pas
+     aux mini-jeux — la personne a deja vu l'offre et decide. */
+  if(S.versContact){ S.versContact = false; return screenContact(); }
   if(S.parcours === "jour"){ return screenOffre(); }
   S.gameList = buildGameList();
   S.gi = 0; S.score = 0; S.games = [];
@@ -2292,7 +2300,17 @@ function screenOffre(){
     + '<button class="btn sec" id="o-dl">' + esc(T("offre_btn_dl")) + '</button>'
     + '<button class="btn sec" id="o-no">' + esc(T("offre_btn_non")) + '</button>'
     + '</div>');
-  $("o-yes").onclick = screenContact;
+  /* On peut lire l'offre sans jouer — c'est le raccourci « je veux seulement
+     voir l'offre ». Mais on ne postule pas sans avoir repondu au quiz : sinon
+     la fiche arrive vide de reponses et n'apprend rien. */
+  $("o-yes").onclick = function(){
+    var qs = (S.parcours === "jour" ? CFG.quiz_jour : CFG.quiz_nuit) || [];
+    if((S.quiz || []).length < qs.length){
+      S.qi = 0; S.quiz = []; S.versContact = true;
+      return screenQuiz();
+    }
+    screenContact();
+  };
   $("o-dl").onclick  = telechargerOffre;
   $("o-no").onclick = function(){ screenFin(false); };
 }
@@ -2578,13 +2596,18 @@ function screenContact(){
     }
     if(!pCodes.length){ toast(T("e1_postes_err")); return; }
     this.disabled = true;
-    candSave({
+    var patch = {
       prenom:pre, nom:nom, tel:tel, email:mail,
       postes_codes: pCodes.join("|"), postes_vises: pLbls.join("|"),
       permis: chipVal("c-permis"), transport: chipVal("c-tr"),
-      parcours:S.parcours, score:S.score, quiz:S.quiz, jeux:S.games,
+      parcours:S.parcours,
       statut:"en cours", etape:1, ts: CAND.data.ts || Date.now()
-    }, screenEtape2);
+    };
+    /* On n'ecrit le quiz, le score et les jeux QUE si cette session en a.
+       Sans cette garde, rouvrir sa candidature par le lien du mail et revalider
+       l'etape 1 ecrasait les reponses deja enregistrees par un tableau vide. */
+    if((S.quiz || []).length){ patch.quiz = S.quiz; patch.score = S.score; patch.jeux = S.games; }
+    candSave(patch, screenEtape2);
   };
 }
 
@@ -4206,6 +4229,22 @@ function admFiche(c){
   function boite(titre, contenu){
     return '<div class="fbox"><div class="stepno">' + titre + '</div>' + contenu + '</div>';
   }
+  /* Une liste de cases cochees ne dit que la moitie de l'histoire. Voir en face
+     ce qui n'a PAS ete coche evite de croire qu'une competence manque alors
+     qu'elle n'a jamais ete proposee — et fait ressortir les vrais trous. */
+  function pillsComp(v, ref, cls){
+    var pris = (v || "").split("|").filter(Boolean);
+    var tout = (ref || []).slice();
+    var abs = tout.filter(function(x){ return pris.indexOf(x) === -1; });
+    var h = pris.length
+      ? pris.map(function(x){ return '<span class="pill2 ' + (cls||"") + '">' + esc(x) + '</span>'; }).join(" ")
+      : '<span class="dim">rien de coché</span>';
+    if(abs.length){
+      h += '<div class="pnon"><div class="pnont">Non coché — ' + abs.length + ' sur ' + tout.length + '</div>'
+        + abs.map(function(x){ return '<span class="pill2 off">' + esc(x) + '</span>'; }).join(" ") + '</div>';
+    }
+    return h;
+  }
   function ligne(k, v){
     return '<div class="kv"><span class="kk">' + esc(k) + '</span><span class="kvv">' + (v || '<span class="dim">—</span>') + '</span></div>';
   }
@@ -4337,8 +4376,10 @@ function admFiche(c){
     +   boite("Profil", profil)
     + '</div>'
 
-    + boite("Expériences déclarées <span class=\"cpt\">" + nExp + " / " + ((CFG.experiences||[]).length||20) + "</span>", pills(c.experiences, "hot"))
-    + boite("Savoir-faire cochés <span class=\"cpt\">" + nSav + " / " + ((CFG.savoirs||[]).length||12) + "</span>", pills(c.savoirs))
+    + boite("Expériences déclarées <span class=\"cpt\">" + nExp + " / " + ((CFG.experiences||[]).length||20) + "</span>",
+        pillsComp(c.experiences, CFG.experiences, "hot"))
+    + boite("Savoir-faire cochés <span class=\"cpt\">" + nSav + " / " + ((CFG.savoirs||[]).length||12) + "</span>",
+        pillsComp(c.savoirs, CFG.savoirs))
     + boite("Réponses au quiz", qh)
     + boite("Mises en situation", sh)
     + boite("Ce qu’il ou elle écrit",
@@ -4353,9 +4394,17 @@ function admFiche(c){
     + '</div>';
   document.body.appendChild(f);
   brancherSuivi(c, f);
-  function ferme(){ couperMedias(f); f.remove(); }
+  function ferme(){
+    couperMedias(f); f.remove();
+    document.removeEventListener("keydown", surEchap);
+  }
+  function surEchap(ev){ if(ev.key === "Escape") ferme(); }
   f.querySelector("#fi-x").onclick = ferme;
   f.querySelector("#fi-x2").onclick = ferme;
+  /* Clic sur le fond — et pas sur le panneau : ev.target n'est le voile que si
+     le clic a atterri en dehors de .inner. Echap fait la meme chose. */
+  f.onclick = function(ev){ if(ev.target === f) ferme(); };
+  document.addEventListener("keydown", surEchap);
   /* suppression en deux temps plutot qu'une boite de dialogue */
   var armee = false;
   f.querySelector("#fi-del").onclick = function(){
