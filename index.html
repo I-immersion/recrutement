@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v4.5 -->
+<!-- LUMIIA RECRUTE — v4.6 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -309,6 +309,18 @@ body.adm{background:#0d1117;}
 .rgpd.mini{margin-top:18px;border-left-color:var(--dim);}
 .rgpdt{font-weight:900;font-size:.86rem;color:var(--soft);letter-spacing:.01em;}
 .rgpdx{margin-top:6px;font-size:.8rem;line-height:1.5;color:var(--dim);}
+@keyframes popk{
+  0%  { transform:translate(-50%,4px)   scale(.35) rotate(var(--r,0deg)); opacity:0; }
+  20% { transform:translate(-50%,-12px) scale(1.3) rotate(var(--r,0deg)); opacity:1; }
+  38% { transform:translate(-50%,-18px) scale(1)   rotate(var(--r,0deg)); opacity:1; }
+  100%{ transform:translate(-50%,-64px) scale(.92) rotate(var(--r,0deg)); opacity:0; }
+}
+.popk{position:absolute;left:50%;z-index:22;pointer-events:none;text-align:center;
+  font-family:'Bebas Neue',sans-serif;letter-spacing:.06em;line-height:1;white-space:nowrap;
+  text-shadow:0 2px 0 rgba(0,0,0,.45),0 0 18px currentColor;
+  animation:popk .82s cubic-bezier(.2,.9,.3,1) forwards;}
+.popk .cb{display:block;margin-top:2px;font-family:'Nunito',sans-serif;font-size:.5em;
+  font-weight:900;letter-spacing:.04em;opacity:.92;}
 .duo{display:flex;gap:10px;flex-wrap:wrap;}
 .duo .btn{flex:1 1 150px;width:auto;padding:15px 12px;font-size:1.15rem;}
 .pmode{width:100%;margin-top:10px;font-size:.8rem;line-height:1.45;color:var(--dim);}
@@ -477,7 +489,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.5</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.6</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -497,7 +509,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v4.5";
+var VERSION = "v4.6";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -652,6 +664,14 @@ var DEFAULT_TXT = {
   shaker_start:     "POSEZ VOTRE DOIGT POUR COMMENCER",
   shaker_choisi:    "LE SHAKER A CHOISI",
   shaker_win:       "COCKTAIL RÉUSSI !",
+  /* Bulles du shaker. Un mot est tiré au hasard dans la liste, séparateur « | ».
+     Plus la série de réussites est longue, plus on monte dans les listes. */
+  shaker_pop1:      "GOOD !|BIEN !|OUI !|OK !|YES !",
+  shaker_pop2:      "SUPER !|TOP !|NICKEL !|CLASSE !|BRAVO !",
+  shaker_pop3:      "GÉNIAL !|EN FEU !|MAGIQUE !|WAOUH !|ÇA SHAKE !",
+  shaker_pop4:      "PARFAIT !|IMPARABLE !|LÉGENDE !|CHAMPION !|MONSTRUEUX !",
+  shaker_pop_near:  "presque|pas loin|à un poil|ouais…",
+  shaker_pop_miss:  "raté|à côté|oups|aïe",
   shaker_win_s:     "Cocktail plein. Le public adore.",
   shaker_lose:      "COCKTAIL RATÉ",
   service_titre:    "SERVEZ LES CLIENTS !",
@@ -776,6 +796,7 @@ var TXT_GROUPES = [
   { g:"Écran d’intro",     cles:["intro_l1","intro_l2","intro_sous","intro_note","intro_btn","intro_lien_offre"] },
   { g:"Mini-jeux",         cles:["jeu_btn","jeu_passer","jeufin_suivant","jeufin_dernier","jeufin_rejouer","jeufin_note",
                                  "shaker_titre","shaker_hint","shaker_start","shaker_choisi","shaker_win","shaker_win_s","shaker_lose",
+                                 "shaker_pop1","shaker_pop2","shaker_pop3","shaker_pop4","shaker_pop_near","shaker_pop_miss",
                                  "service_titre","commande_titre","commande_btn",
                                  "plateau_t1","plateau_t2","plateau_intro","plateau_start"] },
   { g:"Écran résultat",    cles:["res_titre","res_note","res_btn"] },
@@ -927,7 +948,8 @@ var SFX = (function(){
         g.gain.exponentialRampToValueAtTime(0.0001, quand + 0.06);
         o.connect(g); g.connect(c.destination);
         o.start(quand); o.stop(quand + 0.09);
-      } catch(e){}
+        return o;   /* rendu a l'appelant pour pouvoir le faire taire avant l'heure */
+      } catch(e){ return null; }
     },
     horloge: function(){ var c = ctx(); return c ? c.currentTime : 0; },
     /* Delai entre l'instant ou l'on programme un son et l'instant ou l'oreille
@@ -1304,7 +1326,8 @@ function runShaker(api){
   var LAT = 0;
   var finPrevue = false;
   var t0 = 0, done = false, started = false, holding = false;
-  var good = 0, near = 0, changes = 0, mix = 0;
+  var good = 0, near = 0, changes = 0, mix = 0, serie = 0;
+  var tics = [];   /* les temps programmes d'avance, a pouvoir faire taire */
   /* Un « presque » vaut une demi-reussite. Avant, il rapportait des points mais
      ne faisait pas avancer le cocktail : on pouvait secouer en rythme pendant
      30 secondes et voir le verre a moitie vide. */
@@ -1428,6 +1451,32 @@ function runShaker(api){
     setTimeout(function(){ tubeCkt.box.style.transform = ""; }, 130);
   }
 
+  /* Une bulle qui jaillit du shaker, part vers le haut et s'efface. Elle
+     remplace l'ancien mot fixe « DEDANS » : le retour est le meme, mais il se
+     regarde. L'inclinaison et le mot changent a chaque fois, sinon l'oeil
+     s'habitue et cesse de le voir. */
+  function popk(txt, col, taille, sous){
+    if(!txt) return;
+    var p = el('<div class="popk"></div>');
+    p.style.setProperty("--r", (Math.random() * 16 - 8).toFixed(1) + "deg");
+    p.style.color = col;
+    p.style.fontSize = taille;
+    p.style.top = Math.max(30, Math.min(H - 90, curY - 24)) + "px";
+    p.textContent = txt;
+    if(sous){
+      var c = document.createElement("span");
+      c.className = "cb"; c.textContent = sous;
+      p.appendChild(c);
+    }
+    stage.appendChild(p);
+    setTimeout(function(){ p.remove(); }, 850);
+  }
+  function motAuHasard(cle){
+    var l = String(T(cle) || "").split("|");
+    var propres = [];
+    for(var i=0;i<l.length;i++){ var m = l[i].trim(); if(m) propres.push(m); }
+    return propres.length ? propres[Math.floor(Math.random() * propres.length)] : "";
+  }
   function flash(txt, col){
     fb.textContent = txt; fb.style.color = col; fb.style.opacity = "1";
     setTimeout(function(){ fb.style.opacity = "0"; }, 240);
@@ -1448,9 +1497,28 @@ function runShaker(api){
     var off = ((e % PERIOD) + PERIOD) % PERIOD;
     if(off > PERIOD / 2) off -= PERIOD;
     var a = Math.abs(off);
-    if(a <= TOL_OK){ good++; api.addPts(12, W/2, curY, "+12"); SFX.ice(); flash("DEDANS", "var(--lime)"); pulseTubes(); }
-    else if(a <= TOL_NEAR){ near++; api.addPts(6, W/2, curY, "+6"); flash("presque", "var(--or)"); pulseTubes(); }
-    else { flash("à côté", "var(--danger)"); }
+    if(a <= TOL_OK){
+      good++; serie++;
+      api.addPts(12, W/2, curY, "+12"); SFX.ice(); pulseTubes();
+      /* Quatre paliers : le mot et la couleur montent avec la serie en cours.
+         C'est ce qui fait qu'une bonne serie se sent, au lieu de se compter. */
+      var cle, col, tai;
+      if(serie >= 10)     { cle = "shaker_pop4"; col = "var(--or)";    tai = "2.5rem"; }
+      else if(serie >= 6) { cle = "shaker_pop3"; col = "var(--mag)";   tai = "2.2rem"; }
+      else if(serie >= 3) { cle = "shaker_pop2"; col = "var(--cyan)";  tai = "1.9rem"; }
+      else                { cle = "shaker_pop1"; col = "var(--lime)";  tai = "1.65rem"; }
+      popk(motAuHasard(cle), col, tai, serie >= 3 ? ("× " + serie) : "");
+    }
+    else if(a <= TOL_NEAR){
+      /* Un « presque » ne casse pas la serie : il vaut une demi-reussite, il
+         serait incoherent qu'il punisse plus qu'il ne rapporte. */
+      near++; api.addPts(6, W/2, curY, "+6"); pulseTubes();
+      popk(motAuHasard("shaker_pop_near"), "var(--or)", "1.35rem", "");
+    }
+    else {
+      serie = 0;
+      popk(motAuHasard("shaker_pop_miss"), "var(--danger)", "1.25rem", "");
+    }
     mix = Math.min(1, reussite() / NEED);
     paint();
     /* Le cocktail est fait : plus rien a prouver. On laisse un court instant
@@ -1488,7 +1556,10 @@ function runShaker(api){
     var aRef = SFX.horloge(), dRef = Date.now();
     for(var b = -3; b < BEATS + 6; b++){
       var quand = aRef + ((t0 - dRef) + b * PERIOD) / 1000;
-      if(quand > aRef + 0.02) SFX.tickAt(b >= 0 && b % 4 === 0, quand);
+      if(quand > aRef + 0.02){
+        var osc = SFX.tickAt(b >= 0 && b % 4 === 0, quand);
+        if(osc) tics.push(osc);
+      }
     }
     stopT = api.setTimer(DUR + (PERIOD * 3 + 120 + LAT) / 1000, endRound);
   }
@@ -1591,6 +1662,12 @@ function runShaker(api){
     clearTimeout(idleGuard);
     if(stopT) stopT();
     setWarn("");
+    /* Tous les temps de la manche etaient programmes d'avance sur l'horloge
+       audio. Si le cocktail est plein avant la fin du chronometre, ils sont
+       toujours en file d'attente : on les annule, sinon le metronome continue
+       de sonner par-dessus l'ecran de resultat. */
+    for(var iT = 0; iT < tics.length; iT++){ try{ tics[iT].stop(); }catch(e){} }
+    tics.length = 0;
     stage.removeEventListener("pointerdown", onDown);
     stage.removeEventListener("pointermove", onMove);
 
