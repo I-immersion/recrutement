@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v4.0 -->
+<!-- LUMIIA RECRUTE — v4.1 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -472,7 +472,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.0</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.1</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -492,7 +492,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v4.0";
+var VERSION = "v4.1";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -743,6 +743,11 @@ var DEFAULT_TXT = {
   fin_close_t:      "À BIENTÔT.",
   fin_close_x:      "Vous pouvez fermer cette page. Votre candidature est enregistrée, nous revenons vers vous.",
   fin_close_btn:    "Revenir à l’accueil",
+  fin_mail_ok:      "Un récapitulatif vient de vous être envoyé par email.",
+  fin_mail_ko:      "Nous n’avons pas pu vous envoyer le récapitulatif par email — votre candidature est bien enregistrée.",
+  mod_charge:       "Récupération de votre candidature…",
+  mod_ko:           "Ce lien n’est plus valable. Votre candidature reste enregistrée : contactez-nous si vous souhaitez la corriger.",
+  mod_btn:          "Revenir à l’accueil",
   acc_envoyee_t:    "VOTRE CANDIDATURE\nEST BIEN ARRIVÉE",
   acc_envoyee_s:    "Vous pouvez la revoir et la corriger si besoin.",
 
@@ -770,7 +775,7 @@ var TXT_GROUPES = [
   { g:"Étape 5 — vous",    cles:["e5_titre","e5_sous","e5_lbl_a","e5_lbl_b"] },
   { g:"Étape 6 — les pitchs",   cles:["e6_titre","e6_sous","e6_note","rec_note","rec_pret","rec_mode_audio","rec_mode_video","rec_btn_audio","rec_btn_video","rec_ok_audio","rec_ok_video"] },
   { g:"Étape 7 — rappel",  cles:["e7_titre","e7_sous","e7_lbl_mot","e7_mot_note","e7_mail","e7_btn"] },
-  { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","acc_envoyee_t","acc_envoyee_s"] },
+  { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","fin_mail_ok","fin_mail_ko","mod_charge","mod_ko","mod_btn","acc_envoyee_t","acc_envoyee_s"] },
   { g:"Boutons communs",   cles:["btn_continuer","btn_retour","bandeau"] }
 ];
 
@@ -2142,6 +2147,56 @@ function telechargerOffre(){
 }
 
 /* ══════════════════════════════════════
+   GUICHET MAIL — sur le serveur de la réservation
+   ──────────────────────────────────────
+   On ne lui transmet JAMAIS ni destinataire ni contenu : uniquement
+   l'identifiant de la candidature. C'est lui qui lit la fiche dans Firebase,
+   compose le message et l'expédie à l'adresse enregistrée dedans. Personne ne
+   peut donc s'en servir pour écrire à un tiers — l'expéditeur est le même que
+   celui des billets de réservation, sa réputation n'est pas négociable.
+
+   Il sert aussi de guichet de LECTURE : le lien « modifier mes informations »
+   reçu par email peut être ouvert depuis un autre appareil, où le navigateur
+   n'a rien en mémoire. Les règles Firebase interdisent de lire une candidature
+   sans être administrateur ; le guichet, lui, en a le droit, et ne rend qu'une
+   fiche à la fois, à qui en connaît l'identifiant.
+   ══════════════════════════════════════ */
+var GUICHET = "https://reservation.lumiia.fr/api/recrutement-mail.php";
+
+function guichetEnvoi(type, cb){
+  if(!CAND.id){ if(cb) cb(false, "fiche-absente"); return; }
+  var x = new XMLHttpRequest();
+  x.open("POST", GUICHET, true);
+  x.setRequestHeader("Content-Type", "application/json");
+  x.timeout = 20000;
+  x.onload = function(){
+    if(x.status !== 200) console.warn("guichet", type, x.status, x.responseText);
+    if(cb) cb(x.status === 200, x.status);
+  };
+  x.ontimeout = x.onerror = function(){
+    console.warn("guichet injoignable", type);
+    if(cb) cb(false, "reseau");
+  };
+  x.send(JSON.stringify({ id:CAND.id, type:type }));
+}
+
+function guichetFiche(id, cb){
+  var x = new XMLHttpRequest();
+  x.open("GET", GUICHET + "?fiche=" + encodeURIComponent(id), true);
+  x.timeout = 20000;
+  x.onload = function(){
+    try{
+      var r = JSON.parse(x.responseText);
+      if(x.status === 200 && r && r.ok && r.fiche){ cb(true, r.fiche); return; }
+    }catch(e){}
+    console.warn("guichet fiche", x.status, x.responseText);
+    cb(false, null);
+  };
+  x.ontimeout = x.onerror = function(){ cb(false, null); };
+  x.send();
+}
+
+/* ══════════════════════════════════════
    CANDIDATURE — contact d'abord, puis étapes, tout sauvegardé
    ══════════════════════════════════════ */
 var CAND = { id:null, data:{} };
@@ -2580,7 +2635,20 @@ function screenEtape7(){
       grille: gg.join("|"), mot:($("e7-mot").value||"").trim(),
       offre_mail: $("e7-mail").classList.contains("on"),
       statut:"complet", etape:7, envoye: Date.now()
-    }, function(){ candLocalSave(); screenFin(true); });
+    }, function(){
+      candLocalSave();
+      screenFin(true);
+      /* L'écran de fin s'affiche d'abord : un mail qui tarde ou qui échoue ne
+         doit jamais retarder la confirmation que la candidature est arrivée. */
+      function dire(t){ var e = $("fin-mail"); if(e) e.textContent = t; }
+      guichetEnvoi("recap", function(ok){
+        dire(ok ? T("fin_mail_ok") : T("fin_mail_ko"));
+        CAND.data.recap_envoye = ok ? Date.now() : 0;
+        candLocalSave();
+        /* l'offre part après, et seulement si elle a été demandée */
+        if(ok && CAND.data.offre_mail) guichetEnvoi("offre");
+      });
+    });
   };
 }
 
@@ -2759,7 +2827,8 @@ function screenFin(candidat){
       + '<div class="mut" style="margin-top:12px">' + Tb("fin_txt_j") + '</div>';
   }
   if(candidat){
-    h += recapCandidature();
+    h += recapCandidature()
+      + '<div class="dim" id="fin-mail" style="margin-top:12px;line-height:1.45"></div>';
     if(!CFG.modif_bloquee){
       h += '<div class="duo">'
         + '<button class="btn" id="fin-mod">' + esc(T("fin_modifier")) + '</button>'
@@ -4055,6 +4124,39 @@ function admCsv(){
   if(spT) spT.innerHTML = Tb("acc_titre");
   if(spS) spS.textContent = T("acc_sous");
   if(!isJeu){ if(sp) sp.remove(); route(); return; }
+
+  /* Lien reçu par email : ?c=<identifiant de candidature>. Le navigateur qui
+     l'ouvre peut n'avoir jamais vu cette candidature — on la redemande donc au
+     guichet plutôt qu'au stockage local. */
+  var lienModif = q.match(/[?&]c=(-[A-Za-z0-9_-]{18,30})/);
+  if(lienModif){
+    if(sp && sp.parentNode) sp.remove();
+    loadCfg(function(){
+      S.parcours = "nuit";
+      if(CFG.modif_bloquee){
+        view('<div class="card center"><div class="big" style="color:var(--lime)">' + Tb("fin_titre") + '</div>'
+          + '<div class="mut" style="margin-top:12px">' + Tb("fin_modif_close") + '</div>'
+          + '<button class="btn sec" id="mo-re">' + esc(T("mod_btn")) + '</button></div>');
+        $("mo-re").onclick = function(){ window.location.search = ""; };
+        return;
+      }
+      view('<div class="card center"><div class="sp-load" style="margin:10px auto"><i></i></div>'
+        + '<div class="mut" style="margin-top:12px">' + esc(T("mod_charge")) + '</div></div>');
+      guichetFiche(lienModif[1], function(ok, fiche){
+        if(!ok){
+          view('<div class="card center"><div style="font-size:2.6rem">😕</div>'
+            + '<div class="mut" style="margin-top:12px">' + Tb("mod_ko") + '</div>'
+            + '<button class="btn sec" id="mo-re">' + esc(T("mod_btn")) + '</button></div>');
+          $("mo-re").onclick = function(){ window.location.search = ""; };
+          return;
+        }
+        CAND.id = lienModif[1]; CAND.data = fiche || {};
+        candLocalSave();
+        screenContact();
+      });
+    });
+    return;
+  }
 
   candLocalLoad();
   var partie = CAND.id && CAND.data && CAND.data.statut === "en cours";
