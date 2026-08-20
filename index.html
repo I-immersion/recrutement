@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v4.2 -->
+<!-- LUMIIA RECRUTE — v4.3 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -477,7 +477,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.2</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.3</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -497,7 +497,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v4.2";
+var VERSION = "v4.3";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -2661,6 +2661,15 @@ function screenEtape7(){
     }, function(){
       candLocalSave();
       screenFin(true);
+      /* Alerte a LUMIIA : une seule fois par candidature, et independante du
+         sort du mail au candidat — une adresse invalide chez lui ne doit pas
+         nous priver de l'information qu'il a postule. Le destinataire est fixe
+         dans le guichet, l'app ne le connait meme pas. */
+      if(!CAND.data.alerte_envoyee){
+        guichetEnvoi("alerte", function(okA){
+          if(okA) candSave({ alerte_envoyee: Date.now() });
+        });
+      }
       /* L'écran de fin s'affiche d'abord : un mail qui tarde ou qui échoue ne
          doit jamais retarder la confirmation que la candidature est arrivée. */
       function dire(t){ var e = $("fin-mail"); if(e) e.textContent = t; }
