@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v4.6 -->
+<!-- LUMIIA RECRUTE — v4.7 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -489,7 +489,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.6</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.7</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -509,7 +509,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v4.6";
+var VERSION = "v4.7";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -670,8 +670,10 @@ var DEFAULT_TXT = {
   shaker_pop2:      "SUPER !|TOP !|NICKEL !|CLASSE !|BRAVO !",
   shaker_pop3:      "GÉNIAL !|EN FEU !|MAGIQUE !|WAOUH !|ÇA SHAKE !",
   shaker_pop4:      "PARFAIT !|IMPARABLE !|LÉGENDE !|CHAMPION !|MONSTRUEUX !",
-  shaker_pop_near:  "presque|pas loin|à un poil|ouais…",
-  shaker_pop_miss:  "raté|à côté|oups|aïe",
+  /* Ces deux-la ne sont PAS des listes : un geste rate ne se fete pas, il
+     s'annonce sobrement. Une seule mention, toujours la meme. */
+  shaker_pop_near:  "presque",
+  shaker_pop_miss:  "à côté",
   shaker_win_s:     "Cocktail plein. Le public adore.",
   shaker_lose:      "COCKTAIL RATÉ",
   service_titre:    "SERVEZ LES CLIENTS !",
@@ -1503,21 +1505,22 @@ function runShaker(api){
       /* Quatre paliers : le mot et la couleur montent avec la serie en cours.
          C'est ce qui fait qu'une bonne serie se sent, au lieu de se compter. */
       var cle, col, tai;
-      if(serie >= 10)     { cle = "shaker_pop4"; col = "var(--or)";    tai = "2.5rem"; }
-      else if(serie >= 6) { cle = "shaker_pop3"; col = "var(--mag)";   tai = "2.2rem"; }
-      else if(serie >= 3) { cle = "shaker_pop2"; col = "var(--cyan)";  tai = "1.9rem"; }
-      else                { cle = "shaker_pop1"; col = "var(--lime)";  tai = "1.65rem"; }
+      if(serie >= 10)     { cle = "shaker_pop4"; col = "var(--or)";    tai = "3.5rem"; }
+      else if(serie >= 6) { cle = "shaker_pop3"; col = "var(--mag)";   tai = "3rem"; }
+      else if(serie >= 3) { cle = "shaker_pop2"; col = "var(--cyan)";  tai = "2.6rem"; }
+      else                { cle = "shaker_pop1"; col = "var(--lime)";  tai = "2.2rem"; }
       popk(motAuHasard(cle), col, tai, serie >= 3 ? ("× " + serie) : "");
     }
     else if(a <= TOL_NEAR){
       /* Un « presque » ne casse pas la serie : il vaut une demi-reussite, il
          serait incoherent qu'il punisse plus qu'il ne rapporte. */
       near++; api.addPts(6, W/2, curY, "+6"); pulseTubes();
-      popk(motAuHasard("shaker_pop_near"), "var(--or)", "1.35rem", "");
+      /* Mention discrete, pas une bulle : on ne felicite que ce qui est reussi. */
+      flash(T("shaker_pop_near"), "var(--or)");
     }
     else {
       serie = 0;
-      popk(motAuHasard("shaker_pop_miss"), "var(--danger)", "1.25rem", "");
+      flash(T("shaker_pop_miss"), "var(--danger)");
     }
     mix = Math.min(1, reussite() / NEED);
     paint();
