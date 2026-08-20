@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v4.1 -->
+<!-- LUMIIA RECRUTE — v4.2 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -304,6 +304,11 @@ body.adm{background:#0d1117;}
   border:1px solid var(--bd);border-radius:18px;padding:22px;}
 .ovlt{font-family:'Bebas Neue';font-size:1.7rem;letter-spacing:.05em;color:var(--lime);}
 .ovlx{margin-top:10px;font-size:.95rem;line-height:1.55;color:var(--soft);}
+.rgpd{margin-top:22px;border:1px solid var(--bd);border-left:3px solid var(--violet);
+  border-radius:12px;padding:13px 15px;background:rgba(255,255,255,.025);}
+.rgpd.mini{margin-top:18px;border-left-color:var(--dim);}
+.rgpdt{font-weight:900;font-size:.86rem;color:var(--soft);letter-spacing:.01em;}
+.rgpdx{margin-top:6px;font-size:.8rem;line-height:1.5;color:var(--dim);}
 .duo{display:flex;gap:10px;flex-wrap:wrap;}
 .duo .btn{flex:1 1 150px;width:auto;padding:15px 12px;font-size:1.15rem;}
 .pmode{width:100%;margin-top:10px;font-size:.8rem;line-height:1.45;color:var(--dim);}
@@ -472,7 +477,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.1</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.2</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -492,7 +497,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v4.1";
+var VERSION = "v4.2";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -748,6 +753,14 @@ var DEFAULT_TXT = {
   mod_charge:       "Récupération de votre candidature…",
   mod_ko:           "Ce lien n’est plus valable. Votre candidature reste enregistrée : contactez-nous si vous souhaitez la corriger.",
   mod_btn:          "Revenir à l’accueil",
+  fin_mail_deja:    "Le récapitulatif vous a déjà été envoyé il y a un instant.",
+
+  /* Mention d’information — article 13 du RGPD. Elle est affichée à l’endroit
+     et au moment où les données sont réellement collectées, pas enfouie dans
+     une page annexe que personne n’ouvre. */
+  rgpd_titre:       "Ce que deviennent vos informations",
+  rgpd_txt:         "LUMIIA les utilise uniquement pour étudier votre candidature et vous rappeler. Elles ne sont ni revendues ni transmises à qui que ce soit d’extérieur.\nElles sont conservées deux ans au maximum après notre dernier échange, puis supprimées.\nVous pouvez à tout moment les consulter, les corriger ou demander leur suppression en écrivant à contact@lumiia.fr.",
+  rgpd_court:       "En envoyant, vous acceptez que ces informations servent à étudier votre candidature. Vous pourrez les corriger ou demander leur suppression à tout moment — contact@lumiia.fr.",
   acc_envoyee_t:    "VOTRE CANDIDATURE\nEST BIEN ARRIVÉE",
   acc_envoyee_s:    "Vous pouvez la revoir et la corriger si besoin.",
 
@@ -775,7 +788,8 @@ var TXT_GROUPES = [
   { g:"Étape 5 — vous",    cles:["e5_titre","e5_sous","e5_lbl_a","e5_lbl_b"] },
   { g:"Étape 6 — les pitchs",   cles:["e6_titre","e6_sous","e6_note","rec_note","rec_pret","rec_mode_audio","rec_mode_video","rec_btn_audio","rec_btn_video","rec_ok_audio","rec_ok_video"] },
   { g:"Étape 7 — rappel",  cles:["e7_titre","e7_sous","e7_lbl_mot","e7_mot_note","e7_mail","e7_btn"] },
-  { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","fin_mail_ok","fin_mail_ko","mod_charge","mod_ko","mod_btn","acc_envoyee_t","acc_envoyee_s"] },
+  { g:"Mentions légales", cles:["rgpd_titre","rgpd_txt","rgpd_court"] },
+  { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","fin_mail_ok","fin_mail_ko","mod_charge","mod_ko","mod_btn","fin_mail_deja","acc_envoyee_t","acc_envoyee_s"] },
   { g:"Boutons communs",   cles:["btn_continuer","btn_retour","bandeau"] }
 ];
 
@@ -2231,6 +2245,13 @@ function candSave(patch, cb){
   }
 }
 function bandeau(){ return '<div class="savebar">' + esc(T("bandeau")) + '</div>'; }
+/* Affiché à l’étape 1, au moment précis où le candidat saisit son nom, son
+   téléphone, son email et sa photo. C’est là qu’une mention d’information a
+   une valeur : après coup, elle n’informe plus personne. */
+function mentionRgpd(){
+  return '<div class="rgpd"><div class="rgpdt">🔒 ' + esc(T("rgpd_titre")) + '</div>'
+    + '<div class="rgpdx">' + Tb("rgpd_txt") + '</div></div>';
+}
 function jauge(n, total){
   var h = '<div class="steps">';
   for(var i=1;i<=total;i++) h += '<i class="' + (i<n ? "done" : (i===n ? "on" : "")) + '"></i>';
@@ -2307,7 +2328,8 @@ function screenContact(){
   ["Voiture","Deux-roues","Vélo / à pied","Covoiturage à trouver"].forEach(function(x){
     h += '<div class="chip' + (d.transport===x ? " on" : "") + '" data-v="' + esc(x) + '">' + esc(x) + '</div>';
   });
-  h += '</div><button class="btn" id="c-go">' + esc(T("btn_continuer")) + '</button></div>' + bandeau();
+  h += '</div>' + mentionRgpd()
+    + '<button class="btn" id="c-go">' + esc(T("btn_continuer")) + '</button></div>' + bandeau();
   view(h);
 
   chipsExclusifs(["c-permis","c-tr"]);
@@ -2604,6 +2626,7 @@ function screenEtape7(){
     + (fait ? '<div class="pmode">' + esc(noteMedia(CAND.data[slot + "_type"])) + '</div>' : '')
     + '</div>'
     + '<div class="chips" style="margin-top:22px"><div class="chip' + (CAND.data.offre_mail === false ? '' : ' on') + '" id="e7-mail">' + esc(T("e7_mail")) + '</div></div>'
+    + '<div class="rgpd mini"><div class="rgpdx">' + Tb("rgpd_court") + '</div></div>'
     + '<button class="btn" id="e7-go">' + esc(T("e7_btn")) + '</button>'
     + '<button class="btn sec" id="e7-back">Retour</button></div>' + bandeau();
   view(h);
@@ -2641,12 +2664,19 @@ function screenEtape7(){
       /* L'écran de fin s'affiche d'abord : un mail qui tarde ou qui échoue ne
          doit jamais retarder la confirmation que la candidature est arrivée. */
       function dire(t){ var e = $("fin-mail"); if(e) e.textContent = t; }
-      guichetEnvoi("recap", function(ok){
-        dire(ok ? T("fin_mail_ok") : T("fin_mail_ko"));
-        CAND.data.recap_envoye = ok ? Date.now() : 0;
-        candLocalSave();
-        /* l'offre part après, et seulement si elle a été demandée */
-        if(ok && CAND.data.offre_mail) guichetEnvoi("offre");
+      guichetEnvoi("recap", function(ok, statut){
+        /* 429 = le guichet a refusé un doublon envoyé dans la minute. Le candidat
+           a bien reçu son mail : le lui annoncer comme un échec serait faux. */
+        var deja = (statut === 429);
+        dire(ok ? T("fin_mail_ok") : (deja ? T("fin_mail_deja") : T("fin_mail_ko")));
+        if(ok) { CAND.data.recap_envoye = Date.now(); candLocalSave(); }
+        /* L'offre est le même PDF à chaque fois : une seule fois suffit. Le
+           récapitulatif, lui, repart à chaque correction — c'est son intérêt. */
+        if((ok || deja) && CAND.data.offre_mail && !CAND.data.offre_envoyee){
+          guichetEnvoi("offre", function(ok2){
+            if(ok2) candSave({ offre_envoyee: Date.now() });
+          });
+        }
       });
     });
   };
