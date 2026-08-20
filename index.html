@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v4.3 -->
+<!-- LUMIIA RECRUTE — v4.4 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -477,7 +477,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.3</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.4</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -497,7 +497,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v4.3";
+var VERSION = "v4.4";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -1252,9 +1252,15 @@ function runShaker(api){
   var BPM    = 140;
   var PERIOD = Math.round(60000 / BPM);
   var DUR    = GAMES.shaker.dur;
-  var BEATS  = Math.floor(DUR * 1000 / PERIOD);
+  /* Trois temps de grace : personne ne part au quart de tour, et les premiers
+     aller-retours servent a trouver le rythme. Les compter contre le joueur
+     rendait la barre des 60 % inatteignable en pratique. */
+  var BEATS  = Math.max(1, Math.floor(DUR * 1000 / PERIOD) - 3);
   var NEED   = Math.max(1, Math.round(BEATS * 0.60));
-  var TOL_OK = Math.round(PERIOD * 0.28), TOL_NEAR = Math.round(PERIOD * 0.48);
+  /* TOL_OK elargi de 0,28 a 0,36 de la periode. A 140 bpm un temps dure 429 ms :
+     la fenetre « DEDANS » passe de +/-120 ms a +/-154 ms. TOL_NEAR est pousse a
+     la demi-periode, donc tout geste rate d'un cheveu compte au moins a moitie. */
+  var TOL_OK = Math.round(PERIOD * 0.36), TOL_NEAR = Math.round(PERIOD * 0.50);
 
   var RECETTES = [
     { nom:"MAI TAI",      ing:["Rhum ambré","Jus d’ananas","Glaçons"], c:["#c9702e","#f7c948","#bfe9ff"], cCkt:"#ff8a3d" },
@@ -1265,7 +1271,11 @@ function runShaker(api){
   var REC = rnd(RECETTES);
 
   var t0 = 0, done = false, started = false, holding = false;
-  var good = 0, changes = 0, mix = 0;
+  var good = 0, near = 0, changes = 0, mix = 0;
+  /* Un « presque » vaut une demi-reussite. Avant, il rapportait des points mais
+     ne faisait pas avancer le cocktail : on pouvait secouer en rythme pendant
+     30 secondes et voir le verre a moitie vide. */
+  function reussite(){ return good + near * 0.5; }
   var stopT = null, lastChangeT = 0, ivs = [];
   var dir = 0, extY = null, prevY = 0, vel = 0;
   var lastBeat = -99, activeSide = 0, beatPulse = 0;
@@ -1406,9 +1416,9 @@ function runShaker(api){
     if(off > PERIOD / 2) off -= PERIOD;
     var a = Math.abs(off);
     if(a <= TOL_OK){ good++; api.addPts(12, W/2, curY, "+12"); SFX.ice(); flash("DEDANS", "var(--lime)"); pulseTubes(); }
-    else if(a <= TOL_NEAR){ api.addPts(4, W/2, curY, "+4"); flash("presque", "var(--or)"); }
+    else if(a <= TOL_NEAR){ near++; api.addPts(6, W/2, curY, "+6"); flash("presque", "var(--or)"); pulseTubes(); }
     else { flash("à côté", "var(--danger)"); }
-    mix = Math.min(1, good / NEED);
+    mix = Math.min(1, reussite() / NEED);
     paint();
   }
 
@@ -1418,7 +1428,10 @@ function runShaker(api){
     return s / ivs.length;
   }
 
-  var MIN_AMP = Math.max(18, H * 0.055);
+  /* Course minimale pour qu'un aller-retour soit reconnu. Abaissee : a 140 bpm
+     il reste 429 ms par changement de sens, exiger un grand geste obligeait a
+     lever le bras plus vite que le tempo ne le permet. */
+  var MIN_AMP = Math.max(14, H * 0.042);
   function py(ev){ var r = stage.getBoundingClientRect(); return ev.clientY - r.top; }
 
   function begin(){
@@ -1528,7 +1541,7 @@ function runShaker(api){
     stage.removeEventListener("pointerdown", onDown);
     stage.removeEventListener("pointermove", onMove);
 
-    var win = (good / BEATS) >= 0.60;
+    var win = (reussite() / BEATS) >= 0.60;
     if(win){ api.addPts(50, null, null, null); SFX.win(); } else SFX.lose();
 
     var ov = el('<div style="position:absolute;left:0;right:0;top:0;bottom:0;background:rgba(5,0,26,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 20px;z-index:25;animation:zin .25s ease-out"></div>');
@@ -1542,7 +1555,7 @@ function runShaker(api){
     ov.appendChild(t);
     var s = el('<div style="color:var(--soft);font-size:.95rem;margin-top:8px;line-height:1.45"></div>');
     s.textContent = win ? T("shaker_win_s")
-                        : "Cocktail mélangé à " + Math.round(mix*100) + "% — il fallait aller jusqu’au bout.";
+                        : "Cocktail mélangé à " + Math.round(mix*100) + "% — il en fallait 100 %. Retentez, c’est une question de rythme.";
     ov.appendChild(s);
     stage.appendChild(ov);
 
