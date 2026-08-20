@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v4.9 -->
+<!-- LUMIIA RECRUTE — v5.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -515,7 +515,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.9</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.0</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -535,7 +535,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v4.9";
+var VERSION = "v5.0";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -819,8 +819,8 @@ var DEFAULT_TXT = {
   e1_postes_note:   "Ils ne commencent pas au même moment et ne portent pas sur les mêmes jours. Vous pouvez en choisir plusieurs si les deux vous conviennent.",
   e1_postes_err:    "Dites-nous quel poste vous intéresse",
   rgpd_titre:       "Ce que deviennent vos informations",
-  rgpd_txt:         "LUMIIA les utilise uniquement pour étudier votre candidature et vous rappeler. Elles ne sont ni revendues ni transmises à qui que ce soit d’extérieur.\nElles sont conservées deux ans au maximum après notre dernier échange, puis supprimées.\nVous pouvez à tout moment les consulter, les corriger ou demander leur suppression en écrivant à contact@lumiia.fr.",
-  rgpd_court:       "En envoyant, vous acceptez que ces informations servent à étudier votre candidature. Vous pourrez les corriger ou demander leur suppression à tout moment — contact@lumiia.fr.",
+  rgpd_txt:         "Vos informations sont protégées par le RGPD, le règlement européen sur la protection des données.\nLUMIIA les utilise uniquement pour étudier votre candidature et vous rappeler. Elles ne sont ni revendues, ni transmises à l’extérieur.\nLa loi interdit de les conserver indéfiniment. Pour une candidature, la durée de référence retenue par la CNIL est de deux ans après notre dernier échange : cette durée n’est pas notre décision, nous l’appliquons. Passé ce délai, vos informations sont supprimées.\nVous pouvez à tout moment les consulter, les corriger ou demander leur suppression en écrivant à contact@lumiia.fr. Et si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL.",
+  rgpd_court:       "En envoyant, vous acceptez que ces informations servent à étudier votre candidature, dans le cadre du RGPD. Vous pourrez les corriger ou demander leur suppression à tout moment — contact@lumiia.fr.",
   acc_envoyee_t:    "VOTRE CANDIDATURE\nEST BIEN ARRIVÉE",
   acc_envoyee_s:    "Vous pouvez la revoir et la corriger si besoin.",
 
