@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v3.6 -->
+<!-- LUMIIA RECRUTE — v3.8 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -298,6 +298,10 @@ body.adm{background:#0d1117;}
 .pitch{border:1px solid var(--bd);border-left:4px solid var(--violet);border-radius:14px;
   padding:16px 16px 18px;margin-top:18px;background:linear-gradient(160deg,rgba(168,85,247,.08),rgba(255,255,255,.02));}
 .pitch.ok{border-left-color:var(--ok);background:linear-gradient(160deg,rgba(74,222,128,.10),rgba(255,255,255,.02));}
+.pitch.ko{border-left-color:var(--danger);background:linear-gradient(160deg,rgba(255,68,68,.10),rgba(255,255,255,.02));}
+.pitch .pnum .pko{margin-left:auto;font-family:'Nunito';font-size:.78rem;font-weight:900;color:var(--danger);
+  letter-spacing:.02em;}
+.media.ko{border-color:rgba(255,68,68,.55);}
 .pitch .pnum{display:flex;align-items:baseline;gap:6px;font-family:'Bebas Neue';font-size:2rem;
   line-height:1;color:var(--violet);}
 .pitch.ok .pnum{color:var(--ok);}
@@ -309,6 +313,9 @@ body.adm{background:#0d1117;}
 .pitch .pbtns .btn{margin:0;min-width:0;flex:1 1 auto;}
 .pitch .pbtns .btn.done{border-color:var(--ok);color:var(--ok);background:rgba(74,222,128,.10);}
 .pitch .pbtns .btn.sup{flex:0 0 auto;border-color:rgba(255,68,68,.5);color:var(--danger);}
+.recmode{display:inline-block;margin:6px 0 4px;padding:5px 13px;border-radius:99px;
+  border:1px solid var(--cyan);color:var(--cyan);font-family:'Bebas Neue';font-size:1.05rem;
+  letter-spacing:.1em;background:rgba(77,217,232,.10);}
 .pitch .pprev{margin-top:12px;}
 .pitch .pprev video{max-width:100%;max-height:220px;border-radius:10px;}
 .pitch .pprev audio{width:100%;}
@@ -455,7 +462,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v3.6</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v3.8</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -475,7 +482,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v3.6";
+var VERSION = "v3.8";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -697,7 +704,10 @@ var DEFAULT_TXT = {
   e6_note:          "Rien n’est obligatoire ici. Mais une voix ou un visage en disent plus long sur vous que tout le reste du formulaire.",
   rec_note:         "{n} secondes maximum. Vous pourrez réécouter et recommencer.",
   rec_pret:         "Prêt quand vous voulez",
-  rec_btn:          "ENREGISTRER",
+  rec_mode_audio:   "Enregistrement audio",
+  rec_mode_video:   "Enregistrement vidéo",
+  rec_btn_audio:    "ENREGISTRER MON AUDIO",
+  rec_btn_video:    "ENREGISTRER MA VIDÉO",
   rec_ok_audio:     "MON AUDIO EST OK",
   rec_ok_video:     "MA VIDÉO EST OK",
 
@@ -744,7 +754,7 @@ var TXT_GROUPES = [
   { g:"Étape 3 — savoir-faire", cles:["e3_titre","e3_sous"] },
   { g:"Étape 4 — situations",   cles:["e4_titre","e4_sous"] },
   { g:"Étape 5 — vous",    cles:["e5_titre","e5_sous","e5_lbl_a","e5_lbl_b"] },
-  { g:"Étape 6 — les pitchs",   cles:["e6_titre","e6_sous","e6_note","rec_note","rec_pret","rec_btn","rec_ok_audio","rec_ok_video"] },
+  { g:"Étape 6 — les pitchs",   cles:["e6_titre","e6_sous","e6_note","rec_note","rec_pret","rec_mode_audio","rec_mode_video","rec_btn_audio","rec_btn_video","rec_ok_audio","rec_ok_video"] },
   { g:"Étape 7 — rappel",  cles:["e7_titre","e7_sous","e7_lbl_mot","e7_mot_note","e7_mail","e7_btn"] },
   { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","acc_envoyee_t","acc_envoyee_s"] },
   { g:"Boutons communs",   cles:["btn_continuer","btn_retour","bandeau"] }
@@ -2402,10 +2412,12 @@ function screenEtape6(){
     var slot = SLOTS["p" + (i+1)];
     var fait = CAND.data[slot + "_url"];
     var typ  = CAND.data[slot + "_type"];
-    h += '<div class="pitch' + (fait ? " ok" : "") + '">'
+    var err  = !fait && CAND.data[slot + "_err"];
+    h += '<div class="pitch' + (fait ? " ok" : (err ? " ko" : "")) + '">'
       + '<div class="pnum">' + (i+1) + '<span>/ ' + qs.length + '</span>'
-      + (fait ? '<b class="pok">✓ enregistré</b>' : '') + '</div>'
+      + (fait ? '<b class="pok">✓ enregistré</b>' : (err ? '<b class="pko">⚠ non transmis</b>' : '')) + '</div>'
       + '<div class="pq">' + esc(q) + '</div>'
+      + (err ? '<div class="dim" style="margin-top:8px;color:var(--danger)">' + esc(motifEnvoi(err)) + '</div>' : '')
       + '<div class="pbtns">'
       + '<button class="btn sec mini' + (fait && typ === "audio" ? " done" : "") + '" data-slot="' + slot + '" data-video="0" data-q="' + i + '">'
       +   (fait && typ === "audio" ? "✓ 🎙️ Audio — refaire" : "🎙️ Audio") + '</button>'
@@ -2431,8 +2443,8 @@ function screenEtape6(){
   var sups = document.querySelectorAll("[data-sup]");
   for(var j=0;j<sups.length;j++) sups[j].onclick = function(){
     var slot = this.getAttribute("data-sup");
-    var patch = {}; patch[slot + "_url"] = null; patch[slot + "_type"] = null;
-    CAND.data[slot + "_url"] = null; CAND.data[slot + "_type"] = null;
+    var patch = {}; patch[slot + "_url"] = null; patch[slot + "_type"] = null; patch[slot + "_err"] = null;
+    CAND.data[slot + "_url"] = null; CAND.data[slot + "_type"] = null; CAND.data[slot + "_err"] = null;
     candSave(patch, function(){ toast("Enregistrement supprimé"); screenEtape6(); });
   };
   $("e6-back").onclick = screenEtape5;
@@ -2483,8 +2495,8 @@ function screenEtape7(){
   $("e7-aud").onclick = function(){ sauveMot(); screenRec(slot, false, "Un dernier mot ?", "UN DERNIER MOT", screenEtape7); };
   $("e7-vid").onclick = function(){ sauveMot(); screenRec(slot, true,  "Un dernier mot ?", "UN DERNIER MOT", screenEtape7); };
   if($("e7-sup")) $("e7-sup").onclick = function(){
-    var patch = {}; patch[slot + "_url"] = null; patch[slot + "_type"] = null;
-    CAND.data[slot + "_url"] = null; CAND.data[slot + "_type"] = null;
+    var patch = {}; patch[slot + "_url"] = null; patch[slot + "_type"] = null; patch[slot + "_err"] = null;
+    CAND.data[slot + "_url"] = null; CAND.data[slot + "_type"] = null; CAND.data[slot + "_err"] = null;
     sauveMot(); candSave(patch, function(){ toast("Enregistrement supprimé"); screenEtape7(); });
   };
   $("e7-back").onclick = screenEtape6;
@@ -2527,14 +2539,16 @@ function recapCandidature(){
    ÉCRAN D'ENREGISTREMENT (plein écran)
    ══════════════════════════════════════ */
 function screenRec(slot, video, question, titre, retour){
-  var mot = video ? "VIDÉO" : "AUDIO";
+  /* Rien sur cet ecran ne disait si on partait en audio ou en video : le mode est
+     maintenant annonce en haut ET inscrit sur le bouton d'enregistrement. */
   view('<div class="card">'
     + '<div class="stepno">' + esc(titre) + '</div>'
+    + '<div class="recmode">' + (video ? "🎬 " : "🎙️ ") + esc(video ? T("rec_mode_video") : T("rec_mode_audio")) + '</div>'
     + '<div class="q">' + esc(question || "") + '</div>'
     + '<div class="dim">' + Tb("rec_note", { n:REC_MAX }) + '</div>'
     + '<div class="media" id="r-box"><div id="r-st" class="dim">' + esc(T("rec_pret")) + '</div>'
     + '<div id="r-prev"></div></div>'
-    + '<button class="btn" id="r-rec">' + esc(T("rec_btn")) + '</button>'
+    + '<button class="btn" id="r-rec">' + esc(video ? T("rec_btn_video") : T("rec_btn_audio")) + '</button>'
     + '<button class="btn" id="r-ok" disabled>' + esc(video ? T("rec_ok_video") : T("rec_ok_audio")) + '</button>'
     + '<button class="btn sec" id="r-back">' + esc(T("btn_retour")) + '</button>'
     + '</div>' + bandeau());
@@ -2596,7 +2610,7 @@ function screenRec(slot, video, question, titre, retour){
         var pv = document.createElement(video ? "video" : "audio");
         pv.src = URL.createObjectURL(blob); pv.controls = true; pv.playsInline = true;
         pv.style.maxHeight = "220px"; prev.appendChild(pv);
-        uploadMedia(blob, slot + (video ? "-video" : "-audio"), function(ok, u){
+        uploadMedia(blob, slot + (video ? "-video" : "-audio"), function(ok, u, code){
           if(ok){
             envoye = true;
             box.classList.add("ok");
@@ -2606,7 +2620,14 @@ function screenRec(slot, video, question, titre, retour){
             $("r-ok").disabled = false;
             SFX.win();
           } else {
-            st.textContent = "Envoi impossible — vous pouvez continuer sans.";
+            /* on garde la trace de l'echec dans la fiche : l'ecran des pitchs saura
+               distinguer « pas encore enregistre » de « enregistre mais non transmis » */
+            var pe = {}; pe[slot + "_err"] = String(code || "inconnue");
+            candSave(pe);
+            box.classList.add("ko");
+            st.innerHTML = '<b style="color:var(--danger)">Envoi impossible</b><br>'
+              + '<span class="dim">' + esc(motifEnvoi(code)) + '</span><br>'
+              + '<span class="dim" style="font-size:.72rem;opacity:.7">code : ' + esc(String(code || "inconnue")) + '</span>';
             $("r-ok").disabled = false;
           }
           var again = el('<button class="btn sec mini">↺ Recommencer</button>');
@@ -2624,13 +2645,34 @@ function screenRec(slot, video, question, titre, retour){
   };
 }
 
+/* Un envoi qui echoue en silence est pire qu'un envoi qui echoue : on croit que
+   l'app est cassee alors que c'est une regle de securite qui refuse le depot.
+   Le code d'erreur remonte donc jusqu'a l'ecran, tel quel. */
+/* Traduction des codes Firebase Storage en une phrase que l'on peut lire sans
+   ouvrir la console. Le code brut reste affiche a cote : c'est lui qu'on me cite. */
+function motifEnvoi(code){
+  var c = String(code || "");
+  if(c.indexOf("unauthorized") > -1)   return "Le stockage refuse le dépôt : les règles de sécurité de Firebase Storage n’autorisent pas encore ce dossier.";
+  if(c.indexOf("unauthenticated") > -1) return "Le stockage demande une identification.";
+  if(c.indexOf("quota") > -1)          return "L’espace de stockage est saturé.";
+  if(c.indexOf("retry-limit") > -1 || c.indexOf("canceled") > -1) return "La connexion a été interrompue pendant l’envoi.";
+  if(c === "storage-absent")           return "Le module de stockage ne s’est pas chargé.";
+  if(c === "fiche-absente")            return "La candidature n’a pas encore d’identifiant.";
+  return "Le fichier n’a pas pu être déposé.";
+}
 function uploadMedia(blob, kind, cb){
-  if(!fbstore || !CAND.id){ cb(false); return; }
+  if(!fbstore){ console.warn("upload : storage indisponible"); cb(false, null, "storage-absent"); return; }
+  if(!CAND.id){ console.warn("upload : pas d'identifiant de candidature"); cb(false, null, "fiche-absente"); return; }
   var ext = (blob.type.indexOf("mp4") > -1) ? "mp4" : "webm";
-  var ref = fbstore.ref(FB_PATH + "/media/" + CAND.id + "-" + kind + "." + ext);
+  var chemin = FB_PATH + "/media/" + CAND.id + "-" + kind + "." + ext;
+  var ref = fbstore.ref(chemin);
   ref.put(blob).then(function(snap){
     return snap.ref.getDownloadURL();
-  }).then(function(u){ cb(true, u); }).catch(function(){ cb(false); });
+  }).then(function(u){ cb(true, u); }).catch(function(err){
+    var code = (err && (err.code || err.message)) || "inconnue";
+    console.warn("upload KO", chemin, code, err);
+    cb(false, null, code);
+  });
 }
 
 /* ══════════ ECRAN 7 — fin ══════════ */
