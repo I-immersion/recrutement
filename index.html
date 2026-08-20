@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v4.7 -->
+<!-- LUMIIA RECRUTE — v4.9 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -274,7 +274,10 @@ body.adm{background:#0d1117;}
 #pr .chapo{font-size:11pt;line-height:1.55;color:#2c2440;font-weight:700;}
 #pr .pks-row{display:flex;gap:4mm;margin:8mm 0 7mm;}
 #pr .pk{flex:1;border:.5mm solid #ece9f4;border-top:1.6mm solid #7a2fd4;border-radius:2.5mm;padding:5mm;}
+#pr .pkn{display:inline-block;font-size:8pt;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+  background:#7a2fd4;color:#fff;border-radius:99px;padding:1mm 3mm;margin-bottom:2.5mm;}
 #pr .pkh{font-size:15pt;font-weight:900;line-height:1.1;color:#181228;}
+#pr .pkq{font-size:10.5pt;font-weight:900;color:#7a2fd4;margin-top:1.5mm;}
 #pr .pkd{font-size:9pt;line-height:1.45;color:#5b5470;margin-top:3mm;}
 #pr .pks{font-size:12.5pt;font-weight:900;color:#0d6b3a;margin-top:3.5mm;}
 #pr .corps p{font-size:10.5pt;line-height:1.6;color:#2c2440;margin-top:4mm;}
@@ -304,6 +307,29 @@ body.adm{background:#0d1117;}
   border:1px solid var(--bd);border-radius:18px;padding:22px;}
 .ovlt{font-family:'Bebas Neue';font-size:1.7rem;letter-spacing:.05em;color:var(--lime);}
 .ovlx{margin-top:10px;font-size:.95rem;line-height:1.55;color:var(--soft);}
+.pcard{border:1px solid var(--bd);border-left:3px solid var(--cyan);border-radius:14px;
+  padding:14px 16px;margin-top:10px;background:rgba(255,255,255,.03);}
+.pcHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pcN{flex:0 0 auto;background:var(--violet);color:#fff;border-radius:99px;padding:3px 10px;
+  font-size:.7rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;}
+.pcTit{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;line-height:1;color:var(--cyan);letter-spacing:.04em;}
+.pcQ{margin-top:7px;font-weight:900;font-size:1rem;color:var(--lime);line-height:1.25;}
+.pcSal{margin-top:5px;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--tx);letter-spacing:.05em;}
+.pcDet{margin-top:6px;font-size:.86rem;line-height:1.45;color:var(--dim);}
+.postes{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.pchoix{position:relative;border:1px solid var(--bd);border-left:3px solid rgba(255,255,255,.14);
+  border-radius:14px;padding:13px 44px 13px 15px;cursor:pointer;background:rgba(255,255,255,.025);
+  transition:border-color .15s,background .15s;}
+.pchoix.on{border-color:var(--lime);border-left-color:var(--lime);background:rgba(184,255,60,.09);}
+.pchoix .pcHead{gap:9px;}
+.pchoix .pcTit{font-size:1.7rem;}
+.pchoix .pcQ{margin-top:6px;font-size:.95rem;}
+.pchoix .pcD{margin-top:4px;font-size:.82rem;color:var(--dim);line-height:1.4;}
+.pchoix .pcS{margin-top:6px;font-weight:900;color:var(--lime);font-size:.95rem;}
+.pchoix .pcK{position:absolute;top:13px;right:13px;width:24px;height:24px;border-radius:50%;
+  border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;color:transparent;}
+.pchoix.on .pcK{background:var(--lime);border-color:var(--lime);color:#08130a;font-weight:900;}
 .rgpd{margin-top:22px;border:1px solid var(--bd);border-left:3px solid var(--violet);
   border-radius:12px;padding:13px 15px;background:rgba(255,255,255,.025);}
 .rgpd.mini{margin-top:18px;border-left-color:var(--dim);}
@@ -489,7 +515,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.7</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v4.9</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -509,7 +535,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v4.7";
+var VERSION = "v4.9";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -585,9 +611,18 @@ var DEFAULTS = {
     titre: "ATELIER / TRAVAUX",
     texte: "En journée, du lundi au vendredi. On construit, on répare, on aménage : agencement, petite menuiserie, peinture, montage, maintenance des espaces de jeu.\n\nAutonome, soigneux, capable de bosser seul comme en équipe. Vous rentrez chez vous avant que la musique commence."
   },
+  /* Un poste porte cinq informations, et chacune a sa place a l'ecran :
+       code = identifiant stable, sert au tri et aux pastilles de l'admin
+       n    = COMBIEN de postes de ce type sont ouverts (affiche en pastille)
+       t    = l'intitule court, en gros
+       q    = la date d'entree, mise en avant : c'est ce que le candidat cherche
+       d    = le detail des jours, en dessous
+       s    = la remuneration */
   postes: [
-    { code: "24h", t: "24 h — un poste", d: "Trois à quatre journées ou soirées par semaine. Dès que possible.", s: "1 277 € brut / mois" },
-    { code: "35h", t: "35 h — deux postes", d: "Du mercredi au dimanche, journées et soirées. À partir du 23 octobre.", s: "1 863 € brut / mois" }
+    { code: "24h", n: 1, t: "24 h", q: "Dès que possible",
+      d: "Trois à quatre journées ou soirées par semaine.", s: "1 277 € brut / mois" },
+    { code: "35h", n: 2, t: "35 h", q: "À partir du 23 octobre",
+      d: "Du mercredi au dimanche, journées et soirées. Pour l’ouverture du premier étage.", s: "1 863 € brut / mois" }
   ],
   experiences: [
     "Bar / service", "Restauration / cuisine", "Serveur en salle", "Snacking, fast-food, food-truck",
@@ -780,6 +815,9 @@ var DEFAULT_TXT = {
   /* Mention d’information — article 13 du RGPD. Elle est affichée à l’endroit
      et au moment où les données sont réellement collectées, pas enfouie dans
      une page annexe que personne n’ouvre. */
+  e1_lbl_postes:    "Quel poste vous intéresse ?",
+  e1_postes_note:   "Ils ne commencent pas au même moment et ne portent pas sur les mêmes jours. Vous pouvez en choisir plusieurs si les deux vous conviennent.",
+  e1_postes_err:    "Dites-nous quel poste vous intéresse",
   rgpd_titre:       "Ce que deviennent vos informations",
   rgpd_txt:         "LUMIIA les utilise uniquement pour étudier votre candidature et vous rappeler. Elles ne sont ni revendues ni transmises à qui que ce soit d’extérieur.\nElles sont conservées deux ans au maximum après notre dernier échange, puis supprimées.\nVous pouvez à tout moment les consulter, les corriger ou demander leur suppression en écrivant à contact@lumiia.fr.",
   rgpd_court:       "En envoyant, vous acceptez que ces informations servent à étudier votre candidature. Vous pourrez les corriger ou demander leur suppression à tout moment — contact@lumiia.fr.",
@@ -812,6 +850,7 @@ var TXT_GROUPES = [
   { g:"Étape 6 — les pitchs",   cles:["e6_titre","e6_sous","e6_note","rec_note","rec_pret","rec_mode_audio","rec_mode_video","rec_btn_audio","rec_btn_video","rec_ok_audio","rec_ok_video"] },
   { g:"Étape 7 — rappel",  cles:["e7_titre","e7_sous","e7_lbl_mot","e7_mot_note","e7_mail","e7_btn"] },
   { g:"Mentions légales", cles:["rgpd_titre","rgpd_txt","rgpd_court"] },
+  { g:"Choix du poste", cles:["e1_lbl_postes","e1_postes_note","e1_postes_err"] },
   { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","fin_mail_ok","fin_mail_ko","mod_charge","mod_ko","mod_btn","fin_mail_deja","acc_envoyee_t","acc_envoyee_s"] },
   { g:"Boutons communs",   cles:["btn_continuer","btn_retour","bandeau"] }
 ];
@@ -2218,16 +2257,30 @@ function screenScore(){
   $("sc-ok").onclick = screenOffre;
 }
 
+/* Une seule fonction decrit une carte de poste, pour que l'ecran de l'offre, le
+   choix du candidat et le document imprimable ne puissent pas diverger. */
+function nbPostes(p){
+  var n = Math.max(1, parseInt(p && p.n, 10) || 1);
+  return n + " poste" + (n > 1 ? "s" : "");
+}
+function libellePoste(p, i){
+  var t = (p && p.t) || ("Poste " + (i + 1));
+  return p && p.q ? (t + " — " + p.q) : t;
+}
+
 /* ══════════ ECRAN 4 — les postes ══════════ */
 function screenOffre(){
   var o = S.parcours === "nuit" ? CFG.offre_nuit : CFG.offre_jour;
   var cards = "";
   if(S.parcours === "nuit" && CFG.postes){
     CFG.postes.forEach(function(p){
-      cards += '<div style="border:1px solid var(--bd);border-radius:14px;padding:14px 16px;margin-top:10px;background:rgba(255,255,255,.03)">'
-        + '<div class="bebas" style="font-size:1.5rem;color:var(--cyan);line-height:1.05">' + esc(p.t) + '</div>'
-        + '<div class="bebas" style="font-size:1.25rem;color:var(--lime);margin-top:2px">' + esc(p.s) + '</div>'
-        + '<div class="dim" style="margin-top:6px;line-height:1.45">' + esc(p.d) + '</div></div>';
+      cards += '<div class="pcard">'
+        + '<div class="pcHead"><span class="pcN">' + esc(nbPostes(p)) + '</span>'
+        + '<span class="pcTit">' + esc(p.t) + '</span></div>'
+        + (p.q ? '<div class="pcQ">▶ ' + esc(p.q) + '</div>' : '')
+        + '<div class="pcSal">' + esc(p.s) + '</div>'
+        + (p.d ? '<div class="pcDet">' + esc(p.d) + '</div>' : '')
+        + '</div>';
     });
   }
   view('<div class="card">'
@@ -2257,8 +2310,10 @@ function vueImprimable(){
   var logo = document.querySelector(".sp-logo") || document.querySelector(".logo");
   var cartes = "";
   (CFG.postes || []).forEach(function(p){
-    cartes += '<div class="pk"><div class="pkh">' + esc(p.t) + '</div>'
-      + '<div class="pkd">' + esc(p.d) + '</div>'
+    cartes += '<div class="pk"><div class="pkn">' + esc(nbPostes(p)) + '</div>'
+      + '<div class="pkh">' + esc(p.t) + '</div>'
+      + (p.q ? '<div class="pkq">' + esc(p.q) + '</div>' : "")
+      + '<div class="pkd">' + esc(p.d || "") + '</div>'
       + '<div class="pks">' + esc(p.s) + '</div></div>';
   });
   var paras = String(o.texte || "").split(/\n\s*\n/).map(function(x){
@@ -2474,11 +2529,32 @@ function screenContact(){
   ["Voiture","Deux-roues","Vélo / à pied","Covoiturage à trouver"].forEach(function(x){
     h += '<div class="chip' + (d.transport===x ? " on" : "") + '" data-v="' + esc(x) + '">' + esc(x) + '</div>';
   });
+  /* Le choix est construit a partir des postes du back-office : une seule source
+     de verite. Modifier un poste dans l'admin change ce que le candidat voit ici,
+     ce qu'il lit dans l'offre, et ce qui part dans le PDF. */
+  h += '</div><label class="f" style="margin-top:22px">' + esc(T("e1_lbl_postes")) + '</label>'
+    + '<div class="dim">' + Tb("e1_postes_note") + '</div>'
+    + '<div class="postes" id="c-postes">';
+  var dejaP = String(d.postes_codes || "").split("|");
+  (CFG.postes || []).forEach(function(p, i){
+    var code = p.code || String(i + 1);
+    h += '<div class="pchoix' + (dejaP.indexOf(code) > -1 ? " on" : "") + '"'
+      + ' data-code="' + esc(code) + '" data-lbl="' + esc(libellePoste(p, i)) + '">'
+      + '<span class="pcK">✓</span>'
+      + '<div class="pcHead"><span class="pcN">' + esc(nbPostes(p)) + '</span>'
+      + '<span class="pcTit">' + esc(p.t || code) + '</span></div>'
+      + (p.q ? '<div class="pcQ">▶ ' + esc(p.q) + '</div>' : '')
+      + (p.s ? '<div class="pcS">' + esc(p.s) + '</div>' : '')
+      + (p.d ? '<div class="pcD">' + esc(p.d) + '</div>' : '')
+      + '</div>';
+  });
   h += '</div>' + mentionRgpd()
     + '<button class="btn" id="c-go">' + esc(T("btn_continuer")) + '</button></div>' + bandeau();
   view(h);
 
   chipsExclusifs(["c-permis","c-tr"]);
+  var pcs = document.querySelectorAll("#c-postes .pchoix");
+  for(var iP=0;iP<pcs.length;iP++) pcs[iP].onclick = function(){ this.classList.toggle("on"); SFX.soft(); };
   brancherPhoto("c-file", "c-pick", "c-pst", "c-pprev", "c-pm");
   brancherPhoto("c-file-cam", "c-cam", "c-pst", "c-pprev", "c-pm");
 
@@ -2492,9 +2568,19 @@ function screenContact(){
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)){ toast("Il nous faut aussi votre email"); return; }
     if(!CAND.data.photo){ toast("La photo est demandée pour cette candidature"); return; }
     if(!chipVal("c-permis")){ toast("Le permis B : oui, en cours ou non ?"); return; }
+    /* On garde le CODE (stable, pour trier) et le LIBELLE tel qu'il etait au
+       moment de la candidature (pour les mails, l'export et l'historique : si
+       un poste est reecrit plus tard, une vieille fiche ne doit pas mentir). */
+    var sel = document.querySelectorAll("#c-postes .pchoix.on"), pCodes = [], pLbls = [];
+    for(var iS=0;iS<sel.length;iS++){
+      pCodes.push(sel[iS].getAttribute("data-code"));
+      pLbls.push(sel[iS].getAttribute("data-lbl"));
+    }
+    if(!pCodes.length){ toast(T("e1_postes_err")); return; }
     this.disabled = true;
     candSave({
       prenom:pre, nom:nom, tel:tel, email:mail,
+      postes_codes: pCodes.join("|"), postes_vises: pLbls.join("|"),
       permis: chipVal("c-permis"), transport: chipVal("c-tr"),
       parcours:S.parcours, score:S.score, quiz:S.quiz, jeux:S.games,
       statut:"en cours", etape:1, ts: CAND.data.ts || Date.now()
@@ -2853,6 +2939,7 @@ function recapCandidature(){
     + l("Expérience", (d.anciennete||"") + (d.anciennete_metier ? " · métier : " + d.anciennete_metier : ""));
   var e = pastilles(d.experiences); if(e) h += '<div class="rcl2"><span>Domaines</span><div>' + e + '</div></div>';
   var sv = pastilles(d.savoirs);    if(sv) h += '<div class="rcl2"><span>Savoir-faire</span><div>' + sv + '</div></div>';
+  var pv = pastilles(d.postes_vises); if(pv) h += '<div class="rcl2"><span>Poste visé</span><div>' + pv + '</div></div>';
   var cr = pastilles(d.grille);     if(cr) h += '<div class="rcl2"><span>Créneaux de rappel</span><div>' + cr + '</div></div>';
   h += l("Pourquoi LUMIIA", d.pourquoi) + l("Ce qu’on dit de vous", d.portrait) + l("Un dernier mot", d.mot);
   h += l("Enregistrements", med ? (med + (med > 1 ? " envoyés" : " envoyé")) : "");
@@ -3342,6 +3429,7 @@ function aplat(x){
 function meule(c){
   if(c._meule) return c._meule;
   var p = [c.prenom, c.nom, c.tel, c.email, c.anciennete, c.anciennete_metier, c.permis, c.transport,
+           c.postes_vises, c.postes_codes,
            c.experiences, c.savoirs, c.pourquoi, c.portrait, c.mot, c.grille, c.statut,
            suiviDe(c.suivi_statut).n, c.relance_date, c.rdv_date];
   (c.quiz || []).forEach(function(q){ if(q){ p.push(q.q); p.push(q.r); } });
@@ -3867,13 +3955,19 @@ function tabOffre(){
     + '<label class="f">Titre</label><input id="a-on-t" value="' + esc(CFG.offre_nuit.titre) + '">'
     + '<label class="f">Texte de l’offre</label><textarea id="a-on-x" rows="8">' + esc(CFG.offre_nuit.texte) + '</textarea>'
     + '<h3 style="margin-top:22px">Les postes</h3>'
-    + '<p class="aide">Une carte par contrat, affichée au-dessus du texte.</p>';
+    + '<p class="aide">Une carte par type de contrat, affichée au-dessus du texte de l’offre — et reprise '
+    + 'telle quelle dans le choix que fait le candidat à l’étape 1 et dans le PDF téléchargeable. '
+    + 'Le <b>nombre de postes</b> apparaît en pastille, la <b>date d’entrée</b> en évidence : ce sont les deux '
+    + 'informations que le candidat cherche en premier.</p>';
   (CFG.postes || []).forEach(function(p, i){
     h += '<div class="qed"><div class="qed-h"><b>Poste ' + (i+1) + '</b>'
       + '<button class="btn sec mini" data-psup="' + i + '">Supprimer</button></div>'
-      + '<label class="f">Intitulé</label><input data-po="' + i + '" data-f="t" value="' + esc(p.t) + '">'
-      + '<label class="f">Détail (dates, jours)</label><input data-po="' + i + '" data-f="d" value="' + esc(p.d) + '">'
-      + '<label class="f">Rémunération</label><input data-po="' + i + '" data-f="s" value="' + esc(p.s) + '">'
+      + '<label class="f">Code (court, sert aux pastilles du tableau)</label><input data-po="' + i + '" data-f="code" value="' + esc(p.code||"") + '">'
+      + '<label class="f">Nombre de postes ouverts</label><input type="number" min="1" max="20" data-po="' + i + '" data-f="n" value="' + (Math.max(1, parseInt(p.n,10)||1)) + '">'
+      + '<label class="f">Intitulé court (ex. « 35 h »)</label><input data-po="' + i + '" data-f="t" value="' + esc(p.t||"") + '">'
+      + '<label class="f">Date d’entrée — mise en avant</label><input data-po="' + i + '" data-f="q" value="' + esc(p.q||"") + '">'
+      + '<label class="f">Détail des jours</label><input data-po="' + i + '" data-f="d" value="' + esc(p.d||"") + '">'
+      + '<label class="f">Rémunération</label><input data-po="' + i + '" data-f="s" value="' + esc(p.s||"") + '">'
       + '</div>';
   });
   h += '<button class="btn sec" id="po-add" style="margin-top:12px">+ Ajouter un poste</button>';
@@ -3905,7 +3999,7 @@ function tabOffre(){
     var es = document.querySelectorAll("[data-po]");
     for(var i=0;i<es.length;i++){
       var k = +es[i].getAttribute("data-po"), f = es[i].getAttribute("data-f");
-      if(out[k]) out[k][f] = es[i].value;
+      if(out[k]) out[k][f] = (f === "n") ? Math.max(1, Math.min(20, parseInt(es[i].value, 10) || 1)) : es[i].value;
     }
     return out;
   }
@@ -3915,7 +4009,7 @@ function tabOffre(){
     CFG.postes = lirePostes(); CFG.postes.splice(k,1); tabOffre();
   };
   $("po-add").onclick = function(){
-    CFG.postes = lirePostes().concat([{ code:"", t:"Nouveau poste", d:"", s:"" }]); tabOffre();
+    CFG.postes = lirePostes().concat([{ code:"", n:1, t:"Nouveau poste", q:"", d:"", s:"" }]); tabOffre();
   };
   $("o-save").onclick = function(){
     CFG.offre_nuit = { titre:$("a-on-t").value, texte:$("a-on-x").value };
@@ -4043,13 +4137,14 @@ function admCandidats(){
     + '<th data-tri="potentiel">Potentiel ↕</th><th>Profil</th>'
     + '<th>Statut</th><th>Suivi</th><th>Prochaine action</th><th>Candidat</th><th>Contact</th>'
     + '<th data-tri="exp">Expérience ↕</th><th data-tri="savoirs">Savoir-faire ↕</th>'
-    + '<th>Situations</th><th>Rappel</th><th>Permis</th><th>Enreg.</th><th>Offre&nbsp;mail</th>'
+    + '<th>Poste</th><th>Situations</th><th>Rappel</th><th>Permis</th><th>Enreg.</th><th>Offre&nbsp;mail</th>'
     + '<th data-tri="score">Jeu ↕</th><th data-tri="ts">Mise à jour ↕</th></tr></thead><tbody>';
   arr.forEach(function(c){
     var complet = (c.statut === "complet");
     var e = nb(c.experiences), sv = nb(c.savoirs);
     var sit = (c.situations||"").split("|").filter(function(x){ return x !== ""; });
     var cre = (c.grille||"").split("|").filter(Boolean);
+    var pvis = (c.postes_codes||"").split("|").filter(Boolean);
     var soirs = cre.filter(function(x){ return x.indexOf("Soir") > -1; }).length;
     var nMed = ["pitch1","pitch2","pitch3","motmedia","media"].filter(function(s2){ return c[s2 + "_url"]; }).length;
     var d = new Date(c.maj || c.ts || 0);
@@ -4070,6 +4165,7 @@ function admCandidats(){
       + '<td><span class="mono">' + esc(c.tel||"—") + '</span><br><span class="dim">' + esc(c.email||"") + '</span></td>'
       + '<td><div class="cbar"><i style="width:' + Math.round(e/nExpT*100) + '%"></i></div><span class="dim">' + e + ' / ' + nExpT + '</span></td>'
       + '<td><div class="cbar"><i style="width:' + Math.round(sv/nSav*100) + '%"></i></div><span class="dim">' + sv + ' / ' + nSav + '</span></td>'
+      + '<td>' + (pvis.length ? pvis.map(function(x){ return '<span class="pill2 hot">' + esc(x) + '</span>'; }).join(" ") : '<span class="dim">—</span>') + '</td>'
       + '<td>' + (sit.length ? sit.map(function(x){ return '<span class="pill2">' + "ABCDEFGH".charAt(Number(x)) + '</span>'; }).join(" ") : '<span class="dim">—</span>') + '</td>'
       + '<td>' + (cre.length ? ('<b>' + cre.length + '</b> créneaux<br><span class="dim">dont ' + soirs + ' soirs</span>') : '<span class="dim">—</span>') + '</td>'
       + '<td><span class="pill2 ' + (c.permis === "Oui" ? "hot" : (c.permis === "Non" ? "no" : "wip")) + '">' + esc(c.permis||"—") + '</span></td>'
@@ -4129,7 +4225,8 @@ function admFiche(c){
     + ligne("Référence", '<span class="mono">' + esc2(c._k) + '</span>');
 
   /* ── profil ── */
-  var profil = ligne("Ancienneté générale", esc2(c.anciennete))
+  var profil = ligne("Poste visé", pills(c.postes_vises, "hot"))
+    + ligne("Ancienneté générale", esc2(c.anciennete))
     + ligne("Expérience dans le métier", esc2(c.anciennete_metier))
     + ligne("Permis B", '<span class="pill2 ' + (c.permis === "Oui" ? "hot" : (c.permis === "Non" ? "no" : "wip")) + '">' + esc2(c.permis || "—") + '</span>')
     + ligne("Moyen de transport", esc2(c.transport))
@@ -4277,14 +4374,15 @@ function admFiche(c){
 
 function admCsv(){
   var rows = [["date","statut","etape","prenom","nom","tel","email","suivi","rdv","relance","anciennete","anciennete_metier","experiences","savoirs",
-               "situations","creneaux_rappel","permis","transport","offre_par_mail","pitch1","pitch2","pitch3","mot_media","score","pourquoi","portrait","mot","quiz"]];
+               "situations","creneaux_rappel","poste_vise","permis","transport","offre_par_mail","pitch1","pitch2","pitch3","mot_media","score","pourquoi","portrait","mot","quiz"]];
   for(var k in LAST_CAND){
     var c = LAST_CAND[k];
     rows.push([
       new Date(c.maj||c.ts||0).toLocaleString("fr-FR"), c.statut||"", c.etape||"", c.prenom||"", c.nom||"", c.tel||"", c.email||"",
       suiviDe(c.suivi_statut).n, (c.rdv_date||"") + (c.rdv_heure ? " " + c.rdv_heure : ""), c.relance_date||"",
       c.anciennete||"", c.anciennete_metier||"", (c.experiences||"").replace(/\|/g,", "), (c.savoirs||"").replace(/\|/g,", "),
-      (c.situations||"").replace(/\|/g,", "), (c.grille||"").replace(/\|/g,", "), c.permis||"", c.transport||"",
+      (c.situations||"").replace(/\|/g,", "), (c.grille||"").replace(/\|/g,", "),
+      (c.postes_vises||"").replace(/\|/g," + "), c.permis||"", c.transport||"",
       c.offre_mail ? "oui" : "non",
       c.pitch1_url||"", c.pitch2_url||"", c.pitch3_url||"", c.motmedia_url||c.media_url||"", c.score||0,
       (c.pourquoi||"").replace(/\n/g," "), (c.portrait||"").replace(/\n/g," "), (c.mot||"").replace(/\n/g," "),
@@ -4303,7 +4401,9 @@ function admCsv(){
 (function boot(){
   var q = window.location.search;
   var sp = $("splash");
-  var isJeu = q.indexOf("admin") === -1;
+  /* ?offre est un apercu, pas une partie : il ne doit pas subir les cinq
+     secondes d'ecran d'accueil avant de s'afficher. */
+  var isJeu = q.indexOf("admin") === -1 && q.indexOf("offre") === -1;
   var v = $("sp-ver"); if(v) v.textContent = "LUMIIA RECRUTE · " + VERSION;
   var spT = sp && sp.querySelector(".sp-t"), spS = sp && sp.querySelector(".sp-s");
   if(spT) spT.innerHTML = Tb("acc_titre");
