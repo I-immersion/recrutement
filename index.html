@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.1 -->
+<!-- LUMIIA RECRUTE — v5.2 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -437,6 +437,34 @@ body.adm{background:#0d1117;}
 .fiche .pdet summary{cursor:pointer;color:#58a6ff;font-size:.86rem;font-weight:900;}
 .fiche .pgrp{margin-top:12px;color:#58a6ff;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:900;}
 
+#admin .qui{display:flex;align-items:center;gap:9px;}
+#admin .vign,.fiche .vign{width:38px;height:38px;border-radius:8px;object-fit:cover;flex:0 0 auto;
+  border:1px solid #303a48;background:#0f141a;}
+#admin .vign.vide,.fiche .vign.vide{display:flex;align-items:center;justify-content:center;color:#4a5563;font-size:.8rem;}
+
+#admin .revbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0 6px;}
+#admin .revbar .btn{margin:0;}
+#admin .revpos{color:#7d8b9c;font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;font-weight:900;}
+#admin .revetat{color:#3fb950;font-size:.8rem;font-weight:900;}
+#admin .revq{font-size:1.25rem;font-weight:900;line-height:1.35;color:#e6edf3;
+  border-left:3px solid #2f6fd0;padding-left:13px;margin:10px 0 6px;}
+#admin .revmeta{color:#7d8b9c;font-size:.8rem;margin-bottom:14px;}
+#admin .revl{display:grid;grid-template-columns:210px 1fr 240px;gap:14px;align-items:start;
+  border-top:1px solid #262f3a;padding:14px 0;}
+#admin .revqui{display:flex;gap:10px;align-items:flex-start;}
+#admin .revqui b{font-size:.92rem;}
+#admin .revrep{background:#0f141a;border:1px solid #262f3a;border-radius:9px;padding:11px 13px;
+  font-size:.95rem;line-height:1.5;color:#e6edf3;white-space:pre-wrap;}
+#admin .revcorps audio{width:100%;}
+#admin .revcorps video{max-width:100%;max-height:200px;border-radius:9px;}
+#admin .revnote{display:flex;flex-direction:column;gap:8px;}
+#admin .etoiles{display:flex;gap:3px;font-size:1.5rem;line-height:1;cursor:pointer;user-select:none;}
+#admin .etoiles .et{color:#2f3a47;transition:color .12s,transform .12s;}
+#admin .etoiles .et:hover{transform:scale(1.15);}
+#admin .etoiles .et.on{color:#e3b341;}
+#admin .revtxt{margin:0;min-height:52px;font-size:.86rem;}
+@media (max-width:900px){ #admin .revl{grid-template-columns:1fr;} }
+
 .fiche .pnon{margin-top:12px;border-top:1px dashed #303a48;padding-top:10px;}
 .fiche .pnont{color:#7d8b9c;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;
   font-weight:900;margin-bottom:7px;}
@@ -520,7 +548,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.1</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.2</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -540,7 +568,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.1";
+var VERSION = "v5.2";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -820,6 +848,12 @@ var DEFAULT_TXT = {
   /* Mention d’information — article 13 du RGPD. Elle est affichée à l’endroit
      et au moment où les données sont réellement collectées, pas enfouie dans
      une page annexe que personne n’ouvre. */
+  e1_lbl_cv:        "Un CV, si vous en avez un",
+  e1_cv_note:       "Totalement facultatif — le jeu remplace le CV, il ne s’y ajoute pas. Mais si vous en avez déjà un sous la main, il peut nous éclairer. PDF, Word ou photo, 8 Mo maximum.",
+  e1_cv_aucun:      "Aucun document",
+  e1_cv_btn:        "📎 Joindre un document",
+  e1_cv_ok:         "Document reçu ✓",
+  e1_cv_sup:        "🗑 Retirer",
   e1_lbl_postes:    "Quel poste vous intéresse ?",
   e1_postes_note:   "Ils ne commencent pas au même moment et ne portent pas sur les mêmes jours. Vous pouvez en choisir plusieurs si les deux vous conviennent.",
   e1_postes_err:    "Dites-nous quel poste vous intéresse",
@@ -856,6 +890,7 @@ var TXT_GROUPES = [
   { g:"Étape 7 — rappel",  cles:["e7_titre","e7_sous","e7_lbl_mot","e7_mot_note","e7_mail","e7_btn"] },
   { g:"Mentions légales", cles:["rgpd_titre","rgpd_txt","rgpd_court"] },
   { g:"Choix du poste", cles:["e1_lbl_postes","e1_postes_note","e1_postes_err"] },
+  { g:"Dépôt de CV", cles:["e1_lbl_cv","e1_cv_note","e1_cv_aucun","e1_cv_btn","e1_cv_ok","e1_cv_sup"] },
   { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","fin_mail_ok","fin_mail_ko","mod_charge","mod_ko","mod_btn","fin_mail_deja","acc_envoyee_t","acc_envoyee_s"] },
   { g:"Boutons communs",   cles:["btn_continuer","btn_retour","bandeau"] }
 ];
@@ -2539,6 +2574,15 @@ function screenContact(){
     + '<button class="btn sec mini" id="c-pick">🖼️ Choisir dans la galerie</button>'
     + '<div id="c-pprev">' + (d.photo ? '<img src="' + d.photo + '">' : '') + '</div></div>'
 
+    + '<label class="f" style="margin-top:20px">' + esc(T("e1_lbl_cv")) + '</label>'
+    + '<div class="dim">' + Tb("e1_cv_note") + '</div>'
+    + '<div class="media' + (d.cv_url ? " ok" : "") + '" id="c-cvbox">'
+    + '<div id="c-cvst" class="dim">' + (d.cv_url ? (esc(T("e1_cv_ok")) + ' — ' + esc(d.cv_nom || "")) : esc(T("e1_cv_aucun"))) + '</div>'
+    + '<input type="file" id="c-cvf" style="display:none" accept=".pdf,.doc,.docx,.odt,.rtf,.txt,application/pdf,image/*">'
+    + '<button class="btn sec mini" id="c-cvb">' + esc(T("e1_cv_btn")) + '</button>'
+    + '<button class="btn sec mini sup" id="c-cvx" style="' + (d.cv_url ? '' : 'display:none') + '">' + esc(T("e1_cv_sup")) + '</button>'
+    + '</div>'
+
     + '<label class="f" style="margin-top:20px">' + esc(T("e1_lbl_permis")) + '</label><div class="chips" id="c-permis">';
   ["Oui","En cours","Non"].forEach(function(x){
     h += '<div class="chip' + (d.permis===x ? " on" : "") + '" data-v="' + x + '">' + x + '</div>';
@@ -2573,8 +2617,41 @@ function screenContact(){
   chipsExclusifs(["c-permis","c-tr"]);
   var pcs = document.querySelectorAll("#c-postes .pchoix");
   for(var iP=0;iP<pcs.length;iP++) pcs[iP].onclick = function(){ this.classList.toggle("on"); SFX.soft(); };
+  brancherCV();
   brancherPhoto("c-file", "c-pick", "c-pst", "c-pprev", "c-pm");
   brancherPhoto("c-file-cam", "c-cam", "c-pst", "c-pprev", "c-pm");
+
+  function brancherCV(){
+    var st = $("c-cvst"), box = $("c-cvbox"), sup = $("c-cvx");
+    $("c-cvb").onclick = function(){ $("c-cvf").click(); };
+    sup.onclick = function(){
+      candSave({ cv_url:null, cv_nom:null });
+      st.textContent = T("e1_cv_aucun"); box.classList.remove("ok"); this.style.display = "none";
+    };
+    $("c-cvf").onchange = function(){
+      var f = this.files && this.files[0];
+      if(!f) return;
+      if(f.size > 8 * 1024 * 1024){ st.textContent = "Document trop lourd (8 Mo maximum)"; return; }
+      st.textContent = "Envoi…";
+      /* La fiche doit exister avant de deposer un fichier : elle porte l'identifiant
+         qui nomme le document. On la cree si le candidat commence par le CV. */
+      function envoyer(){
+        uploadCV(f, function(ok, u, code, nom){
+          if(ok){
+            candSave({ cv_url:u, cv_nom:nom });
+            st.textContent = T("e1_cv_ok") + " — " + nom;
+            box.classList.add("ok"); sup.style.display = "";
+          } else {
+            box.classList.add("ko");
+            st.innerHTML = '<b style="color:var(--danger)">Envoi impossible</b><br>'
+              + '<span class="dim">' + esc(motifEnvoi(code)) + '</span>';
+          }
+        });
+      }
+      if(!CAND.id) candSave({ statut:"en cours", ts: CAND.data.ts || Date.now() }, envoyer);
+      else envoyer();
+    };
+  }
 
   $("c-go").onclick = function(){
     var pre = ($("c-pre").value||"").trim();
@@ -3094,6 +3171,25 @@ function motifEnvoi(code){
   if(c === "fiche-absente")            return "La candidature n’a pas encore d’identifiant.";
   return "Le fichier n’a pas pu être déposé.";
 }
+/* Le CV part dans un dossier a lui : recrutement/cv/. Les regles de Storage
+   doivent l'autoriser separement — les regles des medias n'acceptent que de
+   l'audio et de la video. */
+function uploadCV(f, cb){
+  if(!fbstore){ cb(false, null, "storage-absent"); return; }
+  if(!CAND.id){ cb(false, null, "fiche-absente"); return; }
+  var nom = String(f.name || "cv").replace(/[^A-Za-z0-9._ -]/g, "_").slice(-70);
+  var ext = (nom.indexOf(".") > -1) ? nom.split(".").pop().toLowerCase().slice(0, 5) : "pdf";
+  var ref = fbstore.ref(FB_PATH + "/cv/" + CAND.id + "." + ext);
+  ref.put(f, { contentType: f.type || "application/octet-stream" })
+    .then(function(snap){ return snap.ref.getDownloadURL(); })
+    .then(function(u){ cb(true, u, null, nom); })
+    .catch(function(err){
+      var code = (err && (err.code || err.message)) || "inconnue";
+      console.warn("upload CV KO", code, err);
+      cb(false, null, code);
+    });
+}
+
 function uploadMedia(blob, kind, cb){
   if(!fbstore){ console.warn("upload : storage indisponible"); cb(false, null, "storage-absent"); return; }
   if(!CAND.id){ console.warn("upload : pas d'identifiant de candidature"); cb(false, null, "fiche-absente"); return; }
@@ -3371,6 +3467,7 @@ function admLoad(){
 var ADM_TAB = "candidats";
 var ADM_TABS = [
   { k:"candidats",  n:"Candidats" },
+  { k:"revue",      n:"Revue des réponses" },
   { k:"suivi",      n:"Suivi & RDV" },
   { k:"stats",      n:"Statistiques" },
   { k:"potentiel",  n:"Potentiel" },
@@ -3408,7 +3505,7 @@ function admRender(){
 }
 
 function admTab(){
-  var f = { candidats:tabCandidats, suivi:tabSuivi, stats:tabStats, potentiel:tabPotentiel,
+  var f = { candidats:tabCandidats, revue:tabRevue, suivi:tabSuivi, stats:tabStats, potentiel:tabPotentiel,
             textes:tabTextes, quiz:tabQuiz, situations:tabSituations,
             pitchs:tabPitchs, offre:tabOffre, listes:tabListes, reglages:tabReglages }[ADM_TAB];
   if(f) f();
@@ -3416,6 +3513,167 @@ function admTab(){
 function panneau(h){ $("adm-tab").innerHTML = h; }
 function boutonSauver(id, libelle){
   return '<div class="adm-save"><button class="btn" id="' + id + '">' + (libelle || "ENREGISTRER") + '</button></div>';
+}
+
+/* ══════════════════════════════════════
+   ONGLET REVUE — une question, tous les candidats
+   ──────────────────────────────────────
+   Le tableau comparatif range les gens ; celui-ci range les REPONSES. Lire dix
+   fois la meme question a la suite, c'est la seule facon de voir laquelle sort
+   du lot — en fiche par fiche, on compare de memoire, donc mal.
+   Chaque reponse recoit une note sur cinq et un commentaire, ranges dans la
+   fiche du candidat sous la cle « eval ».
+   ══════════════════════════════════════ */
+var REV_I = 0;
+
+function revQuestions(){
+  var L = [];
+  (CFG.quiz_nuit || []).forEach(function(q, i){
+    L.push({ cle:"q" + i, groupe:"Quiz " + (i+1), t:q.q, lire:function(c){
+      var r = (c.quiz || [])[i];
+      return (r && r.r) ? String(r.r) : "";
+    }});
+  });
+  (CFG.situations || []).forEach(function(s2, i){
+    L.push({ cle:"s" + i, groupe:"Mise en situation " + (i+1), t:s2.q, lire:function(c){
+      var v = (c.situations || "").split("|")[i];
+      if(v === undefined || v === "") return "";
+      return (s2.o && s2.o[Number(v)]) || "";
+    }});
+  });
+  L.push({ cle:"pourquoi", groupe:"Texte libre", t:"Pourquoi LUMIIA ?",                         lire:function(c){ return c.pourquoi || ""; }});
+  L.push({ cle:"portrait", groupe:"Texte libre", t:"Ce que les gens disent de lui ou d’elle",   lire:function(c){ return c.portrait || ""; }});
+  L.push({ cle:"mot",      groupe:"Texte libre", t:"Un dernier mot",                            lire:function(c){ return c.mot || ""; }});
+  ["pitch1","pitch2","pitch3"].forEach(function(k, i){
+    L.push({ cle:k, groupe:"Pitch " + (i+1), t:(CFG.pitchs || [])[i] || ("Pitch " + (i+1)), media:k });
+  });
+  L.push({ cle:"motmedia", groupe:"Dernier mot", t:"Un dernier mot — enregistrement", media:"motmedia" });
+  return L;
+}
+
+function etoilesHtml(k, n){
+  var h = '<div class="etoiles" data-c="' + esc(k) + '" title="Cliquer la même étoile efface la note">';
+  for(var i=1;i<=5;i++) h += '<span class="et' + (i <= (n||0) ? " on" : "") + '" data-n="' + i + '">★</span>';
+  return h + '</div>';
+}
+
+function revSave(idCand, cle, patch){
+  var c = LAST_CAND[idCand]; if(!c) return;
+  c.eval = c.eval || {};
+  var cur = c.eval[cle] || {};
+  if(patch.n   !== undefined) cur.n = patch.n;
+  if(patch.txt !== undefined) cur.txt = patch.txt;
+  c.eval[cle] = cur;
+  var p = {}; p["eval/" + cle] = cur;
+  majCandidat(idCand, p);
+  var e = $("rev-etat");
+  if(e){ e.textContent = "Enregistré ✓"; setTimeout(function(){ if(e) e.textContent = ""; }, 1500); }
+}
+
+/* Moyenne des notes de revue d'un candidat — sert dans la fiche. */
+function revMoyenne(c){
+  var t = 0, n = 0;
+  for(var k in (c.eval || {})){ var v = c.eval[k]; if(v && v.n){ t += v.n; n++; } }
+  return n ? { moy: Math.round(t / n * 10) / 10, n: n } : null;
+}
+
+function tabRevue(){
+  var Q = revQuestions();
+  if(!Q.length){ panneau('<div class="adm-sec"><p class="aide">Aucune question configurée.</p></div>'); return; }
+  REV_I = Math.max(0, Math.min(Q.length - 1, REV_I));
+  var q = Q[REV_I];
+
+  var arr = [];
+  for(var k in LAST_CAND){ var o = LAST_CAND[k]; o._k = k; arr.push(o); }
+  arr.forEach(function(c){ c._ev = evalCandidat(c); });
+  arr.sort(function(a, b){ return b._ev.total - a._ev.total; });
+
+  var lignes = "", nRep = 0, somme = 0, notees = 0;
+  arr.forEach(function(c){
+    var rep = q.media ? (c[q.media + "_url"] || "") : q.lire(c);
+    if(!rep) return;
+    nRep++;
+    var ev = (c.eval || {})[q.cle] || {};
+    if(ev.n){ somme += ev.n; notees++; }
+    var corps;
+    if(q.media){
+      corps = (c[q.media + "_type"] === "video")
+        ? '<video src="' + esc(rep) + '" controls playsinline preload="none"></video>'
+        : '<audio src="' + esc(rep) + '" controls preload="none"></audio>';
+    } else {
+      corps = '<div class="revrep">' + nl2br(rep) + '</div>';
+    }
+    lignes += '<div class="revl">'
+      + '<div class="revqui">'
+      +   (c.photo ? '<img class="vign" src="' + c.photo + '" alt="">' : '<span class="vign vide">—</span>')
+      +   '<div><b>' + esc(nomComplet(c)) + '</b>'
+      +   '<div><span class="pot ' + couleurPot(c._ev.total) + '">' + c._ev.total + '</span>'
+      +   ' <a class="lien" href="#" data-fiche="' + esc(c._k) + '">voir la fiche</a></div></div>'
+      + '</div>'
+      + '<div class="revcorps">' + corps + '</div>'
+      + '<div class="revnote">' + etoilesHtml(c._k, ev.n)
+      +   '<textarea class="revtxt" rows="2" data-c="' + esc(c._k) + '" placeholder="Votre commentaire…">' + esc(ev.txt || "") + '</textarea>'
+      + '</div></div>';
+  });
+  if(!nRep) lignes = '<p class="aide">Personne n’a encore répondu à celle-ci.</p>';
+
+  var h = '<div class="adm-sec"><h2>Revue des réponses</h2>'
+    + '<p class="aide">Une question à la fois, tous les candidats en face. Notez chaque réponse sur cinq '
+    + 'et laissez un commentaire — tout est enregistré aussitôt dans la fiche du candidat. '
+    + 'Les <b>flèches gauche et droite</b> du clavier changent de question.</p>'
+    + '<div class="revbar">'
+    +   '<button class="btn sec mini" id="rev-prev">← Précédente</button>'
+    +   '<span class="revpos">' + (REV_I + 1) + ' / ' + Q.length + ' · ' + esc(q.groupe) + '</span>'
+    +   '<button class="btn sec mini" id="rev-next">Réponses suivantes →</button>'
+    +   '<span class="revetat" id="rev-etat"></span>'
+    + '</div>'
+    + '<div class="revq">' + esc(q.t) + '</div>'
+    + '<div class="revmeta">' + nRep + ' réponse' + (nRep > 1 ? 's' : '')
+    +   (notees ? ' · ' + notees + ' notée' + (notees > 1 ? 's' : '') + ' · moyenne ' + (Math.round(somme / notees * 10) / 10) + ' / 5' : '')
+    + '</div>'
+    + '<div class="revliste">' + lignes + '</div></div>';
+  panneau(h);
+
+  $("rev-next").onclick = function(){ REV_I = (REV_I + 1) % Q.length; tabRevue(); };
+  $("rev-prev").onclick = function(){ REV_I = (REV_I - 1 + Q.length) % Q.length; tabRevue(); };
+
+  var ets = document.querySelectorAll("#adm-tab .etoiles .et");
+  for(var i=0;i<ets.length;i++) ets[i].onclick = function(){
+    var box = this.parentNode, idc = box.getAttribute("data-c"), n = +this.getAttribute("data-n");
+    if(n === box.querySelectorAll(".et.on").length) n = 0;   /* re-cliquer efface */
+    var es = box.querySelectorAll(".et");
+    for(var j=0;j<es.length;j++){ if(j < n) es[j].classList.add("on"); else es[j].classList.remove("on"); }
+    revSave(idc, q.cle, { n:n });
+  };
+
+  var tas = document.querySelectorAll("#adm-tab .revtxt");
+  for(var t=0;t<tas.length;t++){
+    (function(ta){
+      var tmr = null;
+      ta.oninput = function(){
+        clearTimeout(tmr);
+        tmr = setTimeout(function(){ revSave(ta.getAttribute("data-c"), q.cle, { txt: ta.value }); }, 700);
+      };
+      ta.onblur = function(){ clearTimeout(tmr); revSave(ta.getAttribute("data-c"), q.cle, { txt: ta.value }); };
+    })(tas[t]);
+  }
+
+  var fs = document.querySelectorAll("#adm-tab [data-fiche]");
+  for(var f2=0;f2<fs.length;f2++) fs[f2].onclick = function(ev){
+    ev.preventDefault(); admFiche(LAST_CAND[this.getAttribute("data-fiche")]);
+  };
+
+  /* Fleches du clavier — une seule fois, et jamais quand on ecrit un commentaire. */
+  if(!window.__revTouches){
+    window.__revTouches = true;
+    document.addEventListener("keydown", function(ev){
+      if(ADM_TAB !== "revue" || document.querySelector(".fiche")) return;
+      var el2 = ev.target, tag = ((el2 && el2.tagName) || "").toLowerCase();
+      if(tag === "input" || tag === "textarea" || (el2 && el2.isContentEditable)) return;
+      if(ev.key === "ArrowRight" && $("rev-next")){ ev.preventDefault(); $("rev-next").click(); }
+      if(ev.key === "ArrowLeft"  && $("rev-prev")){ ev.preventDefault(); $("rev-prev").click(); }
+    });
+  }
 }
 
 /* ── ONGLET CANDIDATS ── */
@@ -3452,7 +3710,7 @@ function aplat(x){
 function meule(c){
   if(c._meule) return c._meule;
   var p = [c.prenom, c.nom, c.tel, c.email, c.anciennete, c.anciennete_metier, c.permis, c.transport,
-           c.postes_vises, c.postes_codes,
+           c.postes_vises, c.postes_codes, c.cv_nom,
            c.experiences, c.savoirs, c.pourquoi, c.portrait, c.mot, c.grille, c.statut,
            suiviDe(c.suivi_statut).n, c.relance_date, c.rdv_date];
   (c.quiz || []).forEach(function(q){ if(q){ p.push(q.q); p.push(q.r); } });
@@ -4184,7 +4442,11 @@ function admCandidats(){
       + '<td><span class="pill2 ' + suiviDe(c.suivi_statut).c + '">' + esc(suiviDe(c.suivi_statut).n) + '</span></td>'
       + '<td class="mono">' + (c.rdv_date ? '<b>RDV ' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</b>'
           : (c.relance_date ? esc(jourFR(c.relance_date)) : '<span class="dim">—</span>')) + '</td>'
-      + '<td><b>' + esc(nomComplet(c)) + '</b><br><span class="dim">' + esc(c.anciennete_metier||c.anciennete||"") + '</span></td>'
+      + '<td><div class="qui">'
+      +   (c.photo ? '<img class="vign" src="' + c.photo + '" alt="">' : '<span class="vign vide">—</span>')
+      +   '<span><b>' + esc(nomComplet(c)) + '</b><br><span class="dim">' + esc(c.anciennete_metier||c.anciennete||"") + '</span>'
+      +   (c.cv_url ? '<br><a class="lien" href="' + esc(c.cv_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">📎 CV</a>' : '')
+      +   '</span></div></td>'
       + '<td><span class="mono">' + esc(c.tel||"—") + '</span><br><span class="dim">' + esc(c.email||"") + '</span></td>'
       + '<td><div class="cbar"><i style="width:' + Math.round(e/nExpT*100) + '%"></i></div><span class="dim">' + e + ' / ' + nExpT + '</span></td>'
       + '<td><div class="cbar"><i style="width:' + Math.round(sv/nSav*100) + '%"></i></div><span class="dim">' + sv + ' / ' + nSav + '</span></td>'
@@ -4264,7 +4526,14 @@ function admFiche(c){
     + ligne("Référence", '<span class="mono">' + esc2(c._k) + '</span>');
 
   /* ── profil ── */
+  var mrev = revMoyenne(c);
   var profil = ligne("Poste visé", pills(c.postes_vises, "hot"))
+    + ligne("CV", c.cv_url
+        ? '<a class="lien" href="' + esc2(c.cv_url) + '" target="_blank" rel="noopener">' + esc2(c.cv_nom || "ouvrir le document") + '</a>'
+        : '<span class="dim">aucun</span>')
+    + ligne("Notes de revue", mrev
+        ? ('<b>' + mrev.moy + ' / 5</b> <span class="dim">sur ' + mrev.n + ' réponse' + (mrev.n > 1 ? 's' : '') + ' notée' + (mrev.n > 1 ? 's' : '') + '</span>')
+        : '<span class="dim">pas encore notée</span>')
     + ligne("Ancienneté générale", esc2(c.anciennete))
     + ligne("Expérience dans le métier", esc2(c.anciennete_metier))
     + ligne("Permis B", '<span class="pill2 ' + (c.permis === "Oui" ? "hot" : (c.permis === "Non" ? "no" : "wip")) + '">' + esc2(c.permis || "—") + '</span>')
@@ -4423,7 +4692,7 @@ function admFiche(c){
 
 function admCsv(){
   var rows = [["date","statut","etape","prenom","nom","tel","email","suivi","rdv","relance","anciennete","anciennete_metier","experiences","savoirs",
-               "situations","creneaux_rappel","poste_vise","permis","transport","offre_par_mail","pitch1","pitch2","pitch3","mot_media","score","pourquoi","portrait","mot","quiz"]];
+               "situations","creneaux_rappel","poste_vise","permis","transport","cv","note_revue","offre_par_mail","pitch1","pitch2","pitch3","mot_media","score","pourquoi","portrait","mot","quiz"]];
   for(var k in LAST_CAND){
     var c = LAST_CAND[k];
     rows.push([
@@ -4432,6 +4701,7 @@ function admCsv(){
       c.anciennete||"", c.anciennete_metier||"", (c.experiences||"").replace(/\|/g,", "), (c.savoirs||"").replace(/\|/g,", "),
       (c.situations||"").replace(/\|/g,", "), (c.grille||"").replace(/\|/g,", "),
       (c.postes_vises||"").replace(/\|/g," + "), c.permis||"", c.transport||"",
+      c.cv_url||"", (function(){ var m = revMoyenne(c); return m ? (m.moy + "/5 sur " + m.n) : ""; })(),
       c.offre_mail ? "oui" : "non",
       c.pitch1_url||"", c.pitch2_url||"", c.pitch3_url||"", c.motmedia_url||c.media_url||"", c.score||0,
       (c.pourquoi||"").replace(/\n/g," "), (c.portrait||"").replace(/\n/g," "), (c.mot||"").replace(/\n/g," "),
