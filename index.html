@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.2 -->
+<!-- LUMIIA RECRUTE — v5.4 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -437,6 +437,11 @@ body.adm{background:#0d1117;}
 .fiche .pdet summary{cursor:pointer;color:#58a6ff;font-size:.86rem;font-weight:900;}
 .fiche .pgrp{margin-top:12px;color:#58a6ff;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:900;}
 
+.photoz{position:fixed;inset:0;z-index:300;background:rgba(1,4,9,.92);cursor:zoom-out;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:26px;}
+.photoz img{max-width:min(96vw,900px);max-height:84vh;object-fit:contain;border-radius:12px;
+  box-shadow:0 18px 60px rgba(0,0,0,.6);}
+.photoz .pzl{color:#c3ccd6;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;letter-spacing:.02em;}
 #admin .qui{display:flex;align-items:center;gap:9px;}
 #admin .vign,.fiche .vign{width:38px;height:38px;border-radius:8px;object-fit:cover;flex:0 0 auto;
   border:1px solid #303a48;background:#0f141a;}
@@ -548,7 +553,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.2</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.4</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -568,7 +573,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.2";
+var VERSION = "v5.4";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -688,10 +693,14 @@ var DEFAULTS = {
       "Je fais tout mais je propose qu'on revoie l'organisation" ] }
   ],
   question_video: "Racontez-nous un moment où vous avez sauvé une situation qui partait mal.",
+  /* La quatrieme question ouvre le sujet du parcours — ce qu'un CV raconte mal
+     et qu'une voix raconte bien. Le « meme si ca n'a rien a voir avec un bar »
+     est delibere : c'est lui qui autorise les trajectoires de travers. */
   pitchs: [
     "Si j’étais un personnage imaginaire…",
     "Racontez-nous un moment où vous avez sauvé une situation qui partait mal.",
-    "Parlez-nous de vos activités préférées, de ce que vous aimez…"
+    "Parlez-nous de vos activités préférées, de ce que vous aimez…",
+    "Racontez-nous votre parcours en une minute : ce que vous avez fait avant, ce que vous avez appris, ce dont vous êtes fier — même si ça n’a rien à voir avec un bar."
   ],
   games: { shaker: true, service: true, commande: true, plateau: true }
 };
@@ -2515,7 +2524,7 @@ var ETAPES = 7;
 
 /* Les 4 emplacements d'enregistrement : 3 pitchs + le dernier mot.
    Chaque emplacement stocke <slot>_url et <slot>_type dans la fiche candidat. */
-var SLOTS = { p1:"pitch1", p2:"pitch2", p3:"pitch3", mot:"motmedia" };
+var SLOTS = { p1:"pitch1", p2:"pitch2", p3:"pitch3", p4:"pitch4", mot:"motmedia" };
 
 /* Un emplacement ne garde qu'UNE reponse : soit l'audio, soit la video.
    Enregistrer une video sur une question deja repondue en audio remplaçait
@@ -3031,7 +3040,7 @@ function recapCandidature(){
     var a = String(v||"").split("|").filter(Boolean);
     return a.length ? a.map(function(x){ return '<span class="rcp">' + esc(x) + '</span>'; }).join(" ") : "";
   }
-  var med = ["pitch1","pitch2","pitch3","motmedia"].filter(function(k){ return d[k + "_url"]; }).length;
+  var med = ["pitch1","pitch2","pitch3","pitch4","motmedia"].filter(function(k){ return d[k + "_url"]; }).length;
   var h = '<div class="recap"><div class="rct">' + esc(T("fin_recap_titre")) + '</div>'
     + l("Prénom et nom", ((d.prenom||"") + " " + (d.nom||"")).trim())
     + l("Téléphone", d.tel) + l("Email", d.email)
@@ -3386,7 +3395,7 @@ function evalCandidat(c){
   /* — engagement — */
   if(c.statut === "complet") pt("engagement", "Candidature terminée", S2.eng.complete);
   var np = 0;
-  ["pitch1","pitch2","pitch3"].forEach(function(k){ if(c[k + "_url"]) np++; });
+  ["pitch1","pitch2","pitch3","pitch4"].forEach(function(k){ if(c[k + "_url"]) np++; });
   if(np) pt("engagement", np + " pitch" + (np>1?"s":"") + " enregistré" + (np>1?"s":""), np * S2.eng.pitch);
   if(c.motmedia_url) pt("engagement", "Dernier mot en audio ou vidéo", S2.eng.mot_media);
   if((c.pourquoi||"").trim().length >= 40) pt("engagement", "« Pourquoi LUMIIA » développé", S2.eng.pourquoi);
@@ -3417,7 +3426,7 @@ function maxPotentiel(){
     + maxi(S2.anc_metier) + maxi(S2.anc) + maxi(S2.permis) + maxi(S2.transport);
   (S2.quiz||[]).forEach(function(g){ m += Math.max.apply(null, g.concat([0])); });
   (S2.situ||[]).forEach(function(g){ m += Math.max.apply(null, g.concat([0])); });
-  m += S2.eng.complete + S2.eng.pitch*3 + S2.eng.mot_media + S2.eng.pourquoi + S2.eng.portrait + S2.eng.offre_mail + S2.eng.jeu;
+  m += S2.eng.complete + S2.eng.pitch*4 + S2.eng.mot_media + S2.eng.pourquoi + S2.eng.portrait + S2.eng.offre_mail + S2.eng.jeu;
   _maxCache = Math.max(1, m); _maxSig = sig;
   return _maxCache;
 }
@@ -3440,7 +3449,7 @@ function maxAxe(a){
     return m;
   }
   var e = S2.eng;
-  return e.complete + e.pitch*3 + e.mot_media + e.pourquoi + e.portrait + e.offre_mail + e.jeu;
+  return e.complete + e.pitch*4 + e.mot_media + e.pourquoi + e.portrait + e.offre_mail + e.jeu;
 }
 
 function couleurPot(p){
@@ -3544,8 +3553,9 @@ function revQuestions(){
   L.push({ cle:"pourquoi", groupe:"Texte libre", t:"Pourquoi LUMIIA ?",                         lire:function(c){ return c.pourquoi || ""; }});
   L.push({ cle:"portrait", groupe:"Texte libre", t:"Ce que les gens disent de lui ou d’elle",   lire:function(c){ return c.portrait || ""; }});
   L.push({ cle:"mot",      groupe:"Texte libre", t:"Un dernier mot",                            lire:function(c){ return c.mot || ""; }});
-  ["pitch1","pitch2","pitch3"].forEach(function(k, i){
-    L.push({ cle:k, groupe:"Pitch " + (i+1), t:(CFG.pitchs || [])[i] || ("Pitch " + (i+1)), media:k });
+  ["pitch1","pitch2","pitch3","pitch4"].forEach(function(k, i){
+    if(i >= (CFG.pitchs || []).length) return;   /* autant d'ecrans que de questions reglees */
+    L.push({ cle:k, groupe:"Pitch " + (i+1), t:(CFG.pitchs || [])[i], media:k });
   });
   L.push({ cle:"motmedia", groupe:"Dernier mot", t:"Un dernier mot — enregistrement", media:"motmedia" });
   return L;
@@ -3605,7 +3615,7 @@ function tabRevue(){
     }
     lignes += '<div class="revl">'
       + '<div class="revqui">'
-      +   (c.photo ? '<img class="vign" src="' + c.photo + '" alt="">' : '<span class="vign vide">—</span>')
+      +   (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">' : '<span class="vign vide">—</span>')
       +   '<div><b>' + esc(nomComplet(c)) + '</b>'
       +   '<div><span class="pot ' + couleurPot(c._ev.total) + '">' + c._ev.total + '</span>'
       +   ' <a class="lien" href="#" data-fiche="' + esc(c._k) + '">voir la fiche</a></div></div>'
@@ -3658,6 +3668,7 @@ function tabRevue(){
     })(tas[t]);
   }
 
+  brancherPhotosZoom($("adm-tab"));
   var fs = document.querySelectorAll("#adm-tab [data-fiche]");
   for(var f2=0;f2<fs.length;f2++) fs[f2].onclick = function(ev){
     ev.preventDefault(); admFiche(LAST_CAND[this.getAttribute("data-fiche")]);
@@ -3754,6 +3765,37 @@ function aujourdhui(){
   var d = new Date();
   return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
 }
+/* Agrandissement d'une photo. Un voile par-dessus tout, l'image au maximum de
+   la place disponible, et on ferme au clic ou par Echap — comme la fiche. */
+function photoPleinEcran(src, legende){
+  if(!src) return;
+  var o = el('<div class="photoz"><img alt=""><div class="pzl"></div></div>');
+  o.querySelector("img").src = src;
+  var l = o.querySelector(".pzl");
+  if(legende) l.textContent = legende; else l.parentNode.removeChild(l);
+  function ferme(){
+    if(o.parentNode) o.parentNode.removeChild(o);
+    document.removeEventListener("keydown", auClavier);
+  }
+  function auClavier(ev){ if(ev.key === "Escape") ferme(); }
+  o.onclick = ferme;
+  document.addEventListener("keydown", auClavier);
+  document.body.appendChild(o);
+}
+/* On arrete la propagation : sans ca, cliquer la vignette d'une ligne du tableau
+   ouvrirait AUSSI la fiche du candidat, qui recouvrirait la photo agrandie. */
+function brancherPhotosZoom(racine){
+  var ims = (racine || document).querySelectorAll("img.vign, img.fphoto");
+  for(var i=0;i<ims.length;i++){
+    ims[i].style.cursor = "zoom-in";
+    ims[i].title = "Cliquer pour agrandir";
+    ims[i].onclick = function(ev){
+      ev.stopPropagation();
+      photoPleinEcran(this.getAttribute("src"), this.getAttribute("data-nom") || "");
+    };
+  }
+}
+
 function majCandidat(id, patch){
   if(!db) return;
   patch.suivi_maj = Date.now();
@@ -3919,7 +3961,7 @@ function tabStats(){
   var pots = arr.map(function(c){ return evalCandidat(c).total; }).sort(function(a,b){ return a-b; });
   var moy = Math.round(pots.reduce(function(a,b){ return a+b; },0) / pots.length);
   var med = pots[Math.floor(pots.length/2)];
-  var avecMedia = arr.filter(function(c){ return c.pitch1_url || c.pitch2_url || c.pitch3_url || c.motmedia_url; }).length;
+  var avecMedia = arr.filter(function(c){ return c.pitch1_url || c.pitch2_url || c.pitch3_url || c.pitch4_url || c.motmedia_url; }).length;
   var veutOffre = arr.filter(function(c){ return c.offre_mail; }).length;
 
   function tuile(v, l, sub){
@@ -4427,7 +4469,7 @@ function admCandidats(){
     var cre = (c.grille||"").split("|").filter(Boolean);
     var pvis = (c.postes_codes||"").split("|").filter(Boolean);
     var soirs = cre.filter(function(x){ return x.indexOf("Soir") > -1; }).length;
-    var nMed = ["pitch1","pitch2","pitch3","motmedia","media"].filter(function(s2){ return c[s2 + "_url"]; }).length;
+    var nMed = ["pitch1","pitch2","pitch3","pitch4","motmedia","media"].filter(function(s2){ return c[s2 + "_url"]; }).length;
     var d = new Date(c.maj || c.ts || 0);
     var ev = c._ev, AX = ["metier","terrain","posture","engagement","praticite"];
     var mini = '';
@@ -4443,7 +4485,7 @@ function admCandidats(){
       + '<td class="mono">' + (c.rdv_date ? '<b>RDV ' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</b>'
           : (c.relance_date ? esc(jourFR(c.relance_date)) : '<span class="dim">—</span>')) + '</td>'
       + '<td><div class="qui">'
-      +   (c.photo ? '<img class="vign" src="' + c.photo + '" alt="">' : '<span class="vign vide">—</span>')
+      +   (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">' : '<span class="vign vide">—</span>')
       +   '<span><b>' + esc(nomComplet(c)) + '</b><br><span class="dim">' + esc(c.anciennete_metier||c.anciennete||"") + '</span>'
       +   (c.cv_url ? '<br><a class="lien" href="' + esc(c.cv_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">📎 CV</a>' : '')
       +   '</span></div></td>'
@@ -4469,6 +4511,7 @@ function admCandidats(){
   for(var i=0;i<trs.length;i++) trs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
   var ths = $("a-cand").querySelectorAll("th[data-tri]");
   for(var j=0;j<ths.length;j++) ths[j].onclick = function(){ ADM_TRI = this.getAttribute("data-tri"); admCandidats(); };
+  brancherPhotosZoom($("a-cand"));
 }
 
 /* ══════════════════════════════════════
@@ -4582,6 +4625,7 @@ function admFiche(c){
     { k:"pitch1",   t:(CFG.pitchs||[])[0] || "Pitch 1" },
     { k:"pitch2",   t:(CFG.pitchs||[])[1] || "Pitch 2" },
     { k:"pitch3",   t:(CFG.pitchs||[])[2] || "Pitch 3" },
+    { k:"pitch4",   t:(CFG.pitchs||[])[3] || "Pitch 4" },
     { k:"motmedia", t:"Un dernier mot" },
     { k:"media",    t:"Enregistrement (candidature d’avant la v2.8)" }
   ];
@@ -4630,7 +4674,7 @@ function admFiche(c){
   var f = el('<div class="fiche"><div class="inner"></div></div>');
   f.querySelector(".inner").innerHTML =
       '<div class="fhead">'
-    + (c.photo ? '<img class="fphoto" src="' + c.photo + '" alt="">' : '<div class="fphoto vide">—</div>')
+    + (c.photo ? '<img class="fphoto" src="' + c.photo + '" data-nom="' + esc2(nomComplet(c)) + '" alt="">' : '<div class="fphoto vide">—</div>')
     + '<div class="fid"><h3>' + esc2(nomComplet(c)) + '</h3>'
     + '<div class="fcoord">'
     + (c.tel ? '<a class="lien" href="tel:' + esc2(c.tel) + '">' + esc2(c.tel) + '</a>' : '<span class="dim">pas de téléphone</span>')
@@ -4662,12 +4706,16 @@ function admFiche(c){
     + '<button class="btn danger" id="fi-del">Supprimer cette candidature</button>'
     + '</div>';
   document.body.appendChild(f);
+  brancherPhotosZoom(f);
   brancherSuivi(c, f);
   function ferme(){
     couperMedias(f); f.remove();
     document.removeEventListener("keydown", surEchap);
   }
-  function surEchap(ev){ if(ev.key === "Escape") ferme(); }
+  /* Quand une photo est agrandie par-dessus la fiche, Echap doit fermer la
+     PHOTO et laisser la fiche ouverte. Les deux ecoutes sont sur document et
+     celle de la fiche s'execute en premier : c'est donc a elle de s'abstenir. */
+  function surEchap(ev){ if(ev.key === "Escape" && !document.querySelector(".photoz")) ferme(); }
   f.querySelector("#fi-x").onclick = ferme;
   f.querySelector("#fi-x2").onclick = ferme;
   /* Clic sur le fond — et pas sur le panneau : ev.target n'est le voile que si
@@ -4692,7 +4740,7 @@ function admFiche(c){
 
 function admCsv(){
   var rows = [["date","statut","etape","prenom","nom","tel","email","suivi","rdv","relance","anciennete","anciennete_metier","experiences","savoirs",
-               "situations","creneaux_rappel","poste_vise","permis","transport","cv","note_revue","offre_par_mail","pitch1","pitch2","pitch3","mot_media","score","pourquoi","portrait","mot","quiz"]];
+               "situations","creneaux_rappel","poste_vise","permis","transport","cv","note_revue","offre_par_mail","pitch1","pitch2","pitch3","pitch4","mot_media","score","pourquoi","portrait","mot","quiz"]];
   for(var k in LAST_CAND){
     var c = LAST_CAND[k];
     rows.push([
@@ -4703,7 +4751,7 @@ function admCsv(){
       (c.postes_vises||"").replace(/\|/g," + "), c.permis||"", c.transport||"",
       c.cv_url||"", (function(){ var m = revMoyenne(c); return m ? (m.moy + "/5 sur " + m.n) : ""; })(),
       c.offre_mail ? "oui" : "non",
-      c.pitch1_url||"", c.pitch2_url||"", c.pitch3_url||"", c.motmedia_url||c.media_url||"", c.score||0,
+      c.pitch1_url||"", c.pitch2_url||"", c.pitch3_url||"", c.pitch4_url||"", c.motmedia_url||c.media_url||"", c.score||0,
       (c.pourquoi||"").replace(/\n/g," "), (c.portrait||"").replace(/\n/g," "), (c.mot||"").replace(/\n/g," "),
       (c.quiz||[]).map(function(q){ return (q && q.r) ? (q.q + " → " + q.r) : ""; }).filter(Boolean).join(" // ").replace(/\n/g," ")
     ]);
