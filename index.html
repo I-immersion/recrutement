@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.4 -->
+<!-- LUMIIA RECRUTE — v5.5 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -468,6 +468,10 @@ body.adm{background:#0d1117;}
 #admin .etoiles .et:hover{transform:scale(1.15);}
 #admin .etoiles .et.on{color:#e3b341;}
 #admin .revtxt{margin:0;min-height:52px;font-size:.86rem;}
+#admin .revl.off{opacity:.55;}
+#admin .revfoot{margin-top:16px;padding-top:14px;border-top:1px dashed #303a48;}
+#admin .revfoot .btn{margin:0;}
+#admin .revmuet{color:#d29922;}
 @media (max-width:900px){ #admin .revl{grid-template-columns:1fr;} }
 
 .fiche .pnon{margin-top:12px;border-top:1px dashed #303a48;padding-top:10px;}
@@ -553,7 +557,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.4</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.5</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
@@ -573,7 +577,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.4";
+var VERSION = "v5.5";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3533,7 +3537,13 @@ function boutonSauver(id, libelle){
    Chaque reponse recoit une note sur cinq et un commentaire, ranges dans la
    fiche du candidat sous la cle « eval ».
    ══════════════════════════════════════ */
-var REV_I = 0;
+var REV_I = 0, REV_REFUSES = false;
+/* « Écarté » et « Sans suite » sont les deux fins de non-recevoir. On ne les
+   supprime pas — on les sort du champ de vision, et un bouton les rappelle. */
+function revRefuse(c){
+  var k = c.suivi_statut || "nouveau";
+  return k === "ecarte" || k === "sans_suite";
+}
 
 function revQuestions(){
   var L = [];
@@ -3598,13 +3608,14 @@ function tabRevue(){
   arr.forEach(function(c){ c._ev = evalCandidat(c); });
   arr.sort(function(a, b){ return b._ev.total - a._ev.total; });
 
-  var lignes = "", nRep = 0, somme = 0, notees = 0;
+  var lignes = "", ecartees = "", nRep = 0, nEcart = 0, somme = 0, notees = 0, muets = [];
   arr.forEach(function(c){
     var rep = q.media ? (c[q.media + "_url"] || "") : q.lire(c);
-    if(!rep) return;
-    nRep++;
+    if(!rep){ muets.push(nomComplet(c)); return; }
+    var refuse = revRefuse(c);
+    if(refuse) nEcart++; else nRep++;
     var ev = (c.eval || {})[q.cle] || {};
-    if(ev.n){ somme += ev.n; notees++; }
+    if(ev.n && !refuse){ somme += ev.n; notees++; }
     var corps;
     if(q.media){
       corps = (c[q.media + "_type"] === "video")
@@ -3613,24 +3624,28 @@ function tabRevue(){
     } else {
       corps = '<div class="revrep">' + nl2br(rep) + '</div>';
     }
-    lignes += '<div class="revl">'
+    var sv = suiviDe(c.suivi_statut);
+    var ligne = '<div class="revl' + (refuse ? ' off' : '') + '">'
       + '<div class="revqui">'
       +   (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">' : '<span class="vign vide">—</span>')
       +   '<div><b>' + esc(nomComplet(c)) + '</b>'
-      +   '<div><span class="pot ' + couleurPot(c._ev.total) + '">' + c._ev.total + '</span>'
-      +   ' <a class="lien" href="#" data-fiche="' + esc(c._k) + '">voir la fiche</a></div></div>'
+      +   '<div style="margin-top:3px"><span class="pot ' + couleurPot(c._ev.total) + '">' + c._ev.total + '</span>'
+      +   ' <span class="pill2 ' + sv.c + '">' + esc(sv.n) + '</span></div>'
+      +   '<div style="margin-top:3px"><a class="lien" href="#" data-fiche="' + esc(c._k) + '">voir la fiche</a></div></div>'
       + '</div>'
       + '<div class="revcorps">' + corps + '</div>'
       + '<div class="revnote">' + etoilesHtml(c._k, ev.n)
       +   '<textarea class="revtxt" rows="2" data-c="' + esc(c._k) + '" placeholder="Votre commentaire…">' + esc(ev.txt || "") + '</textarea>'
       + '</div></div>';
+    if(refuse) ecartees += ligne; else lignes += ligne;
   });
-  if(!nRep) lignes = '<p class="aide">Personne n’a encore répondu à celle-ci.</p>';
+  if(!nRep) lignes = '<p class="aide">' + (nEcart ? 'Seuls des candidats écartés ont répondu à celle-ci.' : 'Personne n’a encore répondu à celle-ci.') + '</p>';
 
   var h = '<div class="adm-sec"><h2>Revue des réponses</h2>'
     + '<p class="aide">Une question à la fois, tous les candidats en face. Notez chaque réponse sur cinq '
     + 'et laissez un commentaire — tout est enregistré aussitôt dans la fiche du candidat. '
-    + 'Les <b>flèches gauche et droite</b> du clavier changent de question.</p>'
+    + 'Les <b>flèches gauche et droite</b> du clavier changent de question. '
+    + 'Les candidats <b>écartés</b> ou <b>sans suite</b> sont retirés de la liste ; un bouton en bas les rappelle.</p>'
     + '<div class="revbar">'
     +   '<button class="btn sec mini" id="rev-prev">← Précédente</button>'
     +   '<span class="revpos">' + (REV_I + 1) + ' / ' + Q.length + ' · ' + esc(q.groupe) + '</span>'
@@ -3640,10 +3655,20 @@ function tabRevue(){
     + '<div class="revq">' + esc(q.t) + '</div>'
     + '<div class="revmeta">' + nRep + ' réponse' + (nRep > 1 ? 's' : '')
     +   (notees ? ' · ' + notees + ' notée' + (notees > 1 ? 's' : '') + ' · moyenne ' + (Math.round(somme / notees * 10) / 10) + ' / 5' : '')
+    +   (nEcart ? ' · ' + nEcart + ' écarté' + (nEcart > 1 ? 's' : '') + ' masqué' + (nEcart > 1 ? 's' : '') : '')
+    /* Dire QUI manque, sinon on compte les lignes et on croit a un bug. */
+    +   (muets.length ? ' · <span class="revmuet">' + muets.length + ' sans réponse à celle-ci : '
+          + esc(muets.slice(0, 3).join(", ")) + (muets.length > 3 ? ' et ' + (muets.length - 3) + ' autre' + (muets.length > 4 ? 's' : '') : '') + '</span>' : '')
     + '</div>'
-    + '<div class="revliste">' + lignes + '</div></div>';
+    + '<div class="revliste">' + lignes + '</div>'
+    + (nEcart ? '<div class="revfoot"><button class="btn sec mini" id="rev-ref">'
+        + (REV_REFUSES ? 'Masquer' : 'Afficher') + ' les ' + nEcart + ' écarté' + (nEcart > 1 ? 's' : '')
+        + '</button></div>' : '')
+    + (REV_REFUSES && nEcart ? '<div class="revliste">' + ecartees + '</div>' : '')
+    + '</div>';
   panneau(h);
 
+  if($("rev-ref")) $("rev-ref").onclick = function(){ REV_REFUSES = !REV_REFUSES; tabRevue(); };
   $("rev-next").onclick = function(){ REV_I = (REV_I + 1) % Q.length; tabRevue(); };
   $("rev-prev").onclick = function(){ REV_I = (REV_I - 1 + Q.length) % Q.length; tabRevue(); };
 
