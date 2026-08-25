@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.5 -->
+<!-- LUMIIA RECRUTE — v5.6 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -158,7 +158,9 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 .fiche{position:fixed;inset:0;background:rgba(5,0,26,.93);z-index:200;overflow:auto;padding:22px;}
 .fiche .inner{max-width:640px;margin:0 auto;}
 #adm-gate{max-width:320px;margin:40px auto;text-align:center;}
-#adm-gate input{text-align:center;font-size:2rem;letter-spacing:.6em;font-family:'Bebas Neue';}
+#adm-gate input{text-align:center;font-size:1.9rem;letter-spacing:.42em;font-family:'Bebas Neue';}
+#adm-code-err.ko{color:#ff6b6b;}
+#adm-code-err.wait{color:#ffc857;}
 /* ══════════════════════════════════════════════════════════════
    BACK-OFFICE — thème sombre, structuré, lisible
    ══════════════════════════════════════════════════════════════ */
@@ -238,7 +240,7 @@ body.adm{background:#0d1117;}
   display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.8rem;}
 #admin .rep input{margin-top:0;flex:1;}
 #admin .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;}
-#admin #adm-gate,#admin #adm-login{background:#161b22;border:1px solid #2a323d;}
+#admin #adm-gate{background:#161b22;border:1px solid #2a323d;}
 
 #admin .mol{display:inline-flex;align-items:center;gap:0;flex:0 0 auto;}
 #admin .mol .mm{width:30px;height:32px;border:1px solid #3a4552;background:#1a212a;color:#c3ccd6;
@@ -557,19 +559,12 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.5</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.6</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
-    <input id="adm-code" type="tel" inputmode="numeric" maxlength="4" placeholder="••••">
+    <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
     <button class="btn" id="adm-code-go">OUVRIR</button>
-    <div class="dim" id="adm-code-err" style="margin-top:8px"></div>
-  </div>
-  <div id="adm-login" class="card hidden" style="margin-top:16px;max-width:380px">
-    <div class="mut">Connexion admin</div>
-    <input id="adm-mail" type="email" placeholder="email" autocomplete="username">
-    <input id="adm-pass" type="password" placeholder="mot de passe" autocomplete="current-password">
-    <button class="btn" id="adm-go">ENTRER</button>
-    <div class="dim" id="adm-err" style="margin-top:10px"></div>
+    <div id="adm-code-err" style="margin-top:10px;font-size:.95rem"></div>
   </div>
   <div id="adm-body" class="hidden"></div>
 </div>
@@ -577,7 +572,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.5";
+var VERSION = "v5.6";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3281,28 +3276,85 @@ function initTv(){
 }
 
 /* ══════════ ADMIN ══════════ */
-var ADM_CODE = "4014";
+/* Le code d'acces n'est PAS ici : il vit sur le serveur, dans
+   private/.recrutement_code. L'app se contente de l'envoyer au guichet,
+   qui repond par un laissez-passer Firebase valable 1 h.
+   Consequence : on change le code sans redeployer l'app, et lire ce
+   fichier n'apprend rien a personne. NE PAS REINTRODUIRE DE CODE ICI. */
+var ADM_PASS_URL = "https://reservation.lumiia.fr/api/recrutement-pass.php";
+
 function initAdmin(){
-  var gate = $("adm-gate");
-  function ouvrir(){
-    gate.classList.add("hidden");
-    auth.onAuthStateChanged(function(u){
-      if(u){ $("adm-login").classList.add("hidden"); $("adm-body").classList.remove("hidden"); admLoad(); }
-      else { $("adm-login").classList.remove("hidden"); $("adm-body").classList.add("hidden"); }
-    });
+  var gate = $("adm-gate"), champ = $("adm-code"), bouton = $("adm-code-go"), msg = $("adm-code-err");
+  var enCours = false;
+
+  function dire(txt, genre){
+    msg.className = genre || "dim";
+    msg.textContent = txt;
   }
-  try { if(sessionStorage.getItem("lumiia_adm") === "1") return ouvrir(); } catch(e){}
-  $("adm-code-go").onclick = function(){
-    if(($("adm-code").value||"").trim() === ADM_CODE){
-      try { sessionStorage.setItem("lumiia_adm","1"); } catch(e){}
-      ouvrir();
-    } else { $("adm-code-err").textContent = "Code incorrect."; $("adm-code").value = ""; }
+
+  /* Firebase decide seul de ce qui est affiche : tant qu'une session est
+     valide on est dans l'admin, des qu'elle expire on retombe sur le code. */
+  auth.onAuthStateChanged(function(u){
+    if(u){
+      gate.classList.add("hidden");
+      $("adm-body").classList.remove("hidden");
+      admLoad();
+    } else {
+      gate.classList.remove("hidden");
+      $("adm-body").classList.add("hidden");
+      champ.value = "";
+    }
+  });
+
+  function ouvrir(){
+    var code = (champ.value || "").replace(/[^0-9]/g, "");
+    if(enCours) return;
+    if(code.length < 6){ dire("Il faut les 6 chiffres.", "ko"); return; }
+
+    enCours = true;
+    bouton.disabled = true;
+    dire("Ouverture\u2026");
+
+    fetch(ADM_PASS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: code })
+    })
+    .then(function(r){ return r.json().then(function(j){ return { s:r.status, j:j }; }); })
+    .then(function(res){
+      if(res.j && res.j.ok && res.j.token){
+        return auth.signInWithCustomToken(res.j.token).then(function(){ dire(""); });
+      }
+      champ.value = "";
+      if(res.s === 429){
+        var min = Math.ceil((res.j.attendre || 900) / 60);
+        dire("Trop d'essais. R\u00e9essayez dans " + min + " min.", "wait");
+      } else if(res.s === 401){
+        var r2 = (res.j && typeof res.j.restants === "number") ? res.j.restants : null;
+        dire("Code incorrect." + (r2 !== null ? " Encore " + r2 + " essai" + (r2 > 1 ? "s" : "") + "." : ""), "ko");
+      } else {
+        dire("Le serveur d'acc\u00e8s ne r\u00e9pond pas correctement.", "ko");
+      }
+    })
+    .catch(function(){
+      champ.value = "";
+      dire("Pas de r\u00e9seau, ou serveur d'acc\u00e8s injoignable.", "ko");
+    })
+    .then(function(){ enCours = false; bouton.disabled = false; });
+  }
+
+  bouton.onclick = ouvrir;
+
+  /* Sur iPhone le pave numerique n'a pas de touche Entree, et le premier
+     appui sur un bouton sert souvent a fermer le clavier : le code part
+     donc tout seul des que le 6e chiffre est saisi. */
+  champ.oninput = function(){
+    var v = (champ.value || "").replace(/[^0-9]/g, "");
+    if(champ.value !== v) champ.value = v;
+    if(v.length === 6) ouvrir();
   };
-  $("adm-code").onkeydown = function(e){ if(e.key === "Enter") $("adm-code-go").click(); };
-  $("adm-go").onclick = function(){
-    var m = $("adm-mail").value.trim(), p = $("adm-pass").value;
-    auth.signInWithEmailAndPassword(m, p).catch(function(e){ $("adm-err").textContent = e.message; });
-  };
+  champ.onkeydown = function(e){ if(e.key === "Enter") ouvrir(); };
+  champ.focus();
 }
 
 /* ══════════════════════════════════════════════════════════════
