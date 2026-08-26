@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.9 -->
+<!-- LUMIIA RECRUTE — v5.10 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -562,7 +562,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.9</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.10</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -575,7 +575,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.9";
+var VERSION = "v5.10";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3528,6 +3528,10 @@ function admLoad(){
     admRender();
     db.ref(FB_PATH + "/candidats").on("value", function(s){
       LAST_CAND = s.val() || {};
+      /* La fiche de test interne n'est pas une candidature : on la retire ici,
+         une seule fois, plutot que dans chaque liste, chaque statistique et
+         chaque export. */
+      delete LAST_CAND[ADM_TEST_KEY];
       if(ADM_TAB === "candidats") admCandidats();
       else if(ADM_TAB === "suivi") tabSuivi();
     });
@@ -3552,6 +3556,19 @@ function admLoad(){
    ══════════════════════════════════════════════════════════════ */
 var ADM_ENVOI_URL = "https://reservation.lumiia.fr/api/recrutement-envoi.php";
 
+/* TEST INTERNE — v5.10.
+   Le guichet d'envoi ne connait PAS de destinataire : il lit toujours l'adresse
+   dans la fiche dont on lui donne l'identifiant. On ne l'assouplit pas pour
+   autant. Le test passe donc par une FICHE DEDIEE, ecrite a la volee sous une
+   cle fixe, et l'envoi emprunte exactement le meme chemin qu'un envoi reel :
+   c'est ce qui en fait un test valable. Cette fiche est retiree de LAST_CAND au
+   chargement (voir admLoad) : elle n'apparait donc dans aucune liste, aucun
+   compte, aucun export. */
+var ADM_TEST_KEY    = "_test_interne";
+var ADM_TEST_PRENOM = "Emmanuel";
+var ADM_TEST_NOM    = "Test";
+var ADM_TEST_EMAIL  = "contact@lumiia.fr";
+
 function jetonEnvoi(){
   try { return sessionStorage.getItem("lumiia_jeton") || ""; } catch(e){ return ""; }
 }
@@ -3564,10 +3581,15 @@ function messagesTries(){
   return out;
 }
 
+/* Un {prenom} qui n'est PAS deja suivi de {nom}. Classe de caracteres et
+   lookahead, aucun antislash inutile. */
+var RE_PRENOM_SEUL   = /[{]prenom[}](?! [{]nom[}])/;
+var RE_PRENOM_SEUL_G = /[{]prenom[}](?! [{]nom[}])/g;
+
 var MSG_DEPART = [
   { titre:"Étude des candidatures",
     objet:"Votre candidature chez LUMIIA",
-    corps:"Bonjour {prenom},\n\n"
+    corps:"Bonjour {prenom} {nom},\n\n"
       + "Votre candidature nous est bien parvenue, complète. Merci d\u2019avoir joué le jeu jusqu\u2019au bout.\n\n"
       + "Nous étudions l\u2019ensemble des candidatures à partir du lundi 31 août, et nous revenons vers vous "
       + "juste après \u2014 que la réponse soit positive ou non. Personne ne restera sans nouvelles.\n\n"
@@ -3575,7 +3597,7 @@ var MSG_DEPART = [
       + "À bientôt,\nEmmanuel \u2014 LUMIIA\nUn lieu décalé, vivant, improbable." },
   { titre:"Candidature non terminée",
     objet:"Il vous reste quelques minutes",
-    corps:"Bonjour {prenom},\n\n"
+    corps:"Bonjour {prenom} {nom},\n\n"
       + "Vous avez commencé une candidature chez LUMIIA sans la terminer. Tout ce que vous avez déjà rempli "
       + "est conservé : il vous reste quelques minutes pour aller au bout.\n\n"
       + "{lien}\n\n"
@@ -3584,7 +3606,7 @@ var MSG_DEPART = [
       + "À bientôt,\nEmmanuel \u2014 LUMIIA" },
   { titre:"Réponse négative",
     objet:"Votre candidature chez LUMIIA",
-    corps:"Bonjour {prenom},\n\n"
+    corps:"Bonjour {prenom} {nom},\n\n"
       + "Nous avons étudié votre candidature avec attention. Nous ne pourrons pas y donner suite cette fois-ci.\n\n"
       + "Ce n\u2019est pas un jugement sur votre parcours : nous avons peu de postes et beaucoup de candidatures "
       + "de qualité. Nous conservons la vôtre et nous vous recontacterons si un poste correspond.\n\n"
@@ -3598,6 +3620,7 @@ function tabMessages(){
     + '<p class="aide">Les messages que vous pouvez envoyer depuis la fiche d\u2019un candidat. '
     + 'Le titre est ce que vous verrez dans la liste ; l\u2019objet et le texte sont ce que le candidat re\u00e7oit.<br>'
     + 'Dans le texte, <b>{prenom}</b>, <b>{nom}</b> et <b>{lien}</b> sont remplac\u00e9s \u00e0 l\u2019envoi '
+    + '\u2014 <b>{prenom} {nom}</b> ensemble donne la forme la plus formelle, celle utilis\u00e9e par d\u00e9faut '
     + '(<b>{lien}</b> = lien vers sa candidature, pour la reprendre ou la relire).<br>'
     + 'Un message doit \u00eatre enregistr\u00e9 ici pour pouvoir \u00eatre envoy\u00e9 : le serveur refuse d\u2019expédier '
     + 'un texte qu\u2019il ne conna\u00eet pas.</p>';
@@ -3619,7 +3642,12 @@ function tabMessages(){
       + '</div>';
   });
 
+  var nSeul = 0;
+  L.forEach(function(o){ if(RE_PRENOM_SEUL.test(o.m.corps || "")) nSeul++; });
+
   h += '<div class="adm-save" style="gap:10px">'
+    + (nSeul ? '<button class="btn sec" id="msg-nom">PR\u00c9NOM + NOM PARTOUT ('
+        + nSeul + ')</button>' : '')
     + '<button class="btn sec" id="msg-new">NOUVEAU MESSAGE</button>'
     + '<button class="btn" id="msg-save">ENREGISTRER</button>'
     + '</div></div>';
@@ -3656,11 +3684,19 @@ function tabMessages(){
   };
   $("msg-new").onclick = function(){
     var o = recolter();
-    o["m" + Date.now().toString(36)] = { titre:"Nouveau message", objet:"", corps:"Bonjour {prenom},\n\n", order:999 };
+    o["m" + Date.now().toString(36)] = { titre:"Nouveau message", objet:"", corps:"Bonjour {prenom} {nom},\n\n", order:999 };
     enregistrer(o, "Message ajouté ✓");
     setTimeout(tabMessages, 350);
   };
   $("msg-save").onclick = function(){ enregistrer(recolter()); };
+  /* Bascule vers la forme formelle. Idempotente : la lookahead laisse tranquille
+     un {prenom} deja suivi de {nom}, donc un second clic n'ajoute rien. */
+  if($("msg-nom")) $("msg-nom").onclick = function(){
+    var o = recolter();
+    for(var k in o) o[k].corps = String(o[k].corps || "").replace(RE_PRENOM_SEUL_G, "{prenom} {nom}");
+    enregistrer(o, "Pr\u00e9nom + nom appliqu\u00e9 \u2713");
+    setTimeout(tabMessages, 350);
+  };
   var dels = document.querySelectorAll(".m-del");
   for(var i=0;i<dels.length;i++) dels[i].onclick = function(){
     var k = this.getAttribute("data-mk");
@@ -3687,12 +3723,17 @@ function blocEnvoi(c){
     + '<select id="env-cle" style="width:100%">';
   L.forEach(function(o){ h += '<option value="' + esc(o.k) + '">' + esc(o.m.titre) + '</option>'; });
   h += '</select>'
-    + '<div class="dim" style="margin-top:8px">Destinataire : '
-    + (c.email ? '<b>' + esc(c.email) + '</b>' : '<span style="color:#ff9c9c">aucune adresse sur cette fiche</span>')
+    + '<div class="dim" style="margin-top:8px">Destinataire : <b>' + esc(nomComplet(c)) + '</b>'
+    + (c.email ? ' &nbsp;\u00b7&nbsp; <b>' + esc(c.email) + '</b>'
+               : ' &nbsp;\u00b7&nbsp; <span style="color:#ff9c9c">aucune adresse sur cette fiche</span>')
     + '</div>'
-    + '<div class="factions" style="margin-top:12px;border:none;padding-top:0">'
+    + '<div class="factions" style="margin-top:12px;border:none;padding-top:0;gap:10px">'
     + '<button class="btn" id="env-go"' + (c.email ? '' : ' disabled') + '>Envoyer</button>'
+    + '<button class="btn sec" id="env-test">Envoyer un test interne</button>'
     + '</div>'
+    + '<div class="dim" style="margin-top:8px">Le test part sur <b>' + esc(ADM_TEST_EMAIL) + '</b>, '
+    + 'au nom de <b>' + esc(ADM_TEST_PRENOM + " " + ADM_TEST_NOM) + '</b>, par le m\u00eame chemin qu\u2019un envoi r\u00e9el. '
+    + 'Le candidat ne re\u00e7oit rien et sa fiche n\u2019est pas touch\u00e9e.</div>'
     + '<div id="env-msg" class="svmsg hidden"></div>'
     + '<div id="env-hist">' + envoisHtml(c) + '</div>';
   return h + '</div>';
@@ -3776,6 +3817,67 @@ function brancherEnvoi(c, racine){
   }
 
   bt.onclick = function(){ envoyer(false); };
+
+  /* ── ENVOI DE TEST ──────────────────────────────────────────────
+     Chemin volontairement identique a l'envoi reel : meme guichet, meme
+     jeton, meme substitution des variables cote serveur. Seule change la
+     fiche visee, ecrite juste avant sous une cle fixe. Un test qui
+     emprunterait une branche speciale du serveur ne prouverait rien.
+     forcer:1 parce que la trace d'envoi s'accumule sur cette fiche et
+     ferait refuser le deuxieme test du meme message. */
+  var btT = racine.querySelector("#env-test");
+  if(!btT) return;
+  var btInit = bt.disabled;
+
+  btT.onclick = function(){
+    var cle = sel.value;
+    var jt  = jetonEnvoi();
+    if(!jt){
+      message("Session d\u2019envoi expirée. Fermez la fiche, déconnectez-vous et retapez votre code.", "ko");
+      return;
+    }
+    if(!db){ message("Base indisponible : impossible d\u2019écrire la fiche de test.", "ko"); return; }
+    btT.disabled = true; bt.disabled = true;
+    message("Test en cours\u2026", "ok");
+    db.ref(FB_PATH + "/candidats/" + ADM_TEST_KEY).update({
+      prenom: ADM_TEST_PRENOM,
+      nom:    ADM_TEST_NOM,
+      email:  ADM_TEST_EMAIL,
+      test:   true,
+      maj:    Date.now()
+    })
+    .then(function(){
+      return fetch(ADM_ENVOI_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jeton: jt, id: ADM_TEST_KEY, cle: cle, forcer: 1 })
+      });
+    })
+    .then(function(r){ return r.json().then(function(j){ return { s:r.status, j:j }; }); })
+    .then(function(res){
+      btT.disabled = false; bt.disabled = btInit;
+      if(res.j && res.j.ok){
+        var d = new Date(res.j.date || Date.now());
+        message("Test envoyé à " + ADM_TEST_EMAIL + ", au nom de "
+          + ADM_TEST_PRENOM + " " + ADM_TEST_NOM + ", à "
+          + d.toLocaleTimeString("fr-FR", { hour:"2-digit", minute:"2-digit" })
+          + ". Cette candidature n\u2019a rien reçu.", "ok");
+        toast("Test envoyé ✓");
+        return;
+      }
+      var e = res.j && res.j.err;
+      if(e === "message")     message("Ce message n\u2019est pas enregistré : ouvrez l\u2019onglet Messages et cliquez ENREGISTRER.", "ko");
+      else if(e === "auth")   message("Session d\u2019envoi expirée. Déconnectez-vous et retapez votre code.", "ko");
+      else if(e === "email")  message("Le guichet n\u2019a pas trouvé d\u2019adresse sur la fiche de test.", "ko");
+      else if(e === "rafale") message("Trop rapide : attendez 20 secondes avant de retester le même message.", "ko");
+      else if(e === "smtp")   message("Le serveur de mail a refusé : " + (res.j.detail || ""), "ko");
+      else                    message("Échec du test (" + (e || res.s) + ").", "ko");
+    })
+    .catch(function(err){
+      btT.disabled = false; bt.disabled = btInit;
+      message("Test impossible : " + ((err && err.message) ? err.message : "guichet injoignable"), "ko");
+    });
+  };
 }
 
 /* ══════════════════════════════════════
