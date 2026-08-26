@@ -1,4 +1,10 @@
-.DS_Store
-_versions/
 _hors_repo/
+_versions/
+!offre-lumiia.pdf
+.DS_Store
 *.command
+*.docx
+*.pages
+*.pdf
+grille-transition-lumiia*.html
+Offre d'emploi et fiche de poste/
