@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v6.6 -->
+<!-- LUMIIA RECRUTE — v6.7 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -240,6 +240,10 @@ body.adm{background:#0d1117;}
   border:1px solid #3a4552;color:#8b98a8;background:#1a212a;}
 #admin .avec.chaud{border-color:#8a5a20;background:rgba(255,170,60,.14);color:#ffc46b;}
 #admin .avdet{margin-top:16px;padding:15px 17px;border-radius:9px;background:#12171e;border:1px solid #3a2d63;}
+.fiche .apercu .lienbtn{display:inline-block;padding:8px 16px;border-radius:7px;background:#a855f7;
+  color:#12081f;font-family:'Nunito';font-weight:900;font-size:.8rem;letter-spacing:.06em;
+  text-decoration:none;margin:4px 0;}
+#admin .avfiche{margin-top:12px;}
 #admin .avdq{margin-top:14px;padding-top:11px;border-top:1px solid #232b36;}
 #admin .avdq:first-child{border-top:none;margin-top:0;padding-top:0;}
 #admin .avdqt{font-weight:900;color:#c3ccd6;font-size:.86rem;margin-bottom:6px;}
@@ -629,7 +633,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.6</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.7</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -642,7 +646,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v6.6";
+var VERSION = "v6.7";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4040,7 +4044,11 @@ function brancherEnvoi(c, racine){
     var s = esc(String(t || ""));
     s = s.split("{prenom}").join(pr ? esc(pr) : '<span class="vide">pr\u00e9nom absent de la fiche</span>');
     s = s.split("{nom}").join(no ? esc(no) : '<span class="vide">nom absent de la fiche</span>');
-    s = s.split("{lien}").join('<span class="lien">lien vers sa candidature</span>');
+    /* Le serveur ne pose plus une URL nue mais un BOUTON (envoi.php v1.2).
+       L'apercu montrait « lien vers sa candidature » — une formule ecrite du point
+       de vue du recruteur, dans un texte cense montrer ce que LE CANDIDAT recoit.
+       On montre desormais le bouton tel qu'il partira. */
+    s = s.split("{lien}").join('<span class="lienbtn">REPRENDRE MA CANDIDATURE</span>');
     return s;
   }
 
@@ -4051,7 +4059,8 @@ function brancherEnvoi(c, racine){
     zoneAp.innerHTML = '<div class="ap-objet">Objet : ' + remplacer(m.objet) + '</div>'
       + '<div class="ap-corps">' + remplacer(m.corps).replace(/\n/g, "<br>") + '</div>'
       + '<div class="ap-note">Le texte exact que recevra ' + esc(nomComplet(c))
-      + '. Seul le lien est fabriqu\u00e9 par le serveur au moment de l\u2019envoi.</div>';
+      + '. Le bouton est fabriqu\u00e9 par le serveur au moment de l\u2019envoi, avec l\u2019adresse '
+      + 'personnelle du destinataire.</div>';
   }
 
   sel.onchange = rendreApercu;
@@ -4812,9 +4821,11 @@ function tabAvis(){
 
 /* Le detail : tous les avis d'un candidat, question par question, cote a cote. */
 function avisDetail(c, eq, Q){
-  var h = '<div class="avdet"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">'
+  /* « voir la fiche complete » etait un lien discret en bout de ligne : personne
+     ne le trouvait. C'est pourtant le geste le plus frequent depuis ce tableau. */
+  var h = '<div class="avdet"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">'
     + '<b style="font-size:1.05rem">' + esc(nomComplet(c)) + '</b>'
-    + '<a class="lien" href="#" data-fiche="' + esc(c._k) + '">voir la fiche compl\u00e8te</a></div>';
+    + '<button class="btn sec" data-fiche="' + esc(c._k) + '">OUVRIR LA FICHE</button></div>';
 
   if(estAdmin()){
     h += '<div class="chips" style="margin-top:10px">'
