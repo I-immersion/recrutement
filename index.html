@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.10 -->
+<!-- LUMIIA RECRUTE — v5.11 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -499,6 +499,14 @@ body.adm{background:#0d1117;}
 .fiche .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:680px){ .fiche .fgrid{grid-template-columns:1fr;} }
 .fiche .fbox{border:1px solid #2a323d;border-radius:9px;padding:14px 16px 16px;margin-top:14px;background:#12171e;}
+/* Boite d'ACTION : on y fait quelque chose, on n'y lit pas. Violet, bordure
+   plus marquee, liseré a gauche — pour qu'elle ne se confonde pas avec les
+   dix boites de lecture qui suivent. */
+.fiche .fbox.act{background:#191233;border:1px solid #5b3a9e;border-left:4px solid #a855f7;
+  box-shadow:0 0 0 1px rgba(168,85,247,.10), 0 6px 22px -12px rgba(168,85,247,.55);}
+.fiche .fbox.act .stepno{color:#d8b4fe;border-bottom-color:#4a2f80;}
+.fiche .fbox.act .dim{color:#9b8ec2;}
+.fiche .fbox.act .suivi select,.fiche .fbox.act input{border-color:#4a3a72;background:#211845;}
 .fiche .stepno{color:#58a6ff;font-family:'Nunito';font-weight:900;font-size:.74rem;letter-spacing:.09em;
   text-transform:uppercase;border-bottom:1px solid #2a323d;padding-bottom:6px;margin-bottom:10px;}
 .fiche .kv{display:flex;gap:12px;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px dotted #262f3a;font-size:.92rem;}
@@ -562,7 +570,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.10</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.11</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -575,7 +583,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.10";
+var VERSION = "v5.11";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3330,7 +3338,7 @@ function initAdmin(){
         /* Le jeton autorise le guichet d'envoi pendant 8 h. On le garde pour
            la duree de l'onglet — jamais le code lui-meme, qui reste connu du
            seul serveur et des personnes qui le tapent. */
-        try { sessionStorage.setItem("lumiia_jeton", res.j.jeton || ""); } catch(e){}
+        poserJeton(res.j.jeton || "");
         return auth.signInWithCustomToken(res.j.token).then(function(){ dire(""); });
       }
       champ.value = "";
@@ -3569,8 +3577,39 @@ var ADM_TEST_PRENOM = "Emmanuel";
 var ADM_TEST_NOM    = "Test";
 var ADM_TEST_EMAIL  = "contact@lumiia.fr";
 
+/* LE JETON D'ENVOI — v5.11.
+   Il etait garde en sessionStorage, donc perdu des que l'onglet se fermait.
+   Or la session Firebase, elle, persiste : on rouvrait l'admin sans qu'on nous
+   redemande le code, donc sans jamais reobtenir de jeton, et tout envoi echouait
+   sur « session expiree » avec pour seul remede une deconnexion qui n'existe
+   nulle part dans l'app. Impasse complete.
+   Le jeton est donc conserve avec SA PROPRE ECHEANCE, calee sur les 8 h du
+   serveur : pas une seconde de plus que ce que le serveur accepte deja.
+   Ce qui n'est TOUJOURS pas conserve, et ne doit jamais l'etre : le code a
+   6 chiffres. Et le jeton ne donne rien de plus que ce que la session Firebase
+   du meme navigateur donne deja — envoyer un message ecrit d'avance a une
+   adresse deja inscrite dans une fiche. */
+var JETON_CLE = "lumiia_jeton";
+var JETON_DUREE = 8 * 3600 * 1000;
+
+function poserJeton(j){
+  if(!j) return;
+  try { localStorage.setItem(JETON_CLE, JSON.stringify({ v:j, exp:Date.now() + JETON_DUREE })); } catch(e){}
+  try { sessionStorage.setItem(JETON_CLE, j); } catch(e){}
+}
+
 function jetonEnvoi(){
-  try { return sessionStorage.getItem("lumiia_jeton") || ""; } catch(e){ return ""; }
+  try {
+    var b = localStorage.getItem(JETON_CLE);
+    if(b){
+      var o = JSON.parse(b);
+      if(o && o.v && o.exp > Date.now()) return o.v;
+      localStorage.removeItem(JETON_CLE);
+    }
+  } catch(e){}
+  /* Repli sur l'ancien emplacement : un onglet ouvert avant cette version
+     continue de fonctionner sans retaper quoi que ce soit. */
+  try { return sessionStorage.getItem(JETON_CLE) || ""; } catch(e){ return ""; }
 }
 
 /* Les messages sont un objet indexe par cle ; on le rend trie pour l'affichage. */
@@ -3735,6 +3774,17 @@ function blocEnvoi(c){
     + 'au nom de <b>' + esc(ADM_TEST_PRENOM + " " + ADM_TEST_NOM) + '</b>, par le m\u00eame chemin qu\u2019un envoi r\u00e9el. '
     + 'Le candidat ne re\u00e7oit rien et sa fiche n\u2019est pas touch\u00e9e.</div>'
     + '<div id="env-msg" class="svmsg hidden"></div>'
+    + '<div id="env-code" class="hidden" style="margin-top:12px">'
+    +   '<label class="f">Votre code \u00e0 6 chiffres</label>'
+    +   '<div style="display:flex;gap:10px;align-items:center">'
+    +     '<input id="env-code-in" type="tel" inputmode="numeric" maxlength="6" '
+    +       'style="flex:1;padding:11px 12px;border-radius:8px;background:#211845;border:1px solid #4a3a72;'
+    +       'color:#e6edf3;font-family:ui-monospace,Menlo,monospace;font-size:1.15rem;letter-spacing:.32em;text-align:center">'
+    +     '<button class="btn sec" id="env-code-go">Valider</button>'
+    +   '</div>'
+    +   '<div class="dim" style="margin-top:6px">Le m\u00eame code que pour ouvrir l\u2019admin. '
+    +   'Vous restez connect\u00e9, il n\u2019est pas conserv\u00e9.</div>'
+    + '</div>'
     + '<div id="env-hist">' + envoisHtml(c) + '</div>';
   return h + '</div>';
 }
@@ -3764,6 +3814,61 @@ function brancherEnvoi(c, racine){
   var zone = racine.querySelector("#env-msg");
   var sel  = racine.querySelector("#env-cle");
 
+  /* Quand le jeton manque ou a expire, on ne renvoie plus l'utilisateur vers une
+     deconnexion qui n'existe pas : on redemande le code ICI, et on reprend
+     l'action interrompue une fois le jeton obtenu. */
+  var zoneCode = racine.querySelector("#env-code");
+  var champC   = racine.querySelector("#env-code-in");
+  var btC      = racine.querySelector("#env-code-go");
+  var suiteCode = null;
+
+  function demanderCode(suite){
+    suiteCode = suite || null;
+    if(!zoneCode){ message("Session d\u2019envoi expirée. Rechargez la page.", "ko"); return; }
+    zoneCode.classList.remove("hidden");
+    message("Session d\u2019envoi expirée. Retapez votre code ci-dessous, vous restez connecté.", "ko");
+    try { champC.focus(); } catch(e){}
+  }
+
+  function validerCode(){
+    var code = (champC.value || "").replace(/[^0-9]/g, "");
+    if(code.length < 6){ message("Il faut les 6 chiffres.", "ko"); return; }
+    btC.disabled = true;
+    message("Vérification\u2026", "ok");
+    fetch(ADM_PASS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: code })
+    })
+    .then(function(r){ return r.json().then(function(j){ return { s:r.status, j:j }; }); })
+    .then(function(res){
+      btC.disabled = false; champC.value = "";
+      if(res.j && res.j.ok && res.j.jeton){
+        poserJeton(res.j.jeton);
+        zoneCode.classList.add("hidden");
+        message("Session rouverte \u2713", "ok", true);
+        var f = suiteCode; suiteCode = null;
+        if(f) setTimeout(f, 60);
+        return;
+      }
+      if(res.s === 429) message("Trop d\u2019essais. Réessayez dans "
+        + Math.ceil(((res.j && res.j.attendre) || 900) / 60) + " min.", "ko");
+      else if(res.s === 401) message("Code incorrect.", "ko");
+      else message("Le serveur d\u2019accès ne répond pas correctement.", "ko");
+    })
+    .catch(function(){ btC.disabled = false; message("Serveur d\u2019accès injoignable.", "ko"); });
+  }
+
+  if(btC) btC.onclick = validerCode;
+  if(champC){
+    champC.oninput = function(){
+      var v = (champC.value || "").replace(/[^0-9]/g, "");
+      if(champC.value !== v) champC.value = v;
+      if(v.length === 6) validerCode();
+    };
+    champC.onkeydown = function(e){ if(e.key === "Enter") validerCode(); };
+  }
+
   function message(txt, genre, effacer){
     zone.className = "svmsg " + genre;
     zone.textContent = txt;
@@ -3773,10 +3878,7 @@ function brancherEnvoi(c, racine){
   function envoyer(forcer){
     var cle = sel.value;
     var jt  = jetonEnvoi();
-    if(!jt){
-      message("Session d\u2019envoi expirée. Fermez la fiche, déconnectez-vous et retapez votre code.", "ko");
-      return;
-    }
+    if(!jt){ demanderCode(function(){ envoyer(forcer); }); return; }
     bt.disabled = true;
     message("Envoi en cours\u2026", "ok");
     fetch(ADM_ENVOI_URL, {
@@ -3804,7 +3906,7 @@ function brancherEnvoi(c, racine){
         bt.onclick = function(){ bt.onclick = function(){ envoyer(false); }; envoyer(true); };
       }
       else if(e === "message") message("Ce message n\u2019est pas enregistré : ouvrez l\u2019onglet Messages et cliquez ENREGISTRER.", "ko");
-      else if(e === "auth")    message("Session d\u2019envoi expirée. Déconnectez-vous et retapez votre code.", "ko");
+      else if(e === "auth")    demanderCode(function(){ envoyer(forcer); });
       else if(e === "email")   message("Cette candidature ne porte pas d\u2019adresse email exploitable.", "ko");
       else if(e === "rafale")  message("Trop rapide : attendez quelques secondes.", "ko");
       else if(e === "smtp")    message("Le serveur de mail a refusé : " + (res.j.detail || ""), "ko");
@@ -3829,13 +3931,10 @@ function brancherEnvoi(c, racine){
   if(!btT) return;
   var btInit = bt.disabled;
 
-  btT.onclick = function(){
+  function lancerTest(){
     var cle = sel.value;
     var jt  = jetonEnvoi();
-    if(!jt){
-      message("Session d\u2019envoi expirée. Fermez la fiche, déconnectez-vous et retapez votre code.", "ko");
-      return;
-    }
+    if(!jt){ demanderCode(lancerTest); return; }
     if(!db){ message("Base indisponible : impossible d\u2019écrire la fiche de test.", "ko"); return; }
     btT.disabled = true; bt.disabled = true;
     message("Test en cours\u2026", "ok");
@@ -3867,7 +3966,7 @@ function brancherEnvoi(c, racine){
       }
       var e = res.j && res.j.err;
       if(e === "message")     message("Ce message n\u2019est pas enregistré : ouvrez l\u2019onglet Messages et cliquez ENREGISTRER.", "ko");
-      else if(e === "auth")   message("Session d\u2019envoi expirée. Déconnectez-vous et retapez votre code.", "ko");
+      else if(e === "auth")   demanderCode(lancerTest);
       else if(e === "email")  message("Le guichet n\u2019a pas trouvé d\u2019adresse sur la fiche de test.", "ko");
       else if(e === "rafale") message("Trop rapide : attendez 20 secondes avant de retester le même message.", "ko");
       else if(e === "smtp")   message("Le serveur de mail a refusé : " + (res.j.detail || ""), "ko");
@@ -3877,7 +3976,9 @@ function brancherEnvoi(c, racine){
       btT.disabled = false; bt.disabled = btInit;
       message("Test impossible : " + ((err && err.message) ? err.message : "guichet injoignable"), "ko");
     });
-  };
+  }
+
+  btT.onclick = lancerTest;
 }
 
 /* ══════════════════════════════════════
@@ -5049,8 +5150,9 @@ function admFiche(c){
     if(!a.length) return '<span class="dim">—</span>';
     return a.map(function(x){ return '<span class="pill2 ' + (cls||"") + '">' + esc(x) + '</span>'; }).join(" ");
   }
-  function boite(titre, contenu){
-    return '<div class="fbox"><div class="stepno">' + titre + '</div>' + contenu + '</div>';
+  function boite(titre, contenu, cls){
+    return '<div class="fbox' + (cls ? " " + cls : "") + '"><div class="stepno">'
+      + titre + '</div>' + contenu + '</div>';
   }
   /* Une liste de cases cochees ne dit que la moitie de l'histoire. Voir en face
      ce qui n'a PAS ete coche evite de croire qu'une competence manque alors
@@ -5201,7 +5303,7 @@ function admFiche(c){
     + '<button class="btn sec fclose" id="fi-x">Fermer</button></div>'
 
     + boite("Suivi — appels et rendez-vous", blocSuivi(c))
-    + boite("Envoyer un message", blocEnvoi(c))
+    + boite("Envoyer un message", blocEnvoi(c), "act")
     + boite("Potentiel", ph)
     + '<div class="fgrid">'
     +   boite("Suivi de la candidature", suivi)
