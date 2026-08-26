@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v6.2 -->
+<!-- LUMIIA RECRUTE — v6.4 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -217,6 +217,21 @@ body.adm{background:#0d1117;}
 #admin .avn{color:#ffd700;font-weight:900;}
 #admin .avt{color:#8b98a8;margin-top:2px;font-style:italic;}
 #admin .avattente{margin-top:9px;font-size:.78rem;color:#6b7787;font-style:italic;}
+#admin .impbloc{margin-top:14px;padding:14px 16px;border-radius:9px;background:#191233;
+  border:1px solid #5b3a9e;border-left:4px solid #a855f7;}
+#admin .impbloc .impt,.fiche .impbloc .impt{font-family:'Nunito';font-weight:900;font-size:.74rem;
+  letter-spacing:.09em;text-transform:uppercase;color:#d8b4fe;margin-bottom:10px;}
+#admin .impbloc .impl,.fiche .impbloc .impl{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;}
+#admin .impbloc textarea,.fiche .impbloc textarea{flex:1;min-width:220px;margin:0;
+  padding:11px 12px;border-radius:8px;background:#211845;border:1px solid #4a3a72;color:#e6edf3;
+  font-family:'Nunito';font-weight:700;font-size:.95rem;}
+/* Dans la fiche, la boite violette fait deja l'encadrement : le bloc y est nu,
+   et son titre ferait doublon avec celui de la boite. */
+.fiche .impbloc{margin-top:0;padding:0;background:transparent;border:none;}
+.fiche .impbloc .impt{display:none;}
+#admin .avimp{font-family:'Nunito';font-weight:900;font-size:1.15rem;color:#d8b4fe;}
+#admin .avimp.vide{color:#4a5563;}
+#admin .avsec{font-size:.82rem;color:#8b98a8;}
 #admin .avmoy{font-family:'Nunito';font-weight:900;font-size:1.05rem;color:#ffd700;}
 #admin .avmoy.vide{color:#4a5563;}
 #admin .avcell{text-align:center;font-weight:900;color:#e6edf3;}
@@ -501,10 +516,10 @@ body.adm{background:#0d1117;}
 #admin .revcorps audio{width:100%;}
 #admin .revcorps video{max-width:100%;max-height:200px;border-radius:9px;}
 #admin .revnote{display:flex;flex-direction:column;gap:8px;}
-#admin .etoiles{display:flex;gap:3px;font-size:1.5rem;line-height:1;cursor:pointer;user-select:none;}
-#admin .etoiles .et{color:#2f3a47;transition:color .12s,transform .12s;}
-#admin .etoiles .et:hover{transform:scale(1.15);}
-#admin .etoiles .et.on{color:#e3b341;}
+#admin .etoiles,.fiche .etoiles{display:flex;gap:3px;font-size:1.5rem;line-height:1;cursor:pointer;user-select:none;}
+#admin .etoiles .et,.fiche .etoiles .et{color:#2f3a47;transition:color .12s,transform .12s;}
+#admin .etoiles .et:hover,.fiche .etoiles .et:hover{transform:scale(1.15);}
+#admin .etoiles .et.on,.fiche .etoiles .et.on{color:#e3b341;}
 #admin .revtxt{margin:0;min-height:52px;font-size:.86rem;}
 #admin .revl.off{opacity:.55;}
 #admin .revfoot{margin-top:16px;padding-top:14px;border-top:1px dashed #303a48;}
@@ -614,7 +629,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.2</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.4</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -627,7 +642,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v6.2";
+var VERSION = "v6.4";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4301,6 +4316,71 @@ function etoilesHtml(k, n){
   return h + '</div>';
 }
 
+/* IMPRESSION GENERALE — v6.4.
+   La revue note les REPONSES, une par une. C'est precieux et c'est myope : on
+   peut trouver chaque reponse correcte et ne pas avoir envie de travailler avec
+   la personne, ou l'inverse. L'impression generale est le jugement sur
+   QUELQU'UN, pose une fois, apres avoir lu tout le dossier.
+   Rangee a part des notes de reponses : /candidats/<id>/impression/<membre>. */
+function impressionTous(c){ return c.impression || {}; }
+function impressionDe(c, id){ return impressionTous(c)[id] || {}; }
+
+/* Moyenne des impressions, une personne = une voix (il n'y en a qu'une chacun,
+   la question de la ponderation ne se pose donc pas ici). */
+function impressionMoy(c){
+  var e = impressionTous(c), t = 0, n = 0, vals = [];
+  for(var id in e){ if(e[id] && e[id].n){ t += e[id].n; n++; vals.push(e[id].n); } }
+  return n ? { moy: Math.round(t / n * 10) / 10, n: n, vals: vals } : null;
+}
+
+function impressionSave(idCand, patch){
+  var c = LAST_CAND[idCand]; if(!c) return;
+  if(!MEMBRE){ toast("Choisissez d\u2019abord votre nom"); return; }
+  c.impression = c.impression || {};
+  var cur = c.impression[MEMBRE] || {};
+  if(patch.n   !== undefined) cur.n = patch.n;
+  if(patch.txt !== undefined) cur.txt = patch.txt;
+  cur.ts = Date.now();
+  c.impression[MEMBRE] = cur;
+  var p = {}; p["impression/" + MEMBRE] = cur;
+  majCandidat(idCand, p).catch(function(e){ toast("Impression non enregistr\u00e9e : " + e.message); });
+}
+
+/* Le bloc de saisie, identique dans la fiche et dans le tableau de bord :
+   une seule facon de le dessiner, une seule facon de le brancher. */
+function blocImpression(c){
+  var m = impressionDe(c, MEMBRE);
+  return '<div class="impbloc">'
+    + '<div class="impt">Votre impression g\u00e9n\u00e9rale sur ' + esc(nomComplet(c)) + '</div>'
+    + '<div class="impl">' + etoilesHtml("imp:" + c._k, m.n)
+    +   '<textarea class="imptxt" rows="2" data-c="' + esc(c._k) + '" '
+    +     'placeholder="Ce que vous en pensez, en deux lignes\u2026">' + esc(m.txt || "") + '</textarea>'
+    + '</div></div>';
+}
+
+/* Les etoiles portent la cle « imp:<fiche> » : c'est ce prefixe qui distingue
+   une impression d'une note de reponse dans le meme gestionnaire de clic. */
+function brancherImpression(racine){
+  var ets = racine.querySelectorAll('.impbloc .etoiles .et');
+  for(var i=0;i<ets.length;i++) ets[i].onclick = function(){
+    var box = this.parentNode, cle = box.getAttribute("data-c"), n = +this.getAttribute("data-n");
+    if(cle.indexOf("imp:") !== 0) return;
+    if(n === box.querySelectorAll(".et.on").length) n = 0;   /* re-cliquer efface */
+    var es = box.querySelectorAll(".et");
+    for(var j=0;j<es.length;j++){ if(j < n) es[j].classList.add("on"); else es[j].classList.remove("on"); }
+    impressionSave(cle.slice(4), { n:n });
+  };
+  var tas = racine.querySelectorAll(".imptxt");
+  for(var t=0;t<tas.length;t++) (function(ta){
+    var tmr = null;
+    ta.oninput = function(){
+      clearTimeout(tmr);
+      tmr = setTimeout(function(){ impressionSave(ta.getAttribute("data-c"), { txt: ta.value }); }, 700);
+    };
+    ta.onblur = function(){ clearTimeout(tmr); impressionSave(ta.getAttribute("data-c"), { txt: ta.value }); };
+  })(tas[t]);
+}
+
 /* Les avis d'un candidat sur une question : { <membre> : {n, txt, ts} }. */
 function evalTous(c, cle){ return (c.eval || {})[cle] || {}; }
 function evalDe(c, cle, id){ return evalTous(c, cle)[id] || {}; }
@@ -4328,14 +4408,26 @@ function revSave(idCand, cle, patch){
   if(e){ e.textContent = "Enregistré ✓"; setTimeout(function(){ if(e) e.textContent = ""; }, 1500); }
 }
 
-/* Moyenne des notes de revue d'un candidat, toutes questions et toutes voix. */
+/* Moyenne des notes de revue d'un candidat.
+   UNE VOIX = UNE VOIX. On fait d'abord la moyenne de CHAQUE personne, puis la
+   moyenne de ces moyennes. La moyenne brute de toutes les etoiles donnerait le
+   dernier mot a celui qui a note le plus de reponses : quelqu'un qui note les
+   douze questions peserait six fois plus que quelqu'un qui en note deux, sans
+   que rien ne le dise. Ce n'est pas ce qu'on veut d'un avis d'equipe.
+   n = le nombre de notes posees, il sert a dire sur quoi la moyenne repose. */
 function revMoyenne(c){
-  var t = 0, n = 0;
+  var par = {}, n = 0;
   for(var k in (c.eval || {})){
     var e = c.eval[k];
-    for(var id in e){ if(e[id] && e[id].n){ t += e[id].n; n++; } }
+    for(var id in e){
+      if(!e[id] || !e[id].n) continue;
+      if(!par[id]) par[id] = { s:0, c:0 };
+      par[id].s += e[id].n; par[id].c++; n++;
+    }
   }
-  return n ? { moy: Math.round(t / n * 10) / 10, n: n } : null;
+  var t = 0, v = 0;
+  for(var id2 in par){ t += par[id2].s / par[id2].c; v++; }
+  return v ? { moy: Math.round(t / v * 10) / 10, n: n, voix: v } : null;
 }
 
 /* MIGRATION v6.0 — les notes d'avant etaient anonymes : eval/<question> = {n,txt}.
@@ -4515,7 +4607,7 @@ function tabRevue(){
    vaut le coup. On affiche aussi qui n'a pas encore vote — sans ca on lit
    un consensus la ou il manque la moitie des voix.
    ══════════════════════════════════════════════════════════════ */
-var AVIS_TRI = "moyenne", AVIS_SEL = "";
+var AVIS_TRI = "impression", AVIS_SEL = "";
 
 function avisSynth(c, eq, Q){
   var par = {}, tout = [];
@@ -4536,12 +4628,26 @@ function avisSynth(c, eq, Q){
     moy[id2] = Math.round(par[id2].s / par[id2].n * 10) / 10;
     vals.push(moy[id2]); votants++;
   }
+  /* La moyenne generale est la moyenne DES MOYENNES : chaque personne compte
+     pour une, quel que soit le nombre de reponses qu'elle a notees. */
   var som = 0;
-  tout.forEach(function(x){ som += x; });
+  vals.forEach(function(x){ som += x; });
+
+  /* L'ECART mesure le desaccord. Il porte sur l'IMPRESSION GENERALE des que deux
+     personnes en ont donne une : c'est le jugement sur la personne qui merite
+     d'etre discute, pas la note d'une reponse isolee. Tant qu'il n'y en a pas
+     assez, il retombe sur les moyennes de reponses plutot que de n'afficher
+     rien. */
+  var imp  = impressionMoy(c);
+  var base = (imp && imp.vals.length > 1) ? imp.vals : vals;
   return {
     moy: moy,
-    globale: tout.length ? Math.round(som / tout.length * 10) / 10 : null,
-    ecart: (vals.length > 1) ? Math.round((Math.max.apply(null, vals) - Math.min.apply(null, vals)) * 10) / 10 : 0,
+    globale: vals.length ? Math.round(som / vals.length * 10) / 10 : null,
+    imp: imp ? imp.moy : null,
+    impN: imp ? imp.n : 0,
+    surImp: !!(imp && imp.vals.length > 1),
+    ecart: (base.length > 1) ? Math.round((Math.max.apply(null, base) - Math.min.apply(null, base)) * 10) / 10 : 0,
+    ecartN: base.length,
     votants: votants,
     manquants: eq.length - votants,
     nNotes: tout.length
@@ -4559,10 +4665,12 @@ function tabAvis(){
 
   arr.sort(function(a, b){
     if(AVIS_TRI === "potentiel") return b._ev.total - a._ev.total;
-    if(AVIS_TRI === "ecart")     return (b._av.ecart - a._av.ecart) || ((b._av.globale||0) - (a._av.globale||0));
-    /* Sans aucune note on ne peut rien dire : ces candidats vont en bas, pas en tete. */
-    if((a._av.globale === null) !== (b._av.globale === null)) return a._av.globale === null ? 1 : -1;
-    return (b._av.globale || 0) - (a._av.globale || 0);
+    if(AVIS_TRI === "ecart")     return (b._av.ecart - a._av.ecart) || ((b._av.imp||0) - (a._av.imp||0));
+    /* Sans rien on ne peut rien dire : ces candidats vont en bas, pas en tete. */
+    var ca = (AVIS_TRI === "impression") ? a._av.imp : a._av.globale;
+    var cb = (AVIS_TRI === "impression") ? b._av.imp : b._av.globale;
+    if((ca === null) !== (cb === null)) return ca === null ? 1 : -1;
+    return (cb || 0) - (ca || 0);
   });
 
   var h = '<div class="adm-sec"><h2>Avis de l\u2019\u00e9quipe</h2>';
@@ -4583,8 +4691,15 @@ function tabAvis(){
        + blocEquipe();
   }
 
-  h += '<div class="adm-bar" style="margin-top:16px"><div class="chips" id="av-tri">'
-    + '<div class="chip' + (AVIS_TRI==="moyenne"?" on":"") + '" data-t="moyenne">Par moyenne</div>'
+  h += '<p class="aide" style="margin-top:14px">L\u2019<b>impression</b> est le jugement sur la personne, '
+    + 'pos\u00e9 une fois apr\u00e8s lecture du dossier \u2014 on clique une ligne pour la donner. '
+    + 'Les <b>r\u00e9ponses</b> sont la moyenne des moyennes de la revue : chaque personne compte pour une, '
+    + 'qu\u2019elle ait not\u00e9 deux r\u00e9ponses ou douze. '
+    + 'L\u2019<b>\u00e9cart</b> s\u00e9pare la voix la plus haute de la plus basse \u2014 sur les impressions '
+    + 'd\u00e8s que deux personnes en ont donn\u00e9 une, sur les r\u00e9ponses avant \u00e7a.</p>'
+    + '<div class="adm-bar" style="margin-top:12px"><div class="chips" id="av-tri">'
+    + '<div class="chip' + (AVIS_TRI==="impression"?" on":"") + '" data-t="impression">Par impression</div>'
+    + '<div class="chip' + (AVIS_TRI==="moyenne"?" on":"") + '" data-t="moyenne">Par notes de r\u00e9ponses</div>'
     + '<div class="chip' + (AVIS_TRI==="ecart"?" on":"") + '" data-t="ecart">Par d\u00e9saccord</div>'
     + '<div class="chip' + (AVIS_TRI==="potentiel"?" on":"") + '" data-t="potentiel">Par potentiel</div>'
     + '</div></div>';
@@ -4595,13 +4710,19 @@ function tabAvis(){
   }
 
   h += '<div class="adm-scroll"><table class="cmp"><thead><tr>'
-    + '<th>Moyenne</th><th>Pot.</th><th>Candidat</th>';
+    + '<th title="Impression g\u00e9n\u00e9rale : le jugement sur la personne, pos\u00e9 apr\u00e8s lecture du dossier">Impression</th>'
+    + '<th title="Moyenne des moyennes sur les r\u00e9ponses : chaque personne compte pour une">R\u00e9ponses</th>'
+    + '<th>Pot.</th><th>Candidat</th>';
   eq.forEach(function(m){ h += '<th>' + esc(m.nom) + '</th>'; });
   h += '<th>\u00c9cart</th><th>Voix</th><th>Suivi</th></tr></thead><tbody>';
 
   arr.forEach(function(c){
     var a = c._av, sv = suiviDe(c.suivi_statut);
     h += '<tr data-av="' + esc(c._k) + '"' + (AVIS_SEL === c._k ? ' class="avsel"' : '') + '>'
+      + '<td><span class="avimp' + (a.imp === null ? " vide" : "") + '">'
+      +   (a.imp === null ? "\u2014" : a.imp) + '</span>'
+      +   (a.impN ? '<br><span class="dim" style="font-size:.74rem">' + a.impN + ' avis</span>' : '')
+      + '</td>'
       + '<td><span class="avmoy' + (a.globale === null ? " vide" : "") + '">'
       +   (a.globale === null ? "\u2014" : a.globale) + '</span></td>'
       + '<td class="potc"><span class="pot ' + couleurPot(c._ev.total) + '">' + c._ev.total + '</span></td>'
@@ -4614,8 +4735,10 @@ function tabAvis(){
       h += '<td class="avcell' + (v === undefined ? " rien" : "") + '">'
         + (v === undefined ? "\u2014" : v) + '</td>';
     });
-    h += '<td><span class="avec' + (a.ecart >= 2 ? " chaud" : "") + '">'
-      +   (a.votants > 1 ? a.ecart : "\u2014") + '</span></td>'
+    h += '<td><span class="avec' + (a.ecart >= 2 ? " chaud" : "") + '"'
+      +   ' title="' + (a.surImp ? "\u00c9cart sur les impressions g\u00e9n\u00e9rales"
+                                  : "\u00c9cart sur les moyennes de r\u00e9ponses") + '">'
+      +   (a.ecartN > 1 ? a.ecart : "\u2014") + '</span></td>'
       + '<td><span class="dim">' + a.votants + ' / ' + eq.length + '</span></td>'
       + '<td><span class="pill2 ' + sv.c + '">' + esc(sv.n) + '</span></td>'
       + '</tr>';
@@ -4645,6 +4768,7 @@ function tabAvis(){
   };
 
   brancherEquipe();
+  brancherImpression($("adm-tab"));
   brancherPhotosZoom($("adm-tab"));
 
   var fs = document.querySelectorAll("#adm-tab [data-fiche]");
@@ -4678,6 +4802,22 @@ function avisDetail(c, eq, Q){
       + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="rdv">RDV \u00e0 fixer</div>'
       + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="ecarte">\u00c9cart\u00e9</div>'
       + '</div>';
+  }
+
+  h += blocImpression(c);
+
+  var impA = [];
+  eq.forEach(function(m){
+    if(m.id === MEMBRE) return;
+    if(!voitLesAutres()) return;
+    var a = impressionDe(c, m.id); if(!a.n && !a.txt) return;
+    impA.push('<div class="avl"><b>' + esc(m.nom) + '</b> '
+      + (a.n ? '<span class="avn">' + a.n + '/5</span>' : '<span class="dim">sans note</span>')
+      + (a.txt ? '<div class="avt">' + esc(a.txt) + '</div>' : '') + '</div>');
+  });
+  if(impA.length){
+    h += '<div class="avdq" style="margin-top:14px"><div class="avdqt">Impressions g\u00e9n\u00e9rales des autres</div>'
+       + impA.join("") + '</div>';
   }
 
   if(!voitLesAutres()){
@@ -5104,6 +5244,12 @@ function blocSuivi(c){
 
 /* ── branchements du bloc suivi (appelé après insertion dans le DOM) ── */
 function brancherSuivi(c, racine){
+  /* Le bloc de suivi n'est pas affiche aux jures (v6.0). Sans cette sortie,
+     la suite dereferencait #sv-save qui n'existe pas, l'exception coupait
+     admFiche AVANT le branchement du bouton Fermer et de la touche Echap :
+     la fiche s'ouvrait et ne se refermait plus. Meme faute que d'oublier de
+     debrancher le cablage quand on retire l'appareil. */
+  if(!racine.querySelector("#sv-save")) return;
   var zone = racine.querySelector("#sv-err");
   var ch   = racine.querySelectorAll("#sv-st .chip");
   var occupe = false;
@@ -5896,7 +6042,8 @@ function admFiche(c){
         ? '<a class="lien" href="' + esc2(c.cv_url) + '" target="_blank" rel="noopener">' + esc2(c.cv_nom || "ouvrir le document") + '</a>'
         : '<span class="dim">aucun</span>')
     + ligne("Notes de revue", mrev
-        ? ('<b>' + mrev.moy + ' / 5</b> <span class="dim">sur ' + mrev.n + ' réponse' + (mrev.n > 1 ? 's' : '') + ' notée' + (mrev.n > 1 ? 's' : '') + '</span>')
+        ? ('<b>' + mrev.moy + ' / 5</b> <span class="dim">' + mrev.n + ' note' + (mrev.n > 1 ? 's' : '')
+           + ' de ' + mrev.voix + ' personne' + (mrev.voix > 1 ? 's' : '') + '</span>')
         : '<span class="dim">pas encore notée</span>')
     + ligne("Ancienneté générale", esc2(c.anciennete))
     + ligne("Expérience dans le métier", esc2(c.anciennete_metier))
@@ -6009,6 +6156,7 @@ function admFiche(c){
        /recrutement/candidats doit rester ouverte pour que les candidats
        eux-memes puissent deposer et completer leur dossier. C'est donc une
        retenue d'interface, et elle est assumee comme telle. */
+    + boite("Impression g\u00e9n\u00e9rale", blocImpression(c), "act")
     + (estAdmin() ? boite("Suivi — appels et rendez-vous", blocSuivi(c)) : "")
     + (estAdmin() ? boite("Envoyer un message", blocEnvoi(c), "act") : "")
     + boite("Potentiel", ph)
@@ -6037,6 +6185,7 @@ function admFiche(c){
   brancherPhotosZoom(f);
   brancherSuivi(c, f);
   brancherEnvoi(c, f);
+  brancherImpression(f);
   function ferme(){
     couperMedias(f); f.remove();
     document.removeEventListener("keydown", surEchap);
