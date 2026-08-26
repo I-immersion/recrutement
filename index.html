@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.11 -->
+<!-- LUMIIA RECRUTE — v6.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -196,6 +196,27 @@ body.adm{background:#0d1117;}
 #admin .adm-scroll{overflow:auto;}
 
 #admin table{width:100%;border-collapse:collapse;font-size:.86rem;margin-top:4px;background:#12171e;}
+/* ── JURY ET AVIS ─────────────────────────────────────────── */
+.jurybar{margin:10px 0 2px;padding:9px 13px;border-radius:8px;background:#191233;
+  border:1px solid #5b3a9e;border-left:4px solid #a855f7;color:#d8b4fe;font-size:.85rem;}
+.jurybar a{color:#7cc4ff;}
+#admin .avautres{margin-top:9px;border-top:1px dashed #2a323d;padding-top:8px;}
+#admin .avl{margin-top:7px;font-size:.82rem;color:#c3ccd6;line-height:1.4;}
+#admin .avn{color:#ffd700;font-weight:900;}
+#admin .avt{color:#8b98a8;margin-top:2px;font-style:italic;}
+#admin .avattente{margin-top:9px;font-size:.78rem;color:#6b7787;font-style:italic;}
+#admin .avmoy{font-family:'Nunito';font-weight:900;font-size:1.05rem;color:#ffd700;}
+#admin .avmoy.vide{color:#4a5563;}
+#admin .avcell{text-align:center;font-weight:900;color:#e6edf3;}
+#admin .avcell.rien{color:#3f4854;font-weight:400;}
+#admin .avec{display:inline-block;padding:3px 9px;border-radius:99px;font-size:.78rem;font-weight:900;
+  border:1px solid #3a4552;color:#8b98a8;background:#1a212a;}
+#admin .avec.chaud{border-color:#8a5a20;background:rgba(255,170,60,.14);color:#ffc46b;}
+#admin .avdet{margin-top:16px;padding:15px 17px;border-radius:9px;background:#12171e;border:1px solid #3a2d63;}
+#admin .avdq{margin-top:14px;padding-top:11px;border-top:1px solid #232b36;}
+#admin .avdq:first-child{border-top:none;margin-top:0;padding-top:0;}
+#admin .avdqt{font-weight:900;color:#c3ccd6;font-size:.86rem;margin-bottom:6px;}
+#admin tr.avsel td{background:#1c1638;}
 #admin th{background:#1c2530;color:#c3ccd6;font-family:'Nunito';font-weight:900;font-size:.74rem;
   text-transform:uppercase;letter-spacing:.04em;border:1px solid #2a323d;padding:9px 10px;text-align:left;white-space:nowrap;}
 #admin th[data-tri]{cursor:pointer;}
@@ -506,6 +527,17 @@ body.adm{background:#0d1117;}
   box-shadow:0 0 0 1px rgba(168,85,247,.10), 0 6px 22px -12px rgba(168,85,247,.55);}
 .fiche .fbox.act .stepno{color:#d8b4fe;border-bottom-color:#4a2f80;}
 .fiche .fbox.act .dim{color:#9b8ec2;}
+/* APERCU : on relit le message AVANT de cliquer, avec les variables deja
+   remplacees par ce candidat-la. C'est la seule facon de voir une erreur
+   avant qu'elle parte a quelqu'un. */
+.fiche .fbox.act .apercu{margin-top:10px;padding:12px 14px;border-radius:8px;
+  background:#0e0a22;border:1px solid #3a2d63;}
+.fiche .fbox.act .apercu .ap-objet{font-weight:900;color:#e6edf3;font-size:.9rem;
+  padding-bottom:8px;margin-bottom:9px;border-bottom:1px solid #33285a;}
+.fiche .fbox.act .apercu .ap-corps{color:#cfc6e8;font-size:.9rem;line-height:1.6;}
+.fiche .fbox.act .apercu .ap-note{margin-top:11px;font-size:.75rem;color:#8b7fb0;}
+.fiche .fbox.act .apercu .vide{color:#ff9c9c;font-style:italic;}
+.fiche .fbox.act .apercu .lien{color:#7cc4ff;text-decoration:underline;}
 .fiche .fbox.act .suivi select,.fiche .fbox.act input{border-color:#4a3a72;background:#211845;}
 .fiche .stepno{color:#58a6ff;font-family:'Nunito';font-weight:900;font-size:.74rem;letter-spacing:.09em;
   text-transform:uppercase;border-bottom:1px solid #2a323d;padding-bottom:6px;margin-bottom:10px;}
@@ -570,7 +602,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.11</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.0</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -583,7 +615,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.11";
+var VERSION = "v6.0";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -1113,6 +1145,9 @@ function loadCfg(cb){
       if(v.anciennetes_metier) CFG.anciennetes_metier = v.anciennetes_metier;
       if(v.textes) CFG.textes = v.textes;
       if(v.scoring) CFG.scoring = v.scoring;
+      if(v.equipe) CFG.equipe = v.equipe;
+      CFG.avis_ouverts = !!v.avis_ouverts;
+      CFG.eval_v2      = !!v.eval_v2;
       CFG.modif_bloquee = !!v.modif_bloquee;
       if(v.durees){ CFG.durees = v.durees; for(var g in v.durees){ if(GAMES[g] && v.durees[g]) GAMES[g].dur = v.durees[g]; } }
     }
@@ -3295,6 +3330,51 @@ function initTv(){
    fichier n'apprend rien a personne. NE PAS REINTRODUIRE DE CODE ICI. */
 var ADM_PASS_URL = "https://reservation.lumiia.fr/api/recrutement-pass.php";
 
+/* ROLES — v6.0.
+   Deux codes a 6 chiffres, deux roles. L'ADMIN a tout ; le JURE lit les
+   candidatures, pose des notes et des commentaires, et rien d'autre.
+   LA FRONTIERE N'EST PAS DANS CETTE PAGE. Elle est dans le jeton signe par le
+   serveur : le jure porte la revendication « recrutement_jure », jamais
+   « recrutement_admin », et ce sont les regles de la base qui refusent ensuite
+   toute ecriture dans /recrutement/config. Masquer des onglets ne protege rien ;
+   on les masque seulement pour ne pas proposer ce qui sera refuse.
+   Le role est relu dans les revendications du jeton a chaque ouverture — jamais
+   conserve dans le navigateur, ou il serait modifiable. */
+var ROLE = "admin";
+function estAdmin(){ return ROLE === "admin"; }
+
+/* Le membre qui note. C'est une SIGNATURE, pas une authentification : a
+   l'interieur du cercle des jures, rien n'empeche de choisir le nom d'un autre.
+   La frontiere qui compte — ne pas pouvoir modifier les contenus — est ailleurs. */
+var MEMBRE = "";
+var MEMBRE_CLE = "lumiia_membre";
+var MEMBRE_ADMIN = "emmanuel";
+
+function equipeTriee(){
+  var e = CFG.equipe || {}, L = [], vuAdmin = false;
+  for(var k in e){
+    if(!e[k] || !e[k].nom) continue;
+    if(k === MEMBRE_ADMIN) vuAdmin = true;
+    L.push({ id:k, nom:e[k].nom, order:e[k].order || 0 });
+  }
+  /* Emmanuel est membre du jury qu'on l'ait saisi ou non : ses notes existaient
+     avant la liste, elles doivent avoir une colonne meme si la liste est vide. */
+  if(!vuAdmin) L.push({ id:MEMBRE_ADMIN, nom:"Emmanuel", order:-1 });
+  L.sort(function(a,b){ return (a.order - b.order) || a.nom.localeCompare(b.nom); });
+  return L;
+}
+function membreNom(id){
+  var e = (CFG.equipe || {})[id];
+  if(e && e.nom) return e.nom;
+  return (id === MEMBRE_ADMIN) ? "Emmanuel" : id;
+}
+/* Tant que ce drapeau est faux, chacun ne voit que ses propres notes.
+   Il vit dans la config, que seul l'admin peut ecrire : un jure ne peut pas le
+   retourner. A dire franchement : les notes des autres sont bien dans les donnees
+   qu'il lit, c'est donc une garantie contre l'effet d'ancrage, pas un coffre. */
+function avisOuverts(){ return !!CFG.avis_ouverts; }
+function voitLesAutres(){ return estAdmin() || avisOuverts(); }
+
 function initAdmin(){
   var gate = $("adm-gate"), champ = $("adm-code"), bouton = $("adm-code-go"), msg = $("adm-code-err");
   var enCours = false;
@@ -3308,9 +3388,18 @@ function initAdmin(){
      valide on est dans l'admin, des qu'elle expire on retombe sur le code. */
   auth.onAuthStateChanged(function(u){
     if(u){
-      gate.classList.add("hidden");
-      $("adm-body").classList.remove("hidden");
-      admLoad();
+      /* On lit le role DANS LE JETON, pas dans une variable posee a la connexion :
+         apres un rechargement la session Firebase revient toute seule, sans repasser
+         par le code, et il faut quand meme savoir a qui on a affaire. */
+      u.getIdTokenResult().then(function(r){
+        ROLE = (r && r.claims && r.claims.recrutement_jure) ? "jure" : "admin";
+      }).catch(function(){ ROLE = "admin"; }).then(function(){
+        try { MEMBRE = localStorage.getItem(MEMBRE_CLE) || ""; } catch(e){}
+        if(estAdmin()) MEMBRE = MEMBRE_ADMIN;
+        gate.classList.add("hidden");
+        $("adm-body").classList.remove("hidden");
+        admLoad();
+      });
     } else {
       gate.classList.remove("hidden");
       $("adm-body").classList.add("hidden");
@@ -3339,6 +3428,7 @@ function initAdmin(){
            la duree de l'onglet — jamais le code lui-meme, qui reste connu du
            seul serveur et des personnes qui le tapent. */
         poserJeton(res.j.jeton || "");
+        ROLE = (res.j.role === "jure") ? "jure" : "admin";
         return auth.signInWithCustomToken(res.j.token).then(function(){ dire(""); });
       }
       champ.value = "";
@@ -3533,6 +3623,7 @@ function couleurPot(p){
 function admLoad(){
   document.body.classList.add("adm");
   loadCfg(function(){
+    normaliserPrenomNom();
     admRender();
     db.ref(FB_PATH + "/candidats").on("value", function(s){
       LAST_CAND = s.val() || {};
@@ -3540,6 +3631,7 @@ function admLoad(){
          une seule fois, plutot que dans chaque liste, chaque statistique et
          chaque export. */
       delete LAST_CAND[ADM_TEST_KEY];
+      migrerEval();
       if(ADM_TAB === "candidats") admCandidats();
       else if(ADM_TAB === "suivi") tabSuivi();
     });
@@ -3610,6 +3702,35 @@ function jetonEnvoi(){
   /* Repli sur l'ancien emplacement : un onglet ouvert avant cette version
      continue de fonctionner sans retaper quoi que ce soit. */
   try { return sessionStorage.getItem(JETON_CLE) || ""; } catch(e){ return ""; }
+}
+
+/* PRENOM + NOM — v5.12.
+   Les trois messages de depart avaient ete ecrits en « Bonjour {prenom}, ».
+   Laisser un bouton a cliquer pour corriger revenait a confier a l'utilisateur
+   une migration de donnees : il ne l'a pas vu, et le premier vrai mail est parti
+   sans le nom. La conversion se fait donc TOUTE SEULE au chargement de l'admin,
+   une fois pour toutes, tracee par le drapeau config/nomcomplet_ok.
+   Elle est bornee : elle ne touche QUE les {prenom} qui ne sont pas deja suivis
+   de {nom}, et ne repassera jamais — si Emmanuel ecrit plus tard un message
+   volontairement au seul prenom, il reste tel quel. */
+function normaliserPrenomNom(){
+  if(!db || !CFG || CFG.nomcomplet_ok) return;
+  var m = CFG.messages || {}, o = {}, chg = 0, vide = true;
+  for(var k in m){
+    if(!m[k]) continue;
+    vide = false;
+    var av = String(m[k].corps || ""), ap = av.replace(RE_PRENOM_SEUL_G, "{prenom} {nom}");
+    o[k] = m[k];
+    if(ap !== av){ o[k].corps = ap; chg++; }
+  }
+  /* Tant qu'aucun message n'existe, on ne pose pas le drapeau : sinon les
+     messages de depart crees plus tard echapperaient a la conversion. */
+  if(vide) return;
+  CFG.nomcomplet_ok = true;
+  if(!chg){ db.ref(FB_PATH + "/config/nomcomplet_ok").set(true); return; }
+  CFG.messages = o;
+  cfgSave({ messages:o, nomcomplet_ok:true },
+    chg + " message" + (chg > 1 ? "s" : "") + " au pr\u00e9nom + nom \u2713");
 }
 
 /* Les messages sont un objet indexe par cle ; on le rend trie pour l'affichage. */
@@ -3766,6 +3887,7 @@ function blocEnvoi(c){
     + (c.email ? ' &nbsp;\u00b7&nbsp; <b>' + esc(c.email) + '</b>'
                : ' &nbsp;\u00b7&nbsp; <span style="color:#ff9c9c">aucune adresse sur cette fiche</span>')
     + '</div>'
+    + '<div id="env-apercu" class="apercu"></div>'
     + '<div class="factions" style="margin-top:12px;border:none;padding-top:0;gap:10px">'
     + '<button class="btn" id="env-go"' + (c.email ? '' : ' disabled') + '>Envoyer</button>'
     + '<button class="btn sec" id="env-test">Envoyer un test interne</button>'
@@ -3858,6 +3980,33 @@ function brancherEnvoi(c, racine){
     })
     .catch(function(){ btC.disabled = false; message("Serveur d\u2019accès injoignable.", "ko"); });
   }
+
+  /* L'apercu est refait a chaque changement de message. Les variables sont
+     remplacees ici COMME LE SERVEUR LE FERA, a une exception assumee : {lien}
+     est fabrique par le serveur, on ne l'invente pas, on le signale. */
+  var zoneAp = racine.querySelector("#env-apercu");
+
+  function remplacer(t){
+    var pr = String(c.prenom || "").trim(), no = String(c.nom || "").trim();
+    var s = esc(String(t || ""));
+    s = s.split("{prenom}").join(pr ? esc(pr) : '<span class="vide">pr\u00e9nom absent de la fiche</span>');
+    s = s.split("{nom}").join(no ? esc(no) : '<span class="vide">nom absent de la fiche</span>');
+    s = s.split("{lien}").join('<span class="lien">lien vers sa candidature</span>');
+    return s;
+  }
+
+  function rendreApercu(){
+    if(!zoneAp) return;
+    var m = (CFG.messages || {})[sel.value];
+    if(!m){ zoneAp.innerHTML = ""; return; }
+    zoneAp.innerHTML = '<div class="ap-objet">Objet : ' + remplacer(m.objet) + '</div>'
+      + '<div class="ap-corps">' + remplacer(m.corps).replace(/\n/g, "<br>") + '</div>'
+      + '<div class="ap-note">Le texte exact que recevra ' + esc(nomComplet(c))
+      + '. Seul le lien est fabriqu\u00e9 par le serveur au moment de l\u2019envoi.</div>';
+  }
+
+  sel.onchange = rendreApercu;
+  rendreApercu();
 
   if(btC) btC.onclick = validerCode;
   if(champC){
@@ -3988,6 +4137,7 @@ var ADM_TAB = "candidats";
 var ADM_TABS = [
   { k:"candidats",  n:"Candidats" },
   { k:"revue",      n:"Revue des réponses" },
+  { k:"avis",       n:"Avis de l’équipe" },
   { k:"suivi",      n:"Suivi & RDV" },
   { k:"messages",   n:"Messages" },
   { k:"stats",      n:"Statistiques" },
@@ -4013,20 +4163,48 @@ function cfgSave(patch, msg){
     .catch(function(e){ toast("Erreur : " + e.message); });
 }
 
+/* Un jure ne voit que ce qu'il peut reellement faire. Les autres onglets ne sont
+   pas seulement inutiles pour lui : la base refuserait leurs enregistrements, et
+   un bouton qui echoue vaut moins qu'un bouton absent. */
+function tabsVisibles(){
+  if(estAdmin()) return ADM_TABS;
+  return ADM_TABS.filter(function(o){ return o.k === "revue" || o.k === "avis"; });
+}
+
 function admRender(){
+  var vis = tabsVisibles();
+  var dedans = false;
+  vis.forEach(function(o){ if(o.k === ADM_TAB) dedans = true; });
+  if(!dedans) ADM_TAB = vis[0].k;
+
+  /* Un jure qui n'a pas dit qui il est ne peut rien signer : on lui demande
+     avant tout le reste, pas au moment ou il clique une etoile. */
+  if(!estAdmin() && !MEMBRE){ ecranQuiEtesVous(); return; }
+
   var t = '<div class="adm-tabs">';
-  ADM_TABS.forEach(function(o){
+  vis.forEach(function(o){
     t += '<button class="adm-tab' + (ADM_TAB === o.k ? " on" : "") + '" data-tab="' + o.k + '">' + esc(o.n) + '</button>';
   });
-  t += '</div><div id="adm-tab"></div>';
+  t += '</div>'
+    + (estAdmin() ? "" :
+        '<div class="jurybar">Mode jury \u2014 vous notez sous le nom de <b>'
+        + esc(membreNom(MEMBRE)) + '</b>. '
+        + '<a href="#" id="jury-chg">ce n\u2019est pas moi</a></div>')
+    + '<div id="adm-tab"></div>';
   $("adm-body").innerHTML = t;
+  if($("jury-chg")) $("jury-chg").onclick = function(ev){
+    ev.preventDefault();
+    MEMBRE = "";
+    try { localStorage.removeItem(MEMBRE_CLE); } catch(e){}
+    admRender();
+  };
   var bs = document.querySelectorAll(".adm-tab");
   for(var i=0;i<bs.length;i++) bs[i].onclick = function(){ ADM_TAB = this.getAttribute("data-tab"); admRender(); };
   admTab();
 }
 
 function admTab(){
-  var f = { candidats:tabCandidats, revue:tabRevue, suivi:tabSuivi, stats:tabStats, potentiel:tabPotentiel,
+  var f = { candidats:tabCandidats, revue:tabRevue, avis:tabAvis, suivi:tabSuivi, stats:tabStats, potentiel:tabPotentiel,
             messages:tabMessages,
             textes:tabTextes, quiz:tabQuiz, situations:tabSituations,
             pitchs:tabPitchs, offre:tabOffre, listes:tabListes, reglages:tabReglages }[ADM_TAB];
@@ -4035,6 +4213,27 @@ function admTab(){
 function panneau(h){ $("adm-tab").innerHTML = h; }
 function boutonSauver(id, libelle){
   return '<div class="adm-save"><button class="btn" id="' + id + '">' + (libelle || "ENREGISTRER") + '</button></div>';
+}
+
+function ecranQuiEtesVous(){
+  var L = equipeTriee().filter(function(m){ return m.id !== MEMBRE_ADMIN; });
+  var h = '<div class="adm-sec"><h2>Qui \u00eates-vous ?</h2>';
+  if(!L.length){
+    h += '<p class="aide">Aucun membre n\u2019a encore \u00e9t\u00e9 cr\u00e9\u00e9 par Emmanuel. '
+       + 'Demandez-lui d\u2019ajouter votre nom dans l\u2019onglet <b>Avis de l\u2019\u00e9quipe</b>.</p>';
+  } else {
+    h += '<p class="aide">Choisissez votre nom : il signera vos notes et vos commentaires. '
+       + 'Ce choix est gard\u00e9 sur cet appareil.</p><div class="chips" id="qui-l">';
+    L.forEach(function(m){ h += '<div class="chip" data-m="' + esc(m.id) + '">' + esc(m.nom) + '</div>'; });
+    h += '</div>';
+  }
+  $("adm-body").innerHTML = h + '</div>';
+  var cs = document.querySelectorAll("#qui-l .chip");
+  for(var i=0;i<cs.length;i++) cs[i].onclick = function(){
+    MEMBRE = this.getAttribute("data-m");
+    try { localStorage.setItem(MEMBRE_CLE, MEMBRE); } catch(e){}
+    admRender();
+  };
 }
 
 /* ══════════════════════════════════════
@@ -4086,24 +4285,71 @@ function etoilesHtml(k, n){
   return h + '</div>';
 }
 
+/* Les avis d'un candidat sur une question : { <membre> : {n, txt, ts} }. */
+function evalTous(c, cle){ return (c.eval || {})[cle] || {}; }
+function evalDe(c, cle, id){ return evalTous(c, cle)[id] || {}; }
+
+/* Moyenne d'une reponse, toutes voix confondues. */
+function evalMoy(c, cle){
+  var e = evalTous(c, cle), t = 0, n = 0;
+  for(var id in e){ if(e[id] && e[id].n){ t += e[id].n; n++; } }
+  return n ? { moy: Math.round(t / n * 10) / 10, n: n } : null;
+}
+
 function revSave(idCand, cle, patch){
   var c = LAST_CAND[idCand]; if(!c) return;
+  if(!MEMBRE){ toast("Choisissez d\u2019abord votre nom"); return; }
   c.eval = c.eval || {};
-  var cur = c.eval[cle] || {};
+  c.eval[cle] = c.eval[cle] || {};
+  var cur = c.eval[cle][MEMBRE] || {};
   if(patch.n   !== undefined) cur.n = patch.n;
   if(patch.txt !== undefined) cur.txt = patch.txt;
-  c.eval[cle] = cur;
-  var p = {}; p["eval/" + cle] = cur;
+  cur.ts = Date.now();
+  c.eval[cle][MEMBRE] = cur;
+  var p = {}; p["eval/" + cle + "/" + MEMBRE] = cur;
   majCandidat(idCand, p).catch(function(e){ toast("Note non enregistree : " + e.message); });
   var e = $("rev-etat");
   if(e){ e.textContent = "Enregistré ✓"; setTimeout(function(){ if(e) e.textContent = ""; }, 1500); }
 }
 
-/* Moyenne des notes de revue d'un candidat — sert dans la fiche. */
+/* Moyenne des notes de revue d'un candidat, toutes questions et toutes voix. */
 function revMoyenne(c){
   var t = 0, n = 0;
-  for(var k in (c.eval || {})){ var v = c.eval[k]; if(v && v.n){ t += v.n; n++; } }
+  for(var k in (c.eval || {})){
+    var e = c.eval[k];
+    for(var id in e){ if(e[id] && e[id].n){ t += e[id].n; n++; } }
+  }
   return n ? { moy: Math.round(t / n * 10) / 10, n: n } : null;
+}
+
+/* MIGRATION v6.0 — les notes d'avant etaient anonymes : eval/<question> = {n,txt}.
+   Elles deviennent eval/<question>/<membre> = {n,txt,ts}. Les anciennes sont
+   toutes d'Emmanuel : elles lui sont attribuees, aucune n'est perdue.
+   Reconnaissable sans ambiguite : l'ancienne forme porte n ou txt directement,
+   la nouvelle ne contient que des sous-objets. Une seule fois, drapeau eval_v2. */
+function migrerEval(){
+  if(!estAdmin() || !db || CFG.eval_v2) return;
+  var maj = {}, n = 0, vus = 0;
+  for(var k in LAST_CAND){
+    var e = LAST_CAND[k].eval; if(!e) continue;
+    for(var q in e){
+      var v = e[q]; if(!v) continue;
+      vus++;
+      if(typeof v.n === "number" || typeof v.txt === "string"){
+        var nv = {};
+        nv[MEMBRE_ADMIN] = { n: v.n || 0, txt: v.txt || "", ts: v.ts || Date.now() };
+        maj[k + "/eval/" + q] = nv;
+        LAST_CAND[k].eval[q] = nv;
+        n++;
+      }
+    }
+  }
+  CFG.eval_v2 = true;
+  if(!n){ db.ref(FB_PATH + "/config/eval_v2").set(true); return; }
+  db.ref(FB_PATH + "/candidats").update(maj).then(function(){
+    db.ref(FB_PATH + "/config/eval_v2").set(true);
+    toast(n + " note" + (n > 1 ? "s" : "") + " report\u00e9e" + (n > 1 ? "s" : "") + " \u00e0 votre nom \u2713");
+  }).catch(function(){ CFG.eval_v2 = false; });
 }
 
 function tabRevue(){
@@ -4123,8 +4369,9 @@ function tabRevue(){
     if(!rep){ muets.push(nomComplet(c)); return; }
     var refuse = revRefuse(c);
     if(refuse) nEcart++; else nRep++;
-    var ev = (c.eval || {})[q.cle] || {};
-    if(ev.n && !refuse){ somme += ev.n; notees++; }
+    var ev = evalDe(c, q.cle, MEMBRE);
+    var moyR = evalMoy(c, q.cle);
+    if(moyR && !refuse){ somme += moyR.moy; notees++; }
     var corps;
     if(q.media){
       corps = (c[q.media + "_type"] === "video")
@@ -4134,6 +4381,24 @@ function tabRevue(){
       corps = '<div class="revrep">' + nl2br(rep) + '</div>';
     }
     var sv = suiviDe(c.suivi_statut);
+    var autres = '';
+    if(voitLesAutres()){
+      var e2 = evalTous(c, q.cle), bouts = [];
+      equipeTriee().forEach(function(m){
+        if(m.id === MEMBRE) return;
+        var a = e2[m.id]; if(!a || (!a.n && !a.txt)) return;
+        bouts.push('<div class="avl"><b>' + esc(m.nom) + '</b> '
+          + (a.n ? '<span class="avn">' + a.n + '/5</span>' : '<span class="dim">sans note</span>')
+          + (a.txt ? '<div class="avt">' + esc(a.txt) + '</div>' : '') + '</div>');
+      });
+      if(bouts.length) autres = '<div class="avautres">' + bouts.join("") + '</div>';
+    } else {
+      var nA = 0, e3 = evalTous(c, q.cle);
+      for(var idA in e3){ if(idA !== MEMBRE && e3[idA] && (e3[idA].n || e3[idA].txt)) nA++; }
+      if(nA) autres = '<div class="avattente">' + nA + ' autre avis'
+        + (nA > 1 ? ' d\u00e9pos\u00e9s' : ' d\u00e9pos\u00e9') + ', visible' + (nA > 1 ? 's' : '')
+        + ' quand Emmanuel ouvrira les avis</div>';
+    }
     var ligne = '<div class="revl' + (refuse ? ' off' : '') + '">'
       + '<div class="revqui">'
       +   (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">' : '<span class="vign vide">—</span>')
@@ -4145,6 +4410,7 @@ function tabRevue(){
       + '<div class="revcorps">' + corps + '</div>'
       + '<div class="revnote">' + etoilesHtml(c._k, ev.n)
       +   '<textarea class="revtxt" rows="2" data-c="' + esc(c._k) + '" placeholder="Votre commentaire…">' + esc(ev.txt || "") + '</textarea>'
+      +   autres
       + '</div></div>';
     if(refuse) ecartees += ligne; else lignes += ligne;
   });
@@ -4152,7 +4418,9 @@ function tabRevue(){
 
   var h = '<div class="adm-sec"><h2>Revue des réponses</h2>'
     + '<p class="aide">Une question à la fois, tous les candidats en face. Notez chaque réponse sur cinq '
-    + 'et laissez un commentaire — tout est enregistré aussitôt dans la fiche du candidat. '
+    + 'et laissez un commentaire — tout est enregistré aussitôt sous votre nom. '
+    + (voitLesAutres() ? 'Les avis des autres sont affichés sous le vôtre. '
+        : 'Les avis des autres restent masqués tant qu’Emmanuel n’a pas ouvert la mise en commun. ')
     + 'Les <b>flèches gauche et droite</b> du clavier changent de question. '
     + 'Les candidats <b>écartés</b> ou <b>sans suite</b> sont retirés de la liste ; un bouton en bas les rappelle.</p>'
     + '<div class="revbar">'
@@ -4219,6 +4487,255 @@ function tabRevue(){
       if(ev.key === "ArrowLeft"  && $("rev-prev")){ ev.preventDefault(); $("rev-prev").click(); }
     });
   }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ONGLET AVIS DE L'EQUIPE — le tableau de bord
+   ──────────────────────────────────────────────────────────────
+   La moyenne seule ecrase l'essentiel : trois personnes a 4 et une a 1,
+   ca fait 3,25 comme quatre personnes tiedes, et ce n'est pas du tout la
+   meme situation. On affiche donc l'ECART entre la voix la plus haute et
+   la plus basse, et on peut trier par lui : c'est la que la discussion
+   vaut le coup. On affiche aussi qui n'a pas encore vote — sans ca on lit
+   un consensus la ou il manque la moitie des voix.
+   ══════════════════════════════════════════════════════════════ */
+var AVIS_TRI = "moyenne", AVIS_SEL = "";
+
+function avisSynth(c, eq, Q){
+  var par = {}, tout = [];
+  Q.forEach(function(q){
+    var e = evalTous(c, q.cle);
+    for(var id in e){
+      var v = e[id];
+      if(v && v.n){
+        if(!par[id]) par[id] = { s:0, n:0 };
+        par[id].s += v.n; par[id].n++;
+        tout.push(v.n);
+      }
+    }
+  });
+  var moy = {}, vals = [], votants = 0;
+  for(var id2 in par){
+    if(!par[id2].n) continue;
+    moy[id2] = Math.round(par[id2].s / par[id2].n * 10) / 10;
+    vals.push(moy[id2]); votants++;
+  }
+  var som = 0;
+  tout.forEach(function(x){ som += x; });
+  return {
+    moy: moy,
+    globale: tout.length ? Math.round(som / tout.length * 10) / 10 : null,
+    ecart: (vals.length > 1) ? Math.round((Math.max.apply(null, vals) - Math.min.apply(null, vals)) * 10) / 10 : 0,
+    votants: votants,
+    manquants: eq.length - votants,
+    nNotes: tout.length
+  };
+}
+
+function tabAvis(){
+  var eq = equipeTriee(), Q = revQuestions();
+  var arr = [];
+  for(var k in LAST_CAND){ var o = LAST_CAND[k]; o._k = k; arr.push(o); }
+  arr.forEach(function(c){ c._ev = evalCandidat(c); c._av = avisSynth(c, eq, Q); });
+
+  arr.sort(function(a, b){
+    if(AVIS_TRI === "potentiel") return b._ev.total - a._ev.total;
+    if(AVIS_TRI === "ecart")     return (b._av.ecart - a._av.ecart) || ((b._av.globale||0) - (a._av.globale||0));
+    /* Sans aucune note on ne peut rien dire : ces candidats vont en bas, pas en tete. */
+    if((a._av.globale === null) !== (b._av.globale === null)) return a._av.globale === null ? 1 : -1;
+    return (b._av.globale || 0) - (a._av.globale || 0);
+  });
+
+  var h = '<div class="adm-sec"><h2>Avis de l\u2019\u00e9quipe</h2>';
+
+  if(estAdmin()){
+    h += '<p class="aide">Chacun note depuis son t\u00e9l\u00e9phone avec le code jury. '
+       + 'Tant que les avis ne sont pas ouverts, personne ne voit ceux des autres \u2014 '
+       + 'c\u2019est ce qui emp\u00eache trois personnes de s\u2019aligner sur la premi\u00e8re note pos\u00e9e.</p>'
+       + '<div class="adm-bar" style="margin-top:10px;gap:10px">'
+       + '<button class="btn ' + (avisOuverts() ? "sec" : "") + '" id="av-ouvrir">'
+       +   (avisOuverts() ? "REFERMER LES AVIS" : "OUVRIR LES AVIS \u00c0 TOUS")
+       + '</button>'
+       + '<span class="dim">' + (avisOuverts()
+            ? "Ouverts : chaque jur\u00e9 voit tous les avis."
+            : "Ferm\u00e9s : chacun ne voit que le sien.") + '</span>'
+       + '</div>'
+       + blocEquipe();
+  }
+
+  h += '<div class="adm-bar" style="margin-top:16px"><div class="chips" id="av-tri">'
+    + '<div class="chip' + (AVIS_TRI==="moyenne"?" on":"") + '" data-t="moyenne">Par moyenne</div>'
+    + '<div class="chip' + (AVIS_TRI==="ecart"?" on":"") + '" data-t="ecart">Par d\u00e9saccord</div>'
+    + '<div class="chip' + (AVIS_TRI==="potentiel"?" on":"") + '" data-t="potentiel">Par potentiel</div>'
+    + '</div></div>';
+
+  if(!arr.length){
+    panneau(h + '<p class="aide">Aucune candidature pour le moment.</p></div>');
+    return;
+  }
+
+  h += '<div class="adm-scroll"><table class="cmp"><thead><tr>'
+    + '<th>Moyenne</th><th>Pot.</th><th>Candidat</th>';
+  eq.forEach(function(m){ h += '<th>' + esc(m.nom) + '</th>'; });
+  h += '<th>\u00c9cart</th><th>Voix</th><th>Suivi</th></tr></thead><tbody>';
+
+  arr.forEach(function(c){
+    var a = c._av, sv = suiviDe(c.suivi_statut);
+    h += '<tr data-av="' + esc(c._k) + '"' + (AVIS_SEL === c._k ? ' class="avsel"' : '') + '>'
+      + '<td><span class="avmoy' + (a.globale === null ? " vide" : "") + '">'
+      +   (a.globale === null ? "\u2014" : a.globale) + '</span></td>'
+      + '<td class="potc"><span class="pot ' + couleurPot(c._ev.total) + '">' + c._ev.total + '</span></td>'
+      + '<td><div class="qui">'
+      +   (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">'
+                   : '<span class="vign vide">\u2014</span>')
+      +   '<span><b>' + esc(nomComplet(c)) + '</b></span></div></td>';
+    eq.forEach(function(m){
+      var v = a.moy[m.id];
+      h += '<td class="avcell' + (v === undefined ? " rien" : "") + '">'
+        + (v === undefined ? "\u2014" : v) + '</td>';
+    });
+    h += '<td><span class="avec' + (a.ecart >= 2 ? " chaud" : "") + '">'
+      +   (a.votants > 1 ? a.ecart : "\u2014") + '</span></td>'
+      + '<td><span class="dim">' + a.votants + ' / ' + eq.length + '</span></td>'
+      + '<td><span class="pill2 ' + sv.c + '">' + esc(sv.n) + '</span></td>'
+      + '</tr>';
+  });
+  h += '</tbody></table></div>';
+
+  if(AVIS_SEL && LAST_CAND[AVIS_SEL]) h += avisDetail(LAST_CAND[AVIS_SEL], eq, Q);
+  panneau(h + '</div>');
+
+  var ts = document.querySelectorAll("#av-tri .chip");
+  for(var i=0;i<ts.length;i++) ts[i].onclick = function(){ AVIS_TRI = this.getAttribute("data-t"); tabAvis(); };
+
+  var rs = document.querySelectorAll("#adm-tab tr[data-av]");
+  for(var r=0;r<rs.length;r++) rs[r].onclick = function(){
+    var k2 = this.getAttribute("data-av");
+    AVIS_SEL = (AVIS_SEL === k2) ? "" : k2;
+    tabAvis();
+  };
+
+  if($("av-ouvrir")) $("av-ouvrir").onclick = function(){
+    var v = !avisOuverts();
+    CFG.avis_ouverts = v;
+    cfgSave({ avis_ouverts: v }, v ? "Avis ouverts \u00e0 toute l\u2019\u00e9quipe \u2713" : "Avis referm\u00e9s \u2713");
+    setTimeout(tabAvis, 300);
+  };
+
+  brancherEquipe();
+  brancherPhotosZoom($("adm-tab"));
+
+  var fs = document.querySelectorAll("#adm-tab [data-fiche]");
+  for(var f2=0;f2<fs.length;f2++) fs[f2].onclick = function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    admFiche(LAST_CAND[this.getAttribute("data-fiche")]);
+  };
+
+  var sts = document.querySelectorAll("#adm-tab [data-avsv]");
+  for(var s3=0;s3<sts.length;s3++) sts[s3].onclick = function(ev){
+    ev.stopPropagation();
+    var id = this.getAttribute("data-avc"), k3 = this.getAttribute("data-avsv");
+    var c3 = LAST_CAND[id]; if(!c3) return;
+    var hist = (c3.suivi_hist || []).slice();
+    hist.push({ ts: Date.now(), st: k3, txt: "Depuis le tableau des avis" });
+    majCandidat(id, { suivi_statut: k3, suivi_hist: hist })
+      .then(function(){ toast(suiviDe(k3).n + " \u2713"); })
+      .catch(function(e){ toast("Non enregistr\u00e9 : " + e.message); });
+  };
+}
+
+/* Le detail : tous les avis d'un candidat, question par question, cote a cote. */
+function avisDetail(c, eq, Q){
+  var h = '<div class="avdet"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">'
+    + '<b style="font-size:1.05rem">' + esc(nomComplet(c)) + '</b>'
+    + '<a class="lien" href="#" data-fiche="' + esc(c._k) + '">voir la fiche compl\u00e8te</a></div>';
+
+  if(estAdmin()){
+    h += '<div class="chips" style="margin-top:10px">'
+      + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="retenu">Retenu</div>'
+      + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="rdv">RDV \u00e0 fixer</div>'
+      + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="ecarte">\u00c9cart\u00e9</div>'
+      + '</div>';
+  }
+
+  if(!voitLesAutres()){
+    h += '<p class="aide" style="margin-top:12px">Les avis des autres s\u2019afficheront ici '
+       + 'quand Emmanuel aura ouvert la mise en commun.</p>';
+  }
+
+  var vide = true;
+  h += '<div style="margin-top:12px">';
+  Q.forEach(function(q){
+    var e = evalTous(c, q.cle), bouts = [];
+    eq.forEach(function(m){
+      if(!voitLesAutres() && m.id !== MEMBRE) return;
+      var a = e[m.id]; if(!a || (!a.n && !a.txt)) return;
+      bouts.push('<div class="avl"><b>' + esc(m.nom) + '</b> '
+        + (a.n ? '<span class="avn">' + a.n + '/5</span>' : '<span class="dim">sans note</span>')
+        + (a.txt ? '<div class="avt">' + esc(a.txt) + '</div>' : '') + '</div>');
+    });
+    if(!bouts.length) return;
+    vide = false;
+    h += '<div class="avdq"><div class="avdqt">' + esc(q.t) + '</div>' + bouts.join("") + '</div>';
+  });
+  if(vide) h += '<p class="aide">Aucun avis d\u00e9pos\u00e9 sur ce candidat pour le moment.</p>';
+  return h + '</div></div>';
+}
+
+/* L'equipe : la liste des personnes autorisees a signer un avis. Le code jury,
+   lui, se change sur le serveur — il n'apparait nulle part dans cette page. */
+function blocEquipe(){
+  var L = equipeTriee();
+  var h = '<div class="adm-sec" style="margin-top:16px"><h2>L\u2019\u00e9quipe qui note</h2>'
+    + '<p class="aide">Ajoutez ici les personnes qui donneront leur avis, puis donnez-leur '
+    + 'l\u2019adresse de l\u2019admin et le <b>code jury</b>. Elles choisiront leur nom dans cette liste. '
+    + 'Elles peuvent noter et commenter ; la base leur refuse toute modification des textes, '
+    + 'du quiz et des messages.</p>';
+  L.forEach(function(m){
+    h += '<div class="txrow" data-eq="' + esc(m.id) + '" style="display:flex;gap:10px;align-items:center;margin-top:8px">'
+      + '<input class="eq-nom" value="' + esc(m.nom) + '" placeholder="Pr\u00e9nom" style="flex:1;margin:0">'
+      + (m.id === MEMBRE_ADMIN
+          ? '<span class="dim" style="white-space:nowrap">vous</span>'
+          : '<button class="btn sec mini eq-del" data-eq="' + esc(m.id) + '">Retirer</button>')
+      + '</div>';
+  });
+  return h + '<div class="adm-save" style="gap:10px">'
+    + '<button class="btn sec" id="eq-new">AJOUTER UNE PERSONNE</button>'
+    + '<button class="btn" id="eq-save">ENREGISTRER L\u2019\u00c9QUIPE</button>'
+    + '</div></div>';
+}
+
+function brancherEquipe(){
+  if(!$("eq-save")) return;
+  function recolter(){
+    var o = {}, n = 0;
+    var rs = document.querySelectorAll("#adm-tab [data-eq].txrow");
+    for(var i=0;i<rs.length;i++){
+      var nom = (rs[i].querySelector(".eq-nom").value || "").trim();
+      if(!nom) continue;
+      o[rs[i].getAttribute("data-eq")] = { nom: nom, order: ++n };
+    }
+    return o;
+  }
+  function enregistrer(o, msg){
+    CFG.equipe = o;
+    cfgSave({ equipe:o }, msg || "\u00c9quipe enregistr\u00e9e \u2713");
+  }
+  $("eq-save").onclick = function(){ enregistrer(recolter()); setTimeout(tabAvis, 350); };
+  $("eq-new").onclick = function(){
+    var o = recolter();
+    o["m" + Date.now().toString(36)] = { nom:"Nouveau", order:999 };
+    enregistrer(o, "Personne ajout\u00e9e \u2713");
+    setTimeout(tabAvis, 350);
+  };
+  var ds = document.querySelectorAll(".eq-del");
+  for(var d=0;d<ds.length;d++) ds[d].onclick = function(){
+    /* Retirer quelqu'un de la liste ne supprime PAS ses notes : elles restent
+       dans les fiches, et sa colonne reapparaitrait si on le remettait. */
+    var o = recolter(); delete o[this.getAttribute("data-eq")];
+    enregistrer(o, "Personne retir\u00e9e \u2713");
+    setTimeout(tabAvis, 350);
+  };
 }
 
 /* ── ONGLET CANDIDATS ── */
@@ -5302,8 +5819,14 @@ function admFiche(c){
     + '</div></div>'
     + '<button class="btn sec fclose" id="fi-x">Fermer</button></div>'
 
-    + boite("Suivi — appels et rendez-vous", blocSuivi(c))
-    + boite("Envoyer un message", blocEnvoi(c), "act")
+    /* Un jure lit le dossier en entier — c'est ce qu'on lui demande de juger —
+       mais n'y trouve aucun levier : ni statut, ni rendez-vous, ni message.
+       Les regles de la base ne peuvent pas l'imposer ici : l'ecriture dans
+       /recrutement/candidats doit rester ouverte pour que les candidats
+       eux-memes puissent deposer et completer leur dossier. C'est donc une
+       retenue d'interface, et elle est assumee comme telle. */
+    + (estAdmin() ? boite("Suivi — appels et rendez-vous", blocSuivi(c)) : "")
+    + (estAdmin() ? boite("Envoyer un message", blocEnvoi(c), "act") : "")
     + boite("Potentiel", ph)
     + '<div class="fgrid">'
     +   boite("Suivi de la candidature", suivi)
@@ -5324,7 +5847,7 @@ function admFiche(c){
 
     + '<div class="factions">'
     + '<button class="btn sec" id="fi-x2">Fermer</button>'
-    + '<button class="btn danger" id="fi-del">Supprimer cette candidature</button>'
+    + (estAdmin() ? '<button class="btn danger" id="fi-del">Supprimer cette candidature</button>' : "")
     + '</div>';
   document.body.appendChild(f);
   brancherPhotosZoom(f);
@@ -5346,7 +5869,8 @@ function admFiche(c){
   document.addEventListener("keydown", surEchap);
   /* suppression en deux temps plutot qu'une boite de dialogue */
   var armee = false;
-  f.querySelector("#fi-del").onclick = function(){
+  var btDel = f.querySelector("#fi-del");
+  if(btDel) btDel.onclick = function(){
     if(!armee){
       armee = true;
       this.textContent = "Confirmer la suppression";
