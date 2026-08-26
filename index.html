@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v6.5 -->
+<!-- LUMIIA RECRUTE — v6.6 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -629,7 +629,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.5</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.6</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -642,7 +642,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v6.5";
+var VERSION = "v6.6";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4216,10 +4216,17 @@ function cfgSave(patch, msg){
 
 /* Un jure ne voit que ce qu'il peut reellement faire. Les autres onglets ne sont
    pas seulement inutiles pour lui : la base refuserait leurs enregistrements, et
-   un bouton qui echoue vaut moins qu'un bouton absent. */
+   un bouton qui echoue vaut moins qu'un bouton absent.
+   v6.6 : « Candidats » leur est rendu. Juger quelqu'un sur ses reponses sans
+   pouvoir ouvrir son dossier quand on veut, c'est juger a l'aveugle — et la
+   Revue n'offrait qu'un chemin detourne vers les fiches. Ils y lisent tout et
+   n'y changent rien : la fiche leur retire deja le suivi, l'envoi et la
+   suppression. */
 function tabsVisibles(){
   if(estAdmin()) return ADM_TABS;
-  return ADM_TABS.filter(function(o){ return o.k === "revue" || o.k === "avis"; });
+  return ADM_TABS.filter(function(o){
+    return o.k === "candidats" || o.k === "revue" || o.k === "avis";
+  });
 }
 
 function admRender(){
@@ -5087,14 +5094,17 @@ function tabCandidats(){
   SUIVI.forEach(function(s2){
     h += '<div class="chip' + (ADM_FILTRE==="sv:"+s2.k?" on":"") + '" data-f="sv:' + s2.k + '">' + esc(s2.n) + '</div>';
   });
-  h += '</div><button class="btn sec" id="a-csv">Exporter en CSV</button></div>'
+  /* L'export reste a l'admin : un fichier de 26 telephones et adresses qui sort
+     de l'outil, ca ne se decide pas d'un clic par quelqu'un qui vient donner un
+     avis. Lire dans l'app, oui ; emporter la liste, non. */
+  h += '</div>' + (estAdmin() ? '<button class="btn sec" id="a-csv">Exporter en CSV</button>' : '') + '</div>'
     + '<div id="a-cand" class="adm-scroll"></div></div>';
   panneau(h);
   var fs = document.querySelectorAll("#a-filt .chip");
   for(var i=0;i<fs.length;i++) fs[i].onclick = function(){ ADM_FILTRE = this.getAttribute("data-f"); admTab(); };
   var q = $("a-q");
   q.oninput = function(){ ADM_Q = this.value; admCandidats(); };
-  $("a-csv").onclick = admCsv;
+  if($("a-csv")) $("a-csv").onclick = admCsv;
   admCandidats();
   if(ADM_Q){ q.focus(); q.setSelectionRange(ADM_Q.length, ADM_Q.length); }
 }
