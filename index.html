@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v6.4 -->
+<!-- LUMIIA RECRUTE — v6.5 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -629,7 +629,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.4</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.5</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -642,7 +642,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v6.4";
+var VERSION = "v6.5";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3670,7 +3670,18 @@ function admLoad(){
          chaque export. */
       delete LAST_CAND[ADM_TEST_KEY];
       migrerEval();
-      if(ADM_TAB === "candidats") admCandidats();
+      /* Les candidatures arrivent APRES le premier rendu. Cette liste ne citait
+         que « candidats » et « suivi » : tout onglet ajoute ensuite restait fige
+         sur l'etat vide du chargement. Invisible pour un admin, qui ouvre sur
+         « candidats » — mais un JURE ouvre sur « Revue des reponses » et trouvait
+         une page vide jusqu'a ce qu'il change d'onglet, sans rien pour le lui dire.
+
+         AU PREMIER REMPLISSAGE SEULEMENT on redessine l'onglet actif, quel qu'il
+         soit. Pas aux suivants : chaque etoile posee ecrit dans une fiche, donc
+         rappelle cet ecouteur, et redessiner la Revue a ce moment-la arracherait
+         le curseur du commentaire en cours de frappe. */
+      if(!CAND_RECUS){ CAND_RECUS = true; admTab(); }
+      else if(ADM_TAB === "candidats") admCandidats();
       else if(ADM_TAB === "suivi") tabSuivi();
     });
   });
@@ -4189,6 +4200,8 @@ var ADM_TABS = [
   { k:"reglages",   n:"Réglages" }
 ];
 var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "potentiel", ADM_Q = "";
+/* Faux jusqu'a la premiere arrivee des candidatures. Voir admLoad. */
+var CAND_RECUS = false;
 function nb(x){ return String(x||"").split("|").filter(Boolean).length; }
 /* Avant la v3.3 le champ nom contenait le nom complet : la concaténation reste juste. */
 function nomComplet(c){ return (((c.prenom||"") + " " + (c.nom||"")).trim()) || "—"; }
