@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v5.8 -->
+<!-- LUMIIA RECRUTE — v5.9 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -406,7 +406,7 @@ body.adm{background:#0d1117;}
 .fiche .suivi .btn.sec{background:#1a212a;border:1px solid #3a4552;color:#c3ccd6;}
 .fiche .suivi .svmsg{margin-top:12px;padding:11px 13px;border-radius:8px;font-weight:700;line-height:1.45;}
 .fiche .suivi .svmsg.ko{background:#3a1d1d;border:1px solid #7a3030;color:#ff9c9c;}
-.fiche .suivi .svmsg.ok{background:#173021;border:1px solid #2f6b45;color:#8ee0ac;}
+.fiche .suivi .svmsg.ok{background:#173021;border:1px solid #2f6b45;color:#8ee0ac;}\n.fiche .suivi select{width:100%;padding:11px 12px;border-radius:8px;background:#1a212a;border:1px solid #3a4552;color:#e6edf3;font-family:'Nunito';font-weight:700;font-size:.95rem;}
 #admin #a-q{width:100%;font-size:1rem;padding:12px 14px;}
 
 /* ── potentiel, statistiques ── */
@@ -562,7 +562,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.8</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v5.9</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -575,7 +575,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v5.8";
+var VERSION = "v5.9";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -1100,6 +1100,7 @@ function loadCfg(cb){
       if(v.situations) CFG.situations = v.situations;
       if(v.question_video) CFG.question_video = v.question_video;
       if(v.pitchs) CFG.pitchs = v.pitchs;
+      if(v.messages) CFG.messages = v.messages;
       if(v.anciennetes) CFG.anciennetes = v.anciennetes;
       if(v.anciennetes_metier) CFG.anciennetes_metier = v.anciennetes_metier;
       if(v.textes) CFG.textes = v.textes;
@@ -3326,6 +3327,10 @@ function initAdmin(){
     .then(function(r){ return r.json().then(function(j){ return { s:r.status, j:j }; }); })
     .then(function(res){
       if(res.j && res.j.ok && res.j.token){
+        /* Le jeton autorise le guichet d'envoi pendant 8 h. On le garde pour
+           la duree de l'onglet — jamais le code lui-meme, qui reste connu du
+           seul serveur et des personnes qui le tapent. */
+        try { sessionStorage.setItem("lumiia_jeton", res.j.jeton || ""); } catch(e){}
         return auth.signInWithCustomToken(res.j.token).then(function(){ dire(""); });
       }
       champ.value = "";
@@ -3529,6 +3534,250 @@ function admLoad(){
   });
 }
 
+/* ══════════════════════════════════════════════════════════════
+   MESSAGES AUX CANDIDATS
+   ──────────────────────────────────────────────────────────────
+   Une bibliotheque de messages, ecrits ici, envoyes un par un depuis
+   la fiche d'un candidat.
+
+   L'app n'envoie au serveur QUE l'identifiant de la fiche et le nom du
+   message. Ni l'adresse, ni le texte ne transitent par le navigateur :
+   le serveur lit l'une dans la fiche, l'autre dans cette configuration.
+   C'est ce qui rend le guichet inutilisable par un tiers — et il faut
+   s'en souvenir, car la meme adresse expedie les billets de reservation.
+   NE PAS ASSOUPLIR en passant destinataire ou contenu dans l'appel.
+
+   Jamais d'envoi groupe : un message par personne, decide a chaque fois.
+   Deux candidats ne doivent pas decouvrir l'adresse l'un de l'autre.
+   ══════════════════════════════════════════════════════════════ */
+var ADM_ENVOI_URL = "https://reservation.lumiia.fr/api/recrutement-envoi.php";
+
+function jetonEnvoi(){
+  try { return sessionStorage.getItem("lumiia_jeton") || ""; } catch(e){ return ""; }
+}
+
+/* Les messages sont un objet indexe par cle ; on le rend trie pour l'affichage. */
+function messagesTries(){
+  var m = CFG.messages || {}, out = [];
+  for(var k in m){ if(m[k] && m[k].titre) out.push({ k:k, m:m[k] }); }
+  out.sort(function(a,b){ return (a.m.order||0) - (b.m.order||0) || String(a.m.titre).localeCompare(String(b.m.titre)); });
+  return out;
+}
+
+var MSG_DEPART = [
+  { titre:"Étude des candidatures",
+    objet:"Votre candidature chez LUMIIA",
+    corps:"Bonjour {prenom},\n\n"
+      + "Votre candidature nous est bien parvenue, complète. Merci d\u2019avoir joué le jeu jusqu\u2019au bout.\n\n"
+      + "Nous étudions l\u2019ensemble des candidatures à partir du lundi 31 août, et nous revenons vers vous "
+      + "juste après \u2014 que la réponse soit positive ou non. Personne ne restera sans nouvelles.\n\n"
+      + "D\u2019ici là, vous n\u2019avez rien à faire.\n\n"
+      + "À bientôt,\nEmmanuel \u2014 LUMIIA\nUn lieu décalé, vivant, improbable." },
+  { titre:"Candidature non terminée",
+    objet:"Il vous reste quelques minutes",
+    corps:"Bonjour {prenom},\n\n"
+      + "Vous avez commencé une candidature chez LUMIIA sans la terminer. Tout ce que vous avez déjà rempli "
+      + "est conservé : il vous reste quelques minutes pour aller au bout.\n\n"
+      + "{lien}\n\n"
+      + "Nous étudions les dossiers à partir du lundi 31 août. Au-delà, nous ne pourrons prendre en compte "
+      + "que les candidatures complètes.\n\n"
+      + "À bientôt,\nEmmanuel \u2014 LUMIIA" },
+  { titre:"Réponse négative",
+    objet:"Votre candidature chez LUMIIA",
+    corps:"Bonjour {prenom},\n\n"
+      + "Nous avons étudié votre candidature avec attention. Nous ne pourrons pas y donner suite cette fois-ci.\n\n"
+      + "Ce n\u2019est pas un jugement sur votre parcours : nous avons peu de postes et beaucoup de candidatures "
+      + "de qualité. Nous conservons la vôtre et nous vous recontacterons si un poste correspond.\n\n"
+      + "Merci du temps que vous nous avez accordé, et bonne continuation.\n\n"
+      + "Emmanuel \u2014 LUMIIA" }
+];
+
+function tabMessages(){
+  var L = messagesTries();
+  var h = '<div class="adm-sec"><h2>Messages aux candidats</h2>'
+    + '<p class="aide">Les messages que vous pouvez envoyer depuis la fiche d\u2019un candidat. '
+    + 'Le titre est ce que vous verrez dans la liste ; l\u2019objet et le texte sont ce que le candidat re\u00e7oit.<br>'
+    + 'Dans le texte, <b>{prenom}</b>, <b>{nom}</b> et <b>{lien}</b> sont remplac\u00e9s \u00e0 l\u2019envoi '
+    + '(<b>{lien}</b> = lien vers sa candidature, pour la reprendre ou la relire).<br>'
+    + 'Un message doit \u00eatre enregistr\u00e9 ici pour pouvoir \u00eatre envoy\u00e9 : le serveur refuse d\u2019expédier '
+    + 'un texte qu\u2019il ne conna\u00eet pas.</p>';
+
+  if(!L.length){
+    h += '<p class="aide">Aucun message pour le moment.</p>'
+      + '<div class="adm-save"><button class="btn" id="msg-depart">AJOUTER 3 MESSAGES POUR COMMENCER</button></div>';
+  }
+
+  L.forEach(function(o, i){
+    h += '<div class="qed" data-mk="' + esc(o.k) + '">'
+      + '<label class="f">Titre — visible par vous seul</label>'
+      + '<input type="text" class="m-titre" value="' + esc(o.m.titre || "") + '">'
+      + '<label class="f" style="margin-top:10px">Objet du mail</label>'
+      + '<input type="text" class="m-objet" value="' + esc(o.m.objet || "") + '">'
+      + '<label class="f" style="margin-top:10px">Texte</label>'
+      + '<textarea class="m-corps" rows="10">' + esc(o.m.corps || "") + '</textarea>'
+      + '<div style="margin-top:10px"><button class="btn sec m-del" data-mk="' + esc(o.k) + '">Supprimer ce message</button></div>'
+      + '</div>';
+  });
+
+  h += '<div class="adm-save" style="gap:10px">'
+    + '<button class="btn sec" id="msg-new">NOUVEAU MESSAGE</button>'
+    + '<button class="btn" id="msg-save">ENREGISTRER</button>'
+    + '</div></div>';
+  panneau(h);
+
+  function recolter(){
+    var o = {}, blocs = document.querySelectorAll("[data-mk]"), n = 0;
+    for(var i=0;i<blocs.length;i++){
+      var b = blocs[i];
+      if(!b.querySelector(".m-titre")) continue;
+      var t = (b.querySelector(".m-titre").value || "").trim();
+      if(!t) continue;
+      o[b.getAttribute("data-mk")] = {
+        titre: t,
+        objet: (b.querySelector(".m-objet").value || "").trim(),
+        corps: b.querySelector(".m-corps").value || "",
+        order: ++n
+      };
+    }
+    return o;
+  }
+  function enregistrer(o, msg){
+    CFG.messages = o;
+    cfgSave({ messages:o }, msg || "Messages enregistrés ✓");
+  }
+
+  if($("msg-depart")) $("msg-depart").onclick = function(){
+    var o = {};
+    MSG_DEPART.forEach(function(m, i){
+      o["m" + Date.now().toString(36) + i] = { titre:m.titre, objet:m.objet, corps:m.corps, order:i+1 };
+    });
+    enregistrer(o, "3 messages ajoutés ✓");
+    setTimeout(tabMessages, 350);
+  };
+  $("msg-new").onclick = function(){
+    var o = recolter();
+    o["m" + Date.now().toString(36)] = { titre:"Nouveau message", objet:"", corps:"Bonjour {prenom},\n\n", order:999 };
+    enregistrer(o, "Message ajouté ✓");
+    setTimeout(tabMessages, 350);
+  };
+  $("msg-save").onclick = function(){ enregistrer(recolter()); };
+  var dels = document.querySelectorAll(".m-del");
+  for(var i=0;i<dels.length;i++) dels[i].onclick = function(){
+    var k = this.getAttribute("data-mk");
+    if(this.textContent.indexOf("Confirmer") === -1){
+      this.textContent = "Confirmer la suppression";
+      var b = this;
+      setTimeout(function(){ b.textContent = "Supprimer ce message"; }, 5000);
+      return;
+    }
+    var o = recolter(); delete o[k];
+    enregistrer(o, "Message supprimé ✓");
+    setTimeout(tabMessages, 350);
+  };
+}
+
+/* ── bloc « envoyer un message », affiché dans la fiche ── */
+function blocEnvoi(c){
+  var L = messagesTries();
+  var h = '<div class="suivi">';
+  if(!L.length){
+    return h + '<p class="aide">Aucun message n\u2019est encore écrit. Onglet <b>Messages</b> pour en créer.</p></div>';
+  }
+  h += '<label class="f">Message à envoyer</label>'
+    + '<select id="env-cle" style="width:100%">';
+  L.forEach(function(o){ h += '<option value="' + esc(o.k) + '">' + esc(o.m.titre) + '</option>'; });
+  h += '</select>'
+    + '<div class="dim" style="margin-top:8px">Destinataire : '
+    + (c.email ? '<b>' + esc(c.email) + '</b>' : '<span style="color:#ff9c9c">aucune adresse sur cette fiche</span>')
+    + '</div>'
+    + '<div class="factions" style="margin-top:12px;border:none;padding-top:0">'
+    + '<button class="btn" id="env-go"' + (c.email ? '' : ' disabled') + '>Envoyer</button>'
+    + '</div>'
+    + '<div id="env-msg" class="svmsg hidden"></div>'
+    + '<div id="env-hist">' + envoisHtml(c) + '</div>';
+  return h + '</div>';
+}
+
+function envoisHtml(c){
+  var e = c.envois || {}, lignes = [];
+  for(var k in e){
+    if(!e[k]) continue;
+    var m = (CFG.messages || {})[k];
+    lignes.push({ t: (m && m.titre) ? m.titre : k, ts: e[k] });
+  }
+  if(!lignes.length) return "";
+  lignes.sort(function(a,b){ return b.ts - a.ts; });
+  var h = '<div class="pgrp" style="margin-top:18px">Déjà envoyé</div>';
+  lignes.forEach(function(l){
+    var d = new Date(l.ts || 0);
+    h += '<div class="kv"><span class="kk">' + esc(l.t) + '</span><span class="kvv">'
+      + d.toLocaleDateString("fr-FR") + " à " + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})
+      + '</span></div>';
+  });
+  return h;
+}
+
+function brancherEnvoi(c, racine){
+  var bt = racine.querySelector("#env-go");
+  if(!bt) return;
+  var zone = racine.querySelector("#env-msg");
+  var sel  = racine.querySelector("#env-cle");
+
+  function message(txt, genre, effacer){
+    zone.className = "svmsg " + genre;
+    zone.textContent = txt;
+    if(effacer) setTimeout(function(){ if(zone.textContent === txt) zone.className = "svmsg hidden"; }, 3000);
+  }
+
+  function envoyer(forcer){
+    var cle = sel.value;
+    var jt  = jetonEnvoi();
+    if(!jt){
+      message("Session d\u2019envoi expirée. Fermez la fiche, déconnectez-vous et retapez votre code.", "ko");
+      return;
+    }
+    bt.disabled = true;
+    message("Envoi en cours\u2026", "ok");
+    fetch(ADM_ENVOI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jeton: jt, id: c._k, cle: cle, forcer: forcer ? 1 : 0 })
+    })
+    .then(function(r){ return r.json().then(function(j){ return { s:r.status, j:j }; }); })
+    .then(function(res){
+      bt.disabled = false;
+      if(res.j && res.j.ok){
+        c.envois = c.envois || {};
+        c.envois[cle] = res.j.date || Date.now();
+        var box = racine.querySelector("#env-hist");
+        if(box) box.innerHTML = envoisHtml(c);
+        message("Message envoyé ✓", "ok", true);
+        toast("Message envoyé ✓");
+        return;
+      }
+      var e = res.j && res.j.err;
+      if(e === "deja"){
+        var d = new Date(res.j.date || 0);
+        message("Ce message a déjà été envoyé le " + d.toLocaleDateString("fr-FR")
+          + ". Cliquez à nouveau sur Envoyer pour l\u2019envoyer quand même.", "ko");
+        bt.onclick = function(){ bt.onclick = function(){ envoyer(false); }; envoyer(true); };
+      }
+      else if(e === "message") message("Ce message n\u2019est pas enregistré : ouvrez l\u2019onglet Messages et cliquez ENREGISTRER.", "ko");
+      else if(e === "auth")    message("Session d\u2019envoi expirée. Déconnectez-vous et retapez votre code.", "ko");
+      else if(e === "email")   message("Cette candidature ne porte pas d\u2019adresse email exploitable.", "ko");
+      else if(e === "rafale")  message("Trop rapide : attendez quelques secondes.", "ko");
+      else if(e === "smtp")    message("Le serveur de mail a refusé : " + (res.j.detail || ""), "ko");
+      else                     message("Échec de l\u2019envoi (" + (e || res.s) + ").", "ko");
+    })
+    .catch(function(){
+      bt.disabled = false;
+      message("Pas de réseau, ou guichet d\u2019envoi injoignable.", "ko");
+    });
+  }
+
+  bt.onclick = function(){ envoyer(false); };
+}
+
 /* ══════════════════════════════════════
    BACK-OFFICE — onglets
    ══════════════════════════════════════ */
@@ -3537,6 +3786,7 @@ var ADM_TABS = [
   { k:"candidats",  n:"Candidats" },
   { k:"revue",      n:"Revue des réponses" },
   { k:"suivi",      n:"Suivi & RDV" },
+  { k:"messages",   n:"Messages" },
   { k:"stats",      n:"Statistiques" },
   { k:"potentiel",  n:"Potentiel" },
   { k:"textes",     n:"Textes de l’app" },
@@ -3574,6 +3824,7 @@ function admRender(){
 
 function admTab(){
   var f = { candidats:tabCandidats, revue:tabRevue, suivi:tabSuivi, stats:tabStats, potentiel:tabPotentiel,
+            messages:tabMessages,
             textes:tabTextes, quiz:tabQuiz, situations:tabSituations,
             pitchs:tabPitchs, offre:tabOffre, listes:tabListes, reglages:tabReglages }[ADM_TAB];
   if(f) f();
@@ -4848,6 +5099,7 @@ function admFiche(c){
     + '<button class="btn sec fclose" id="fi-x">Fermer</button></div>'
 
     + boite("Suivi — appels et rendez-vous", blocSuivi(c))
+    + boite("Envoyer un message", blocEnvoi(c))
     + boite("Potentiel", ph)
     + '<div class="fgrid">'
     +   boite("Suivi de la candidature", suivi)
@@ -4873,6 +5125,7 @@ function admFiche(c){
   document.body.appendChild(f);
   brancherPhotosZoom(f);
   brancherSuivi(c, f);
+  brancherEnvoi(c, f);
   function ferme(){
     couperMedias(f); f.remove();
     document.removeEventListener("keydown", surEchap);
