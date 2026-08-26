@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v6.1 -->
+<!-- LUMIIA RECRUTE — v6.2 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -200,6 +200,18 @@ body.adm{background:#0d1117;}
 .jurybar{margin:10px 0 2px;padding:9px 13px;border-radius:8px;background:#191233;
   border:1px solid #5b3a9e;border-left:4px solid #a855f7;color:#d8b4fe;font-size:.85rem;}
 .jurybar a{color:#7cc4ff;}
+/* Bascule a deux positions : on voit l'etat ET l'autre choix en meme temps,
+   ce qu'un bouton unique ne montre jamais. */
+#admin .bascule{display:inline-flex;border:1px solid #3a4552;border-radius:99px;
+  background:#12171e;padding:3px;cursor:pointer;user-select:none;}
+#admin .bascule .bopt{padding:7px 15px;border-radius:99px;font-family:'Nunito';font-weight:900;
+  font-size:.78rem;color:#7d8b9c;white-space:nowrap;transition:background .15s,color .15s;}
+#admin .bascule .bopt.on{background:#a855f7;color:#12081f;}
+#admin .eq-code{width:120px!important;margin:0!important;font-family:ui-monospace,Menlo,monospace;
+  letter-spacing:.22em;text-align:center;}
+#admin .eq-etat{font-size:.78rem;color:#6b7787;margin-top:8px;}
+#admin .eq-etat.ko{color:#ff9c9c;}
+#admin .eq-etat.ok{color:#8ee0ac;}
 #admin .avautres{margin-top:9px;border-top:1px dashed #2a323d;padding-top:8px;}
 #admin .avl{margin-top:7px;font-size:.82rem;color:#c3ccd6;line-height:1.4;}
 #admin .avn{color:#ffd700;font-weight:900;}
@@ -602,7 +614,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.1</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.2</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -615,7 +627,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v6.1";
+var VERSION = "v6.2";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3328,7 +3340,12 @@ function initTv(){
    qui repond par un laissez-passer Firebase valable 1 h.
    Consequence : on change le code sans redeployer l'app, et lire ce
    fichier n'apprend rien a personne. NE PAS REINTRODUIRE DE CODE ICI. */
-var ADM_PASS_URL = "https://reservation.lumiia.fr/api/recrutement-pass.php";
+var ADM_PASS_URL  = "https://reservation.lumiia.fr/api/recrutement-pass.php";
+/* Les codes du jury vivent sur le serveur, dans private/, et JAMAIS dans
+   Firebase : /recrutement/config est en lecture publique, ils y seraient
+   lisibles par n'importe qui. Ce guichet est la seule facon d'y toucher, et il
+   exige un jeton d'envoi — que seul un admin recoit. */
+var ADM_JURES_URL = "https://reservation.lumiia.fr/api/recrutement-jures.php";
 
 /* ROLES — v6.0.
    Deux codes a 6 chiffres, deux roles. L'ADMIN a tout ; le JURE lit les
@@ -3392,9 +3409,15 @@ function initAdmin(){
          apres un rechargement la session Firebase revient toute seule, sans repasser
          par le code, et il faut quand meme savoir a qui on a affaire. */
       u.getIdTokenResult().then(function(r){
-        ROLE = (r && r.claims && r.claims.recrutement_jure) ? "jure" : "admin";
-      }).catch(function(){ ROLE = "admin"; }).then(function(){
-        try { MEMBRE = localStorage.getItem(MEMBRE_CLE) || ""; } catch(e){}
+        var cl = (r && r.claims) || {};
+        ROLE = cl.recrutement_jure ? "jure" : "admin";
+        /* Depuis la v6.2 chaque jure a SON code : le jeton dit qui il est.
+           Une note n'est donc plus signee sur declaration mais par le code qui
+           a ouvert la session. Le repli sur le choix manuel ne sert qu'aux
+           sessions ouvertes avant cette version. */
+        MEMBRE = cl.membre ? String(cl.membre) : "";
+      }).catch(function(){ ROLE = "admin"; MEMBRE = ""; }).then(function(){
+        if(!MEMBRE){ try { MEMBRE = localStorage.getItem(MEMBRE_CLE) || ""; } catch(e){} }
         if(estAdmin()) MEMBRE = MEMBRE_ADMIN;
         gate.classList.add("hidden");
         $("adm-body").classList.remove("hidden");
@@ -4188,16 +4211,9 @@ function admRender(){
   t += '</div>'
     + (estAdmin() ? "" :
         '<div class="jurybar">Mode jury \u2014 vous notez sous le nom de <b>'
-        + esc(membreNom(MEMBRE)) + '</b>. '
-        + '<a href="#" id="jury-chg">ce n\u2019est pas moi</a></div>')
+        + esc(membreNom(MEMBRE)) + '</b>.</div>')
     + '<div id="adm-tab"></div>';
   $("adm-body").innerHTML = t;
-  if($("jury-chg")) $("jury-chg").onclick = function(ev){
-    ev.preventDefault();
-    MEMBRE = "";
-    try { localStorage.removeItem(MEMBRE_CLE); } catch(e){}
-    admRender();
-  };
   var bs = document.querySelectorAll(".adm-tab");
   for(var i=0;i<bs.length;i++) bs[i].onclick = function(){ ADM_TAB = this.getAttribute("data-tab"); admRender(); };
   admTab();
@@ -4219,8 +4235,8 @@ function ecranQuiEtesVous(){
   var L = equipeTriee().filter(function(m){ return m.id !== MEMBRE_ADMIN; });
   var h = '<div class="adm-sec"><h2>Qui \u00eates-vous ?</h2>';
   if(!L.length){
-    h += '<p class="aide">Aucun membre n\u2019a encore \u00e9t\u00e9 cr\u00e9\u00e9 par Emmanuel. '
-       + 'Demandez-lui d\u2019ajouter votre nom dans l\u2019onglet <b>Avis de l\u2019\u00e9quipe</b>.</p>';
+    h += '<p class="aide">Votre code ne correspond \u00e0 aucune personne enregistr\u00e9e. '
+       + 'Demandez \u00e0 Emmanuel de vous cr\u00e9er un acc\u00e8s dans l\u2019onglet <b>Avis de l\u2019\u00e9quipe</b>.</p>';
   } else {
     h += '<p class="aide">Choisissez votre nom : il signera vos notes et vos commentaires. '
        + 'Ce choix est gard\u00e9 sur cet appareil.</p><div class="chips" id="qui-l">';
@@ -4533,6 +4549,9 @@ function avisSynth(c, eq, Q){
 }
 
 function tabAvis(){
+  /* Les codes se lisent sur le serveur : on affiche l'onglet tout de suite,
+     champs grises, et on le redessine des que la reponse arrive. */
+  if(estAdmin() && JURY_CODES === null) chargerCodes(function(){ if(ADM_TAB === "avis") tabAvis(); });
   var eq = equipeTriee(), Q = revQuestions();
   var arr = [];
   for(var k in LAST_CAND){ var o = LAST_CAND[k]; o._k = k; arr.push(o); }
@@ -4552,13 +4571,14 @@ function tabAvis(){
     h += '<p class="aide">Chacun note depuis son t\u00e9l\u00e9phone avec le code jury. '
        + 'Tant que les avis ne sont pas ouverts, personne ne voit ceux des autres \u2014 '
        + 'c\u2019est ce qui emp\u00eache trois personnes de s\u2019aligner sur la premi\u00e8re note pos\u00e9e.</p>'
-       + '<div class="adm-bar" style="margin-top:10px;gap:10px">'
-       + '<button class="btn ' + (avisOuverts() ? "sec" : "") + '" id="av-ouvrir">'
-       +   (avisOuverts() ? "REFERMER LES AVIS" : "OUVRIR LES AVIS \u00c0 TOUS")
-       + '</button>'
+       + '<div class="adm-bar" style="margin-top:12px;gap:14px;align-items:center">'
+       + '<div class="bascule" id="av-ouvrir">'
+       +   '<span class="bopt' + (avisOuverts() ? "" : " on") + '">Chacun le sien</span>'
+       +   '<span class="bopt' + (avisOuverts() ? " on" : "") + '">Tout le monde voit tout</span>'
+       + '</div>'
        + '<span class="dim">' + (avisOuverts()
-            ? "Ouverts : chaque jur\u00e9 voit tous les avis."
-            : "Ferm\u00e9s : chacun ne voit que le sien.") + '</span>'
+            ? "Chaque jur\u00e9 voit d\u00e9sormais les avis des autres."
+            : "Chacun ne voit que le sien \u2014 personne ne s\u2019aligne sur la premi\u00e8re note pos\u00e9e.") + '</span>'
        + '</div>'
        + blocEquipe();
   }
@@ -4616,6 +4636,8 @@ function tabAvis(){
   };
 
   if($("av-ouvrir")) $("av-ouvrir").onclick = function(){
+    /* Un clic n'importe ou sur la bascule fait passer a l'autre position :
+       viser la bonne moitie sur telephone est un test d'adresse inutile. */
     var v = !avisOuverts();
     CFG.avis_ouverts = v;
     cfgSave({ avis_ouverts: v }, v ? "Avis ouverts \u00e0 toute l\u2019\u00e9quipe \u2713" : "Avis referm\u00e9s \u2713");
@@ -4684,32 +4706,78 @@ function avisDetail(c, eq, Q){
 
 /* L'equipe : la liste des personnes autorisees a signer un avis. Le code jury,
    lui, se change sur le serveur — il n'apparait nulle part dans cette page. */
+/* Chaque personne a SON code. C'est ce qui permet a l'app de savoir qui note
+   sans le lui demander — et donc a une note d'etre signee par le code qui a
+   ouvert la session, non par un nom choisi dans une liste.
+   Les codes ne sont NI dans cette page NI dans Firebase : ils sont lus et
+   ecrits sur le serveur a chaque fois, par un guichet qui exige le jeton
+   d'admin. Un champ vide retire simplement l'acces de cette personne. */
+var JURY_CODES = null;   /* null = pas encore charge */
+var JURY_ETAT  = "";
+
 function blocEquipe(){
   var L = equipeTriee();
   var h = '<div class="adm-sec" style="margin-top:16px"><h2>L\u2019\u00e9quipe qui note</h2>'
-    + '<p class="aide">Ajoutez ici les personnes qui donneront leur avis, puis donnez-leur '
-    + 'l\u2019adresse de l\u2019admin et le <b>code jury</b>. Elles choisiront leur nom dans cette liste. '
-    + 'Elles peuvent noter et commenter ; la base leur refuse toute modification des textes, '
-    + 'du quiz et des messages.</p>';
+    + '<p class="aide">Un code \u00e0 6 chiffres par personne, que vous choisissez et pouvez '
+    + 'changer quand vous voulez. Vous leur donnez l\u2019adresse de l\u2019admin et leur code : '
+    + 'l\u2019app les reconna\u00eet toute seule. Elles peuvent noter et commenter ; la base leur '
+    + 'refuse toute modification des textes, du quiz et des messages.</p>';
   L.forEach(function(m){
+    var admin = (m.id === MEMBRE_ADMIN);
+    var code  = (JURY_CODES && JURY_CODES[m.id]) ? JURY_CODES[m.id] : "";
     h += '<div class="txrow" data-eq="' + esc(m.id) + '" style="display:flex;gap:10px;align-items:center;margin-top:8px">'
       + '<input class="eq-nom" value="' + esc(m.nom) + '" placeholder="Pr\u00e9nom" style="flex:1;margin:0">'
-      + (m.id === MEMBRE_ADMIN
-          ? '<span class="dim" style="white-space:nowrap">vous</span>'
-          : '<button class="btn sec mini eq-del" data-eq="' + esc(m.id) + '">Retirer</button>')
+      + (admin
+          ? '<span class="dim" style="white-space:nowrap">votre code admin</span>'
+          : '<input class="eq-code" type="tel" inputmode="numeric" maxlength="6" '
+            + 'value="' + esc(code) + '" placeholder="\u2014\u2014\u2014\u2014\u2014\u2014" '
+            + (JURY_CODES ? '' : 'disabled ') + '>'
+            + '<button class="btn sec mini eq-tirer" data-eq="' + esc(m.id) + '" title="Tirer un code au hasard">\ud83c\udfb2</button>'
+            + '<button class="btn sec mini eq-del" data-eq="' + esc(m.id) + '">Retirer</button>')
       + '</div>';
   });
+  h += '<div class="eq-etat' + (JURY_ETAT.indexOf("\u2713") > -1 ? ' ok' : (JURY_ETAT ? ' ko' : '')) + '" id="eq-etat">'
+    + esc(JURY_ETAT || (JURY_CODES ? "" : "Lecture des codes sur le serveur\u2026")) + '</div>';
+  /* Le guichet des codes exige le jeton d'admin, qui dure 8 h. Passe ce delai,
+     on redemande le code ICI plutot que d'envoyer Emmanuel ouvrir une fiche au
+     hasard pour retrouver le seul champ qui savait le redemander. */
+  if(!jetonEnvoi()){
+    h += '<div style="margin-top:10px;display:flex;gap:10px;align-items:center">'
+      + '<input id="eq-jeton" type="tel" inputmode="numeric" maxlength="6" '
+      +   'placeholder="votre code admin" class="eq-code" style="width:150px!important">'
+      + '<button class="btn sec mini" id="eq-jeton-go">Rouvrir la session</button>'
+      + '</div>';
+  }
   return h + '<div class="adm-save" style="gap:10px">'
     + '<button class="btn sec" id="eq-new">AJOUTER UNE PERSONNE</button>'
     + '<button class="btn" id="eq-save">ENREGISTRER L\u2019\u00c9QUIPE</button>'
     + '</div></div>';
 }
 
+/* Lecture des codes, une fois par ouverture de l'onglet. */
+function chargerCodes(apres){
+  var jt = jetonEnvoi();
+  if(!jt){ JURY_CODES = {}; JURY_ETAT = "Session expir\u00e9e : rouvrez une fiche et retapez votre code pour g\u00e9rer les acc\u00e8s."; apres(); return; }
+  fetch(ADM_JURES_URL, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jeton: jt, action: "lire" })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(j){
+    JURY_CODES = (j && j.ok && j.codes) ? j.codes : {};
+    JURY_ETAT  = (j && j.ok) ? "" : "Codes illisibles : " + ((j && j.err) || "guichet") + ".";
+    apres();
+  })
+  .catch(function(){ JURY_CODES = {}; JURY_ETAT = "Guichet des codes injoignable."; apres(); });
+}
+
 function brancherEquipe(){
   if(!$("eq-save")) return;
+
+  function lignes(){ return document.querySelectorAll("#adm-tab [data-eq].txrow"); }
+
   function recolter(){
-    var o = {}, n = 0;
-    var rs = document.querySelectorAll("#adm-tab [data-eq].txrow");
+    var o = {}, n = 0, rs = lignes();
     for(var i=0;i<rs.length;i++){
       var nom = (rs[i].querySelector(".eq-nom").value || "").trim();
       if(!nom) continue;
@@ -4717,23 +4785,139 @@ function brancherEquipe(){
     }
     return o;
   }
+  function recolterCodes(){
+    var o = {}, rs = lignes();
+    for(var i=0;i<rs.length;i++){
+      var ch = rs[i].querySelector(".eq-code");
+      if(!ch) continue;
+      o[rs[i].getAttribute("data-eq")] = (ch.value || "").replace(/[^0-9]/g, "");
+    }
+    return o;
+  }
+  function etat(txt, ok){
+    JURY_ETAT = txt;
+    var e = $("eq-etat");
+    if(e){ e.textContent = txt; e.className = "eq-etat" + (ok ? " ok" : (txt ? " ko" : "")); }
+  }
   function enregistrer(o, msg){
     CFG.equipe = o;
     cfgSave({ equipe:o }, msg || "\u00c9quipe enregistr\u00e9e \u2713");
   }
-  $("eq-save").onclick = function(){ enregistrer(recolter()); setTimeout(tabAvis, 350); };
+
+  /* Les noms vont dans Firebase, les codes sur le serveur. Deux destinations,
+     un seul bouton : on n'annonce le succes que lorsque les DEUX ont repondu. */
+  function toutEnregistrer(apres){
+    /* GARDE-FOU. Tant que les codes n'ont pas ete LUS, les champs sont vides —
+       les envoyer effacerait tous les acces d'un coup, sans que rien ne le
+       signale. On n'ecrit jamais une liste qu'on n'a pas d'abord relue. */
+    if(JURY_CODES === null){
+      etat("Les codes sont encore en cours de lecture \u2014 attendez une seconde et r\u00e9essayez.", false);
+      return;
+    }
+    var noms  = recolter();
+    var codes = recolterCodes();
+    for(var id in codes){
+      if(codes[id] && codes[id].length !== 6){
+        etat("Le code de " + membreNom(id) + " doit faire 6 chiffres, ou rester vide.", false);
+        return;
+      }
+    }
+    enregistrer(noms);
+    var jt = jetonEnvoi();
+    if(!jt){ etat("Noms enregistr\u00e9s, mais session expir\u00e9e : les codes n\u2019ont pas \u00e9t\u00e9 envoy\u00e9s.", false); return; }
+    etat("Enregistrement des codes\u2026", false);
+    fetch(ADM_JURES_URL, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jeton: jt, action: "ecrire", codes: codes })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j && j.ok){
+        JURY_CODES = codes;
+        etat(j.n + " acc\u00e8s actif" + (j.n > 1 ? "s" : "") + " \u2713", true);
+        if(apres) setTimeout(apres, 300);
+        return;
+      }
+      var e = j && j.err, qui = (j && j.membre) ? membreNom(j.membre) : "";
+      if(e === "meme_que_admin") etat("Le code de " + qui + " est votre code admin : il lui donnerait tous les droits. Refus\u00e9.", false);
+      else if(e === "doublon")   etat("Deux personnes ont le m\u00eame code (" + qui + ") : on ne pourrait plus les distinguer.", false);
+      else if(e === "format")    etat("Le code de " + qui + " doit faire exactement 6 chiffres.", false);
+      else if(e === "auth")      etat("Session expir\u00e9e : rouvrez une fiche et retapez votre code.", false);
+      else                       etat("Codes non enregistr\u00e9s (" + (e || "guichet") + ").", false);
+    })
+    .catch(function(){ etat("Guichet des codes injoignable : les noms sont enregistr\u00e9s, pas les codes.", false); });
+  }
+
+  $("eq-save").onclick = function(){ toutEnregistrer(null); };
+
   $("eq-new").onclick = function(){
     var o = recolter();
+    JURY_CODES = recolterCodes();
     o["m" + Date.now().toString(36)] = { nom:"Nouveau", order:999 };
     enregistrer(o, "Personne ajout\u00e9e \u2713");
     setTimeout(tabAvis, 350);
   };
+
+  var ts = document.querySelectorAll(".eq-tirer");
+  for(var t=0;t<ts.length;t++) ts[t].onclick = function(){
+    /* Un code tire au hasard vaut mieux qu'une date de naissance : c'est la
+       limite d'essais du serveur qui protege, mais autant ne pas l'aider. */
+    var r = new Uint32Array(1);
+    if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(r);
+    else r[0] = Math.floor(Math.random() * 4294967296);
+    var code = String(100000 + (r[0] % 900000));
+    var l = this.parentNode.querySelector(".eq-code");
+    if(l){ l.value = code; l.focus(); }
+    etat("Code tir\u00e9 \u2014 cliquez ENREGISTRER pour le rendre actif.", false);
+  };
+
+  if($("eq-jeton-go")) $("eq-jeton-go").onclick = function(){
+    var code = ($("eq-jeton").value || "").replace(/[^0-9]/g, "");
+    if(code.length < 6){ etat("Il faut les 6 chiffres.", false); return; }
+    this.disabled = true;
+    etat("V\u00e9rification\u2026", false);
+    fetch(ADM_PASS_URL, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: code })
+    })
+    .then(function(r){ return r.json().then(function(j){ return { s:r.status, j:j }; }); })
+    .then(function(res){
+      if(res.j && res.j.ok && res.j.jeton){
+        poserJeton(res.j.jeton);
+        JURY_CODES = null; JURY_ETAT = "";
+        tabAvis();
+        return;
+      }
+      if(res.s === 429) etat("Trop d\u2019essais. R\u00e9essayez dans "
+        + Math.ceil(((res.j && res.j.attendre) || 900) / 60) + " min.", false);
+      else if(res.s === 401) etat("Code incorrect.", false);
+      else etat("Le serveur d\u2019acc\u00e8s ne r\u00e9pond pas correctement.", false);
+      var b = $("eq-jeton-go"); if(b) b.disabled = false;
+    })
+    .catch(function(){
+      etat("Serveur d\u2019acc\u00e8s injoignable.", false);
+      var b = $("eq-jeton-go"); if(b) b.disabled = false;
+    });
+  };
+
   var ds = document.querySelectorAll(".eq-del");
   for(var d=0;d<ds.length;d++) ds[d].onclick = function(){
     /* Retirer quelqu'un de la liste ne supprime PAS ses notes : elles restent
-       dans les fiches, et sa colonne reapparaitrait si on le remettait. */
-    var o = recolter(); delete o[this.getAttribute("data-eq")];
+       dans les fiches, et sa colonne reapparaitrait si on le remettait. Son
+       code, lui, dispara\u00eet — il ne doit plus pouvoir entrer. */
+    var id = this.getAttribute("data-eq");
+    var o = recolter(); delete o[id];
     enregistrer(o, "Personne retir\u00e9e \u2713");
+    /* Meme garde : sans lecture prealable on ne renvoie pas la liste des codes,
+       on se contente de retirer la personne de l'affichage. */
+    if(JURY_CODES === null){ setTimeout(tabAvis, 350); return; }
+    var cs = recolterCodes(); cs[id] = "";
+    var jt = jetonEnvoi();
+    if(jt) fetch(ADM_JURES_URL, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jeton: jt, action: "ecrire", codes: cs })
+    }).catch(function(){});
+    JURY_CODES = cs;
     setTimeout(tabAvis, 350);
   };
 }
