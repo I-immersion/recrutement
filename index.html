@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v6.8 -->
+<!-- LUMIIA RECRUTE — v6.10 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -635,7 +635,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.8</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.10</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -648,7 +648,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v6.8";
+var VERSION = "v6.10";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -927,6 +927,10 @@ var DEFAULT_TXT = {
   mod_charge:       "Récupération de votre candidature…",
   mod_ko:           "Ce lien n’est plus valable. Votre candidature reste enregistrée : contactez-nous si vous souhaitez la corriger.",
   mod_btn:          "Revenir à l’accueil",
+  mod_reprise_t:    "ON A RETROUVÉ\nVOTRE CANDIDATURE",
+  mod_reprise_s:    "Tout ce que vous aviez rempli est là. Vous pouvez continuer où vous vous étiez arrêté.",
+  mod_reprise_btn:  "CONTINUER OÙ J’EN ÉTAIS",
+  mod_depart_btn:   "Tout revoir depuis le début",
   fin_mail_deja:    "Le récapitulatif vous a déjà été envoyé il y a un instant.",
 
   /* Mention d’information — article 13 du RGPD. Elle est affichée à l’endroit
@@ -975,7 +979,7 @@ var TXT_GROUPES = [
   { g:"Mentions légales", cles:["rgpd_titre","rgpd_txt","rgpd_court"] },
   { g:"Choix du poste", cles:["e1_lbl_postes","e1_postes_note","e1_postes_err"] },
   { g:"Dépôt de CV", cles:["e1_lbl_cv","e1_cv_note","e1_cv_aucun","e1_cv_btn","e1_cv_ok","e1_cv_sup"] },
-  { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","fin_mail_ok","fin_mail_ko","mod_charge","mod_ko","mod_btn","fin_mail_deja","acc_envoyee_t","acc_envoyee_s"] },
+  { g:"Écran de fin",      cles:["fin_titre","fin_txt","fin_titre_j","fin_txt_j","fin_btn","fin_recap_titre","fin_modifier","fin_modifier_note","fin_modif_close","fin_fermer","fin_close_t","fin_close_x","fin_close_btn","fin_mail_ok","fin_mail_ko","mod_charge","mod_ko","mod_btn","mod_reprise_t","mod_reprise_s","mod_reprise_btn","mod_depart_btn","fin_mail_deja","acc_envoyee_t","acc_envoyee_s"] },
   { g:"Boutons communs",   cles:["btn_continuer","btn_retour","bandeau"] }
 ];
 
@@ -4671,7 +4675,25 @@ function avisSynth(c, eq, Q){
      rien. */
   var imp  = impressionMoy(c);
   var base = (imp && imp.vals.length > 1) ? imp.vals : vals;
+
+  /* L'impression de CHAQUE personne, pour sa colonne. Une colonne qui ne
+     montrerait que sa moyenne de reponses resterait vide chez quelqu'un qui a
+     donne son avis sur la personne sans noter chaque reponse — or c'est
+     exactement ce qu'on lui permet de faire. */
+  var impPar = {}, exprime = {};
+  var ei = impressionTous(c);
+  for(var i3 in ei){
+    if(!ei[i3]) continue;
+    if(ei[i3].n){ impPar[i3] = ei[i3].n; exprime[i3] = true; }
+    else if(ei[i3].txt){ exprime[i3] = true; }
+  }
+  for(var i4 in moy) exprime[i4] = true;
+  var nExpr = 0;
+  for(var i5 in exprime) nExpr++;
+
   return {
+    impPar: impPar,
+    exprimes: nExpr,
     moy: moy,
     globale: vals.length ? Math.round(som / vals.length * 10) / 10 : null,
     imp: imp ? imp.moy : null,
@@ -4680,7 +4702,7 @@ function avisSynth(c, eq, Q){
     ecart: (base.length > 1) ? Math.round((Math.max.apply(null, base) - Math.min.apply(null, base)) * 10) / 10 : 0,
     ecartN: base.length,
     votants: votants,
-    manquants: eq.length - votants,
+    manquants: eq.length - nExpr,
     nNotes: tout.length
   };
 }
@@ -4727,7 +4749,9 @@ function tabAvis(){
     + 'Les <b>r\u00e9ponses</b> sont la moyenne des moyennes de la revue : chaque personne compte pour une, '
     + 'qu\u2019elle ait not\u00e9 deux r\u00e9ponses ou douze. '
     + 'L\u2019<b>\u00e9cart</b> s\u00e9pare la voix la plus haute de la plus basse \u2014 sur les impressions '
-    + 'd\u00e8s que deux personnes en ont donn\u00e9 une, sur les r\u00e9ponses avant \u00e7a.</p>'
+    + 'd\u00e8s que deux personnes en ont donn\u00e9 une, sur les r\u00e9ponses avant \u00e7a. '
+    + 'Dans la colonne de chacun : son impression, et en dessous sa moyenne sur les r\u00e9ponses '
+    + 'qu\u2019elle a not\u00e9es \u2014 noter chaque r\u00e9ponse n\u2019est pas obligatoire.</p>'
     + '<div class="adm-bar" style="margin-top:12px"><div class="chips" id="av-tri">'
     + '<div class="chip' + (AVIS_TRI==="impression"?" on":"") + '" data-t="impression">Par impression</div>'
     + '<div class="chip' + (AVIS_TRI==="moyenne"?" on":"") + '" data-t="moyenne">Par notes de r\u00e9ponses</div>'
@@ -4744,8 +4768,12 @@ function tabAvis(){
     + '<th title="Impression g\u00e9n\u00e9rale : le jugement sur la personne, pos\u00e9 apr\u00e8s lecture du dossier">Impression</th>'
     + '<th title="Moyenne des moyennes sur les r\u00e9ponses : chaque personne compte pour une">R\u00e9ponses</th>'
     + '<th>Pot.</th><th>Candidat</th>';
-  eq.forEach(function(m){ h += '<th>' + esc(m.nom) + '</th>'; });
-  h += '<th>\u00c9cart</th><th>Voix</th><th>Suivi</th></tr></thead><tbody>';
+  eq.forEach(function(m){
+    h += '<th title="Son impression g\u00e9n\u00e9rale, et en dessous sa moyenne sur les r\u00e9ponses '
+      + 'qu\u2019elle a not\u00e9es">' + esc(m.nom) + '</th>';
+  });
+  h += '<th>\u00c9cart</th><th title="Personnes qui se sont exprim\u00e9es, sur le nombre attendu">Voix</th>'
+    + '<th>Suivi</th></tr></thead><tbody>';
 
   arr.forEach(function(c){
     var a = c._av, sv = suiviDe(c.suivi_statut);
@@ -4762,15 +4790,19 @@ function tabAvis(){
                    : '<span class="vign vide">\u2014</span>')
       +   '<span><b>' + esc(nomComplet(c)) + '</b></span></div></td>';
     eq.forEach(function(m){
-      var v = a.moy[m.id];
-      h += '<td class="avcell' + (v === undefined ? " rien" : "") + '">'
-        + (v === undefined ? "\u2014" : v) + '</td>';
+      var vi = a.impPar[m.id];     /* son impression sur la personne */
+      var vr = a.moy[m.id];        /* sa moyenne sur les reponses notees */
+      var rien = (vi === undefined && vr === undefined);
+      h += '<td class="avcell' + (rien ? " rien" : "") + '">'
+        + (vi === undefined ? "\u2014" : vi)
+        + (vr === undefined ? "" : '<br><span class="avsec">r\u00e9p. ' + vr + '</span>')
+        + '</td>';
     });
     h += '<td><span class="avec' + (a.ecart >= 2 ? " chaud" : "") + '"'
       +   ' title="' + (a.surImp ? "\u00c9cart sur les impressions g\u00e9n\u00e9rales"
                                   : "\u00c9cart sur les moyennes de r\u00e9ponses") + '">'
       +   (a.ecartN > 1 ? a.ecart : "\u2014") + '</span></td>'
-      + '<td><span class="dim">' + a.votants + ' / ' + eq.length + '</span></td>'
+      + '<td><span class="dim">' + a.exprimes + ' / ' + eq.length + '</span></td>'
       + '<td><span class="pill2 ' + sv.c + '">' + esc(sv.n) + '</span></td>'
       + '</tr>';
     /* LE DETAIL SE DEPLIE ICI, sous la ligne cliquee. Il etait ajoute apres le
@@ -6326,7 +6358,34 @@ function admCsv(){
         }
         CAND.id = lienModif[1]; CAND.data = fiche || {};
         candLocalSave();
-        screenContact();
+
+        /* Le lien du mail deposait toujours a l'etape 1, champs pre-remplis.
+           Quelqu'un qui s'etait arrete a l'etape 5 devait donc retraverser
+           quatre ecrans pour revenir la ou il en etait — dans un message dont
+           le seul but est de LEVER un obstacle. On propose desormais les deux :
+           reprendre ou tout revoir. Les deux, parce qu'on arrive souvent d'un
+           autre appareil et qu'on peut vouloir verifier ce qu'on avait mis. */
+        var et = CAND.data.etape || 1;
+        if((CAND.data.statut === "complet") || et < 2){ screenContact(); return; }
+
+        function ecranDe(e){
+          if(e >= 6) return screenEtape7();
+          if(e === 5) return screenEtape6();
+          if(e === 4) return screenEtape5();
+          if(e === 3) return screenEtape4();
+          return screenEtape3();
+        }
+        var pre = (CAND.data.prenom || "").trim();
+        view('<div class="card center">'
+          + '<div style="font-size:3rem">\ud83d\udc4b</div>'
+          + '<div class="big" style="color:var(--lime)">' + Tb("mod_reprise_t") + '</div>'
+          + (pre ? '<div class="mut" style="margin-top:10px">' + esc(pre) + ', ' + esc(T("mod_reprise_s")) + '</div>'
+                 : '<div class="mut" style="margin-top:10px">' + esc(T("mod_reprise_s")) + '</div>')
+          + '<button class="btn" id="mo-go" style="margin-top:18px">' + esc(T("mod_reprise_btn")) + '</button>'
+          + '<button class="btn sec" id="mo-tout">' + esc(T("mod_depart_btn")) + '</button>'
+          + '</div>');
+        $("mo-go").onclick   = function(){ ecranDe(et); };
+        $("mo-tout").onclick = function(){ screenContact(); };
       });
     });
     return;
