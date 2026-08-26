@@ -1,7 +1,4 @@
 .DS_Store
-*.pdf
-*.docx
-*.pages
+_versions/
 _hors_repo/
-grille-transition-lumiia*.html
-!offre-lumiia.pdf
+*.command
