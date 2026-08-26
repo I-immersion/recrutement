@@ -1,10 +1,13 @@
-_hors_repo/
-_versions/
-!offre-lumiia.pdf
 .DS_Store
-*.command
+*.pdf
 *.docx
 *.pages
-*.pdf
+*.command
+_hors_repo/
+_versions/
 grille-transition-lumiia*.html
 Offre d'emploi et fiche de poste/
+recrutement-mail.php
+# Les reintegrations restent en DERNIER : une exclusion posee apres les annule.
+# Ne JAMAIS trier ce fichier, l'ordre des lignes EST la regle.
+!offre-lumiia.pdf
