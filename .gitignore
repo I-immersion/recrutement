@@ -6,8 +6,10 @@
 _hors_repo/
 _versions/
 grille-transition-lumiia*.html
+Grille planning/
 Offre d'emploi et fiche de poste/
 recrutement-mail.php
+v36-*.png
 # Les reintegrations restent en DERNIER : une exclusion posee apres les annule.
 # Ne JAMAIS trier ce fichier, l'ordre des lignes EST la regle.
 !offre-lumiia.pdf
