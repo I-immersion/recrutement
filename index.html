@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.0 -->
+<!-- LUMIIA RECRUTE — v7.1 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -281,6 +281,13 @@ body.adm{background:#0d1117;}
 #admin .pill2{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.74rem;font-weight:700;
   border:1px solid #3a4552;color:#c3ccd6;background:#1a212a;margin:1px 2px 1px 0;}
 #admin .pill2.hot{background:rgba(63,185,80,.14);border-color:#2f7a3d;color:#7ee787;}
+#admin .pill2.msg{background:rgba(77,217,232,.12);border-color:#2c6b76;color:#9fe4ee;}
+#admin .archbloc{margin-top:22px;border-top:1px solid #232b36;padding-top:14px;}
+#admin .archbtn{width:100%;text-align:left;background:#12171e;border:1px solid #2a323d;
+  border-radius:9px;padding:12px 15px;color:#8b98a8;font-family:'Nunito';font-weight:900;
+  font-size:.86rem;cursor:pointer;}
+#admin .archbtn:hover{border-color:#3a4552;color:#c3ccd6;}
+#admin .archin{margin-top:12px;opacity:.82;}
 #admin .pill2.no{background:rgba(248,81,73,.13);border-color:#8b3a35;color:#ff8b81;}
 #admin .pill2.wip{background:rgba(210,153,34,.13);border-color:#8a6a1f;color:#e3b341;}
 
@@ -652,7 +659,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.0</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.1</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -665,7 +672,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.0";
+var VERSION = "v7.1";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4450,10 +4457,44 @@ var ADM_TABS = [
   { k:"reglages",   n:"Réglages" }
 ];
 var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "potentiel", ADM_Q = "";
+/* Archives repliees par defaut : voir admCandidats. */
+var ADM_ARCH = false;
 /* Faux jusqu'a la premiere arrivee des candidatures. Voir admLoad. */
 var CAND_RECUS = false;
 function nb(x){ return String(x||"").split("|").filter(Boolean).length; }
 /* Avant la v3.3 le champ nom contenait le nom complet : la concaténation reste juste. */
+/* CE QU'ON LUI A ENVOYE — v7.1.
+   La trace des envois existait deja, mais seulement au fond de la fiche, dans
+   le bloc d'envoi. Or la question « est-ce que je lui ai repondu ? » se pose en
+   parcourant la liste, pas en ouvrant vingt-six fiches. Le serveur ecrit
+   candidats/<id>/envois/<cle> = horodatage apres chaque envoi reussi : on lit
+   cette trace-la, pas une autre. */
+function envoisDe(c){
+  var e = (c && c.envois) || {}, L = [];
+  for(var k in e){
+    if(!e[k]) continue;
+    var m = (CFG.messages || {})[k];
+    L.push({ cle:k, titre:(m && m.titre) ? m.titre : k, ts:e[k] });
+  }
+  L.sort(function(a,b){ return b.ts - a.ts; });
+  return L;
+}
+
+function envoisCell(c){
+  var L = envoisDe(c);
+  if(!L.length) return '<span class="dim">\u2014</span>';
+  var h = '', d;
+  L.slice(0, 2).forEach(function(o){
+    d = new Date(o.ts);
+    h += '<span class="pill2 msg" title="Envoy\u00e9 le ' + d.toLocaleDateString("fr-FR")
+      + ' \u00e0 ' + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) + '">\u2709 '
+      + esc(o.titre) + '</span> ';
+  });
+  if(L.length > 2) h += '<span class="dim">+' + (L.length - 2) + '</span>';
+  d = new Date(L[0].ts);
+  return h + '<br><span class="dim mono">' + d.toLocaleDateString("fr-FR") + '</span>';
+}
+
 function nomComplet(c){ return (((c.prenom||"") + " " + (c.nom||"")).trim()) || "—"; }
 
 function cfgSave(patch, msg){
@@ -6334,13 +6375,32 @@ function admCandidats(){
   var nSav = (CFG.savoirs||[]).length || 12;
   var nExpT = (CFG.experiences||[]).length || 20;
 
-  var h = '<table class="cmp"><thead><tr>'
+  /* ARCHIVES. Les ecartes et les sans-suite ne disparaissent pas, ils descendent :
+     un dossier ferme reste consultable, mais il n'a plus a occuper le regard
+     au-dessus des gens qu'on est en train de traiter. Meme regle que dans la
+     Revue, qui les retire deja de la pile.
+     Deux exceptions : quand on filtre explicitement sur l'un de ces statuts, et
+     quand une recherche est en cours — chercher quelqu'un et ne pas le trouver
+     parce qu'il etait dans un bloc replie, c'est un piege. */
+  var ARCH = ["ecarte","sans_suite"];
+  var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:sans_suite");
+  var actifs = arr, archives = [];
+  if(separer){
+    actifs = [];
+    arr.forEach(function(c){
+      (ARCH.indexOf(c.suivi_statut || "nouveau") > -1 ? archives : actifs).push(c);
+    });
+  }
+
+  function tableCand(liste){
+    var h = '<table class="cmp"><thead><tr>'
     + '<th data-tri="potentiel">Potentiel ↕</th><th>Profil</th>'
-    + '<th>Statut</th><th>Suivi</th><th>Prochaine action</th><th>Candidat</th><th>Contact</th>'
+    + '<th>Statut</th><th>Suivi</th><th>Messages envoy\u00e9s</th><th>Prochaine action</th>'
+    + '<th>Candidat</th><th>Contact</th>'
     + '<th data-tri="exp">Expérience ↕</th><th data-tri="savoirs">Savoir-faire ↕</th>'
     + '<th>Poste</th><th>Situations</th><th>Rappel</th><th>Permis</th><th>Enreg.</th><th>Offre&nbsp;mail</th>'
     + '<th data-tri="score">Jeu ↕</th><th data-tri="ts">Mise à jour ↕</th></tr></thead><tbody>';
-  arr.forEach(function(c){
+    liste.forEach(function(c){
     var complet = (c.statut === "complet");
     var e = nb(c.experiences), sv = nb(c.savoirs);
     var sit = (c.situations||"").split("|").filter(function(x){ return x !== ""; });
@@ -6360,6 +6420,7 @@ function admCandidats(){
       + '<td><span class="axes">' + mini + '</span></td>'
       + '<td><span class="pill2 ' + (complet ? "hot" : "wip") + '">' + (complet ? "complète" : ("étape " + (c.etape||1))) + '</span></td>'
       + '<td><span class="pill2 ' + suiviDe(c.suivi_statut).c + '">' + esc(suiviDe(c.suivi_statut).n) + '</span></td>'
+      + '<td>' + envoisCell(c) + '</td>'
       + '<td class="mono">' + (c.rdv_date ? '<b>RDV ' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</b>'
           : (c.relance_date ? esc(jourFR(c.relance_date)) : '<span class="dim">—</span>')) + '</td>'
       + '<td><div class="qui">'
@@ -6378,15 +6439,34 @@ function admCandidats(){
       + '<td>' + (c.offre_mail ? '<span class="pill2 hot">oui</span>' : '<span class="dim">—</span>') + '</td>'
       + '<td><div class="cbar"><i style="width:' + Math.round((c.score||0)/maxSc*100) + '%"></i></div><span class="dim">' + (c.score||0) + '</span></td>'
       + '<td class="dim mono">' + d.toLocaleDateString("fr-FR") + '<br>' + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) + '</td></tr>';
-  });
-  h += '</tbody></table><p class="aide">Trié par potentiel décroissant. Les cinq barres donnent le profil : '
-    + 'métier, terrain, posture, engagement, praticité. Le potentiel n’élimine personne, il range la pile — '
-    + 'les poids se règlent dans l’onglet Potentiel. Cliquez une ligne pour ouvrir la fiche complète. '
-    + 'La photo n’apparaît pas dans ce tableau : elle sert à reconnaître la personne le jour de l’entretien, pas à comparer.</p>';
+    });
+    return h + '</tbody></table>';
+  }
+
+  var h = (actifs.length ? tableCand(actifs)
+    : '<p class="aide">Aucune candidature active' + (archives.length ? ' \u2014 tout est en archives.' : '.') + '</p>')
+    + '<p class="aide">Tri\u00e9 par potentiel d\u00e9croissant. Les cinq barres donnent le profil : '
+    + 'm\u00e9tier, terrain, posture, engagement, praticit\u00e9. Le potentiel n\u2019\u00e9limine personne, il range la pile \u2014 '
+    + 'les poids se r\u00e8glent dans l\u2019onglet Potentiel. Cliquez une ligne pour ouvrir la fiche compl\u00e8te. '
+    + 'La photo n\u2019appara\u00eet pas dans ce tableau : elle sert \u00e0 reconna\u00eetre la personne le jour de l\u2019entretien, pas \u00e0 comparer.</p>';
+
+  if(archives.length){
+    var ouvert = ADM_ARCH || !!ADM_Q;
+    h += '<div class="archbloc">'
+      + '<button class="archbtn" id="a-arch">' + (ouvert ? "\u25be" : "\u25b8") + ' Archives \u00b7 '
+      +   archives.length + ' dossier' + (archives.length > 1 ? 's' : '') + ' \u00e9cart\u00e9'
+      +   (archives.length > 1 ? 's' : '') + ' ou sans suite'
+      +   (ADM_Q ? ' <span class="dim">(ouvert : recherche en cours)</span>' : '')
+      + '</button>'
+      + (ouvert ? '<div class="archin">' + tableCand(archives) + '</div>' : '')
+      + '</div>';
+  }
+
   $("a-cand").innerHTML = h;
 
   var trs = $("a-cand").querySelectorAll("tr[data-k]");
   for(var i=0;i<trs.length;i++) trs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
+  if($("a-arch")) $("a-arch").onclick = function(){ ADM_ARCH = !ADM_ARCH; admCandidats(); };
   var ths = $("a-cand").querySelectorAll("th[data-tri]");
   for(var j=0;j<ths.length;j++) ths[j].onclick = function(){ ADM_TRI = this.getAttribute("data-tri"); admCandidats(); };
   brancherPhotosZoom($("a-cand"));
