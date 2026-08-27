@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.4 -->
+<!-- LUMIIA RECRUTE — v7.5 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -663,7 +663,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.4</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.5</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -676,7 +676,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.4";
+var VERSION = "v7.5";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -5544,10 +5544,19 @@ function tabExtras(){
 }
 
 function blocEssaiExtra(){
-  var url = location.origin + location.pathname + "?x=" + ADM_TEST_KEY;
+  /* GitHub Pages sert la page avec max-age=600 : pendant dix minutes le
+     navigateur ressert sa copie sans rien demander au serveur. Un lien de test
+     fixe rouvrait donc la VERSION PRECEDENTE de l'app, et on croyait la
+     correction non deployee. Le parametre qui change a chaque affichage force
+     une page neuve. Inutile pour les vrais candidats — ils cliquent des jours
+     plus tard — mais indispensable quand on teste juste apres une livraison. */
+  var url = location.origin + location.pathname + "?x=" + ADM_TEST_KEY
+          + "&n=" + Date.now().toString(36);
   var h = '<div class="essai"><div class="essait">\ud83e\uddea Essayer le parcours extras</div>'
     + '<div class="dim">Ce lien ouvre les trois \u00e9crans sur la <b>fiche de test</b>, '
-    + 'jamais sur un vrai candidat. Vos r\u00e9ponses d\u2019essai s\u2019affichent ci-dessous.</div>'
+    + 'jamais sur un vrai candidat. Vos r\u00e9ponses d\u2019essai s\u2019affichent ci-dessous. '
+    + 'Il change \u00e0 chaque affichage : c\u2019est ce qui \u00e9vite de rouvrir une version '
+    + 'en cache juste apr\u00e8s une mise \u00e0 jour.</div>'
     + '<div style="margin-top:10px"><a class="lien" href="' + esc(url) + '" target="_blank" rel="noopener">'
     +   esc(url) + '</a></div>';
   var x = (XT_ESSAI && XT_ESSAI.extra) ? XT_ESSAI.extra : null;
