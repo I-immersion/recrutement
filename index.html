@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.5 -->
+<!-- LUMIIA RECRUTE — v7.6 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -663,7 +663,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.5</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.6</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -676,7 +676,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.5";
+var VERSION = "v7.6";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -2635,7 +2635,8 @@ var ETAPES = 7;
 
 /* Les 4 emplacements d'enregistrement : 3 pitchs + le dernier mot.
    Chaque emplacement stocke <slot>_url et <slot>_type dans la fiche candidat. */
-var SLOTS = { p1:"pitch1", p2:"pitch2", p3:"pitch3", p4:"pitch4", mot:"motmedia" };
+var SLOTS = { p1:"pitch1", p2:"pitch2", p3:"pitch3", p4:"pitch4", mot:"motmedia",
+              xtra:"extramedia" };
 
 /* Un emplacement ne garde qu'UNE reponse : soit l'audio, soit la video.
    Enregistrer une video sur une question deja repondue en audio remplaçait
@@ -3412,7 +3413,7 @@ function xtSave(patch, cb){
 
 function xtCarte(n, titre, sous, contenu, btn){
   return '<div class="card">'
-    + '<div class="stepno">EXTRAS \u00b7 ' + n + ' / 3</div>'
+    + '<div class="stepno">EXTRAS \u00b7 ' + n + ' / 4</div>'
     + '<div class="q">' + titre + '</div>'
     + (sous ? '<div class="dim">' + sous + '</div>' : '')
     + contenu + btn + '</div>';
@@ -3427,7 +3428,7 @@ function xtStatut(){
     + '</div>'
     + '<div id="xt-siret" class="' + (x.statut === "oui" ? "" : "hidden") + '">'
     +   '<label class="f" style="margin-top:20px">Num\u00e9ro SIRET</label>'
-    +   '<input id="xt-sir" inputmode="numeric" placeholder="14 chiffres" value="' + esc(x.siret || "") + '">'
+    +   '<input id="xt-sir" inputmode="numeric" value="' + esc(x.siret || "") + '">'
     +   '<label class="f">Nom de votre structure <span class="dim">(si diff\u00e9rent de votre nom)</span></label>'
     +   '<input id="xt-soc" value="' + esc(x.societe || "") + '">'
     + '</div>';
@@ -3482,12 +3483,12 @@ function xtLigneRef(i, r){
   return '<div class="xtref" data-i="' + i + '">'
     + '<div class="xtrn">R\u00e9f\u00e9rence ' + (i + 1) + (i > 1 ? ' <span class="dim">(facultative)</span>' : '') + '</div>'
     + '<label class="f">\u00c9tablissement et ville</label>'
-    + '<input class="xr-eta" value="' + esc(r.etab || "") + '" placeholder="Le Comptoir, Valence">'
+    + '<input class="xr-eta" value="' + esc(r.etab || "") + '">'
     + '<label class="f">Votre poste, et sur quelle p\u00e9riode</label>'
-    + '<input class="xr-post" value="' + esc(r.poste || "") + '" placeholder="Barman, \u00e9t\u00e9 2025">'
+    + '<input class="xr-post" value="' + esc(r.poste || "") + '">'
     + '<label class="f">Qui peut parler de vous, et son num\u00e9ro</label>'
-    + '<input class="xr-nom" value="' + esc(r.nom || "") + '" placeholder="Pr\u00e9nom Nom">'
-    + '<input class="xr-tel" type="tel" inputmode="tel" value="' + esc(r.tel || "") + '" placeholder="06\u2026">'
+    + '<input class="xr-nom" value="' + esc(r.nom || "") + '">'
+    + '<input class="xr-tel" type="tel" inputmode="tel" value="' + esc(r.tel || "") + '">'
     + '</div>';
 }
 
@@ -3517,11 +3518,61 @@ function xtRefs(){
       if(o.etab || o.nom || o.tel) out.push(o);
     }
     if(out.length < 1){ toast("Au moins une r\u00e9f\u00e9rence, sinon on ne peut rien v\u00e9rifier"); return; }
-    xtSave({ refs: out, refs_ok: $("xt-ok").classList.contains("on") }, xtDispos);
+    xtSave({ refs: out, refs_ok: $("xt-ok").classList.contains("on") }, xtVous);
   };
 }
 
-/* ── 3 / 3 — quand, et a quel point seul ── */
+/* ── 3 / 4 — parlez-nous de vous ──
+   Entre les references, qui sont des faits verifiables, et les disponibilites,
+   qui sont un calendrier, il manquait la PERSONNE. Sur un extra on ne se
+   rencontre pas avant le premier service : entendre une voix, c'est souvent ce
+   qui decide. Facultatif — refuser d'enregistrer n'ecarte personne, ca reste la
+   regle de toute l'app.
+   L'enregistreur du parcours principal est reutilise tel quel : meme bouton,
+   meme televersement, meme gestion du remplacement audio/video. */
+var XT_QUESTION = "Qui \u00eates-vous, et o\u00f9 avez-vous fait vos armes ? "
+  + "Une minute suffit : les lieux, l'ambiance que vous aimez, ce que vous savez tenir.";
+
+function xtVous(){
+  var slot = SLOTS.xtra, fait = CAND.data[slot + "_url"], typ = CAND.data[slot + "_type"];
+  var h = '<div class="media' + (fait ? " ok" : "") + '" style="margin-top:16px">'
+    + '<div class="dim">' + esc(XT_QUESTION) + '</div>'
+    + '<button class="btn sec mini' + clsMedia(false, typ, fait) + '" id="xt-aud">'
+    +   esc(libMedia(false, typ, fait)) + '</button>'
+    + '<button class="btn sec mini' + clsMedia(true, typ, fait) + '" id="xt-vid">'
+    +   esc(libMedia(true, typ, fait)) + '</button>'
+    + (fait ? '<button class="btn sec mini sup" id="xt-sup">\ud83d\uddd1 Supprimer</button>' : '')
+    + (fait ? '<div class="pmode">' + esc(noteMedia(typ)) + '</div>' : '')
+    + (fait ? '<div class="pprev">' + (typ === "video"
+        ? '<video src="' + esc(fait) + '" controls playsinline preload="none"></video>'
+        : '<audio src="' + esc(fait) + '" controls preload="none"></audio>') + '</div>' : '')
+    + '</div>';
+  view(xtCarte(3, "PARLEZ-NOUS<br>DE VOUS",
+    "Un extra, on ne le rencontre pas avant le premier service. Une minute de voix en dit plus "
+    + "qu\u2019une page de CV. C\u2019est facultatif, et \u00e7a n\u2019\u00e9carte personne.",
+    h,
+    '<button class="btn" id="xt-go">CONTINUER</button>'
+    + '<button class="btn sec" id="xt-back">Retour</button>'));
+  $("xt-aud").onclick = function(){
+    avantRemplacer(CAND.data[slot + "_url"], CAND.data[slot + "_type"], false, function(){
+      screenRec(slot, false, XT_QUESTION, "EXTRAS \u00b7 3 / 4", xtVous);
+    });
+  };
+  $("xt-vid").onclick = function(){
+    avantRemplacer(CAND.data[slot + "_url"], CAND.data[slot + "_type"], true, function(){
+      screenRec(slot, true, XT_QUESTION, "EXTRAS \u00b7 3 / 4", xtVous);
+    });
+  };
+  if($("xt-sup")) $("xt-sup").onclick = function(){
+    var patch = {}; patch[slot + "_url"] = null; patch[slot + "_type"] = null; patch[slot + "_err"] = null;
+    CAND.data[slot + "_url"] = null; CAND.data[slot + "_type"] = null; CAND.data[slot + "_err"] = null;
+    candSave(patch, function(){ toast("Enregistrement supprim\u00e9"); xtVous(); });
+  };
+  $("xt-back").onclick = xtRefs;
+  $("xt-go").onclick = xtDispos;
+}
+
+/* ── 4 / 4 — quand, et a quel point seul ── */
 var XT_SOIRS = ["Vendredi soir","Samedi soir","Dimanche","En semaine si besoin","Soir\u00e9es priv\u00e9es"];
 var XT_FREQ  = ["1 \u00e0 2 fois par mois","Presque chaque week-end","Au coup par coup"];
 var XT_PREV  = ["La veille, \u00e7a me va","Deux ou trois jours","Une semaine"];
@@ -3549,7 +3600,7 @@ function xtDispos(){
     + '<label class="f" style="margin-top:18px">Derri\u00e8re le bar, vous en \u00eates o\u00f9&nbsp;?</label>' + xtChips("xt-auto", XT_AUTO, x.autonomie)
     + '<label class="f" style="margin-top:18px">Quelque chose \u00e0 ajouter&nbsp;?</label>'
     + '<textarea id="xt-mot" rows="3" placeholder="Facultatif">' + esc(x.mot || "") + '</textarea>';
-  view(xtCarte(3, "QUAND EST-CE<br>QU\u2019ON VOUS APPELLE&nbsp;?",
+  view(xtCarte(4, "QUAND EST-CE<br>QU\u2019ON VOUS APPELLE&nbsp;?",
     "Dernier \u00e9cran. On note vos disponibilit\u00e9s pour ne pas vous d\u00e9ranger un mardi \u00e0 14 h.",
     h,
     '<button class="btn" id="xt-go">JE VALIDE</button>'
@@ -3565,7 +3616,7 @@ function xtDispos(){
       this.classList.toggle("on");
     };
   });
-  $("xt-back").onclick = xtRefs;
+  $("xt-back").onclick = xtVous;
   $("xt-go").onclick = function(){
     xtSave({ soirs: xtVals("xt-soirs"), frequence: xtVals("xt-freq"),
              prevenance: xtVals("xt-prev"), autonomie: xtVals("xt-auto"),
@@ -5530,6 +5581,13 @@ function tabExtras(){
     });
     h += '</div>';
 
+    if(c.extramedia_url){
+      h += '<div class="xtr"><div class="xtrt">Ce qu\u2019il ou elle raconte</div>'
+        + '<div class="pprev">' + (c.extramedia_type === "video"
+            ? '<video src="' + esc(c.extramedia_url) + '" controls playsinline preload="none"></video>'
+            : '<audio src="' + esc(c.extramedia_url) + '" controls preload="none"></audio>')
+        + '</div></div>';
+    }
     if(x.mot) h += '<div class="xtm">\u00ab\u00a0' + esc(x.mot) + '\u00a0\u00bb</div>';
     h += '</div>';
   });
