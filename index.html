@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.2 -->
+<!-- LUMIIA RECRUTE — v7.3 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -663,7 +663,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.2</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.3</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -676,7 +676,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.2";
+var VERSION = "v7.3";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3918,6 +3918,7 @@ function admLoad(){
          une seule fois, plutot que dans chaque liste, chaque statistique et
          chaque export. */
       delete LAST_CAND[ADM_TEST_KEY];
+      delete LAST_CAND[ADM_TEST_VIEUX];
       migrerEval();
       /* Les candidatures arrivent APRES le premier rendu. Cette liste ne citait
          que « candidats » et « suivi » : tout onglet ajoute ensuite restait fige
@@ -3962,7 +3963,14 @@ var ADM_ENVOI_URL = "https://reservation.lumiia.fr/api/recrutement-envoi.php";
    c'est ce qui en fait un test valable. Cette fiche est retiree de LAST_CAND au
    chargement (voir admLoad) : elle n'apparait donc dans aucune liste, aucun
    compte, aucun export. */
-var ADM_TEST_KEY    = "_test_interne";
+/* La cle a la FORME d'une cle Firebase — tiret initial, vingt signes — et ce
+   n'est pas cosmetique : le guichet mail refuse tout identifiant qui n'y
+   ressemble pas (« identifiant invalide »), et c'est lui qui sert les liens
+   ?c= et ?x= recus par mail. Avec l'ancienne cle « _test_interne », le lien de
+   test des extras tombait sur un refus muet du serveur.
+   Ne pas la raccourcir ni retirer le tiret. */
+var ADM_TEST_KEY    = "-TEST_interne_lumiia";
+var ADM_TEST_VIEUX  = "_test_interne";   /* l'ancienne, a masquer aussi */
 var ADM_TEST_PRENOM = "Emmanuel";
 var ADM_TEST_NOM    = "Test";
 var ADM_TEST_EMAIL  = "contact@lumiia.fr";
