@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.6 -->
+<!-- LUMIIA RECRUTE — v7.8 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -663,7 +663,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.6</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.8</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -676,7 +676,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.6";
+var VERSION = "v7.8";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3456,7 +3456,7 @@ function xtStatut(){
     if(!v){ toast("Dites-nous o\u00f9 vous en \u00eates"); return; }
     if(v === "non"){ xtSave({ statut:"non" }, xtSansStatut); return; }
     var sir = ($("xt-sir").value || "").replace(/[^0-9]/g, "");
-    xtSave({ statut:"oui", siret:sir, societe:($("xt-soc").value || "").trim() }, xtRefs);
+    xtSave({ statut:"oui", siret:sir, societe:($("xt-soc").value || "").trim() }, xtVous);
   };
 }
 
@@ -3477,11 +3477,11 @@ function xtSansStatut(){
   $("xt-fin").onclick = function(){ window.location.search = ""; };
 }
 
-/* ── 2 / 3 — les references ── */
+/* ── 3 / 4 — les references ── */
 function xtLigneRef(i, r){
   r = r || {};
   return '<div class="xtref" data-i="' + i + '">'
-    + '<div class="xtrn">R\u00e9f\u00e9rence ' + (i + 1) + (i > 1 ? ' <span class="dim">(facultative)</span>' : '') + '</div>'
+    + '<div class="xtrn">R\u00e9f\u00e9rence ' + (i + 1) + ' <span class="dim">(facultative)</span></div>'
     + '<label class="f">\u00c9tablissement et ville</label>'
     + '<input class="xr-eta" value="' + esc(r.etab || "") + '">'
     + '<label class="f">Votre poste, et sur quelle p\u00e9riode</label>'
@@ -3499,14 +3499,15 @@ function xtRefs(){
   for(var i=0;i<3;i++) h += xtLigneRef(i, rs[i]);
   h += '<div class="chips" style="margin-top:18px"><div class="chip' + (x.refs_ok ? " on" : "") + '" id="xt-ok">'
     + 'Oui, vous pouvez les appeler</div></div>';
-  view(xtCarte(2, "QUI PEUT DIRE<br>DU BIEN DE VOUS&nbsp;?",
-    "Sur un extra, on n\u2019a pas trois semaines pour se rendre compte. Deux \u00e9tablissements o\u00f9 vous avez "
-    + "tenu un bar, et quelqu\u2019un qu\u2019on peut appeler : c\u2019est ce qui remplace la p\u00e9riode d\u2019essai.",
+  view(xtCarte(3, "QUI PEUT DIRE<br>DU BIEN DE VOUS&nbsp;?",
+    "Sur un extra, on n\u2019a pas trois semaines pour se rendre compte. Un \u00e9tablissement o\u00f9 vous avez "
+    + "tenu un bar et quelqu\u2019un qu\u2019on peut appeler, c\u2019est ce qui remplace la p\u00e9riode d\u2019essai \u2014 "
+    + "mais rien n\u2019est obligatoire, remplissez ce que vous avez.",
     h,
     '<button class="btn" id="xt-go">CONTINUER</button>'
     + '<button class="btn sec" id="xt-back">Retour</button>'));
   $("xt-ok").onclick = function(){ this.classList.toggle("on"); };
-  $("xt-back").onclick = xtStatut;
+  $("xt-back").onclick = xtVous;
   $("xt-go").onclick = function(){
     var out = [], bl = document.querySelectorAll(".xtref");
     for(var i=0;i<bl.length;i++){
@@ -3517,17 +3518,23 @@ function xtRefs(){
                 tel:(b.querySelector(".xr-tel").value || "").trim() };
       if(o.etab || o.nom || o.tel) out.push(o);
     }
-    if(out.length < 1){ toast("Au moins une r\u00e9f\u00e9rence, sinon on ne peut rien v\u00e9rifier"); return; }
-    xtSave({ refs: out, refs_ok: $("xt-ok").classList.contains("on") }, xtVous);
+    /* Plus aucune reference n'est exigee : elles sont annoncees facultatives, un
+       refus de passer les dementirait. Le parcours entier tient la meme ligne que
+       le reste de l'app — on n'elimine personne sur un champ vide, on note ce
+       qu'on a et on rappelle. */
+    xtSave({ refs: out, refs_ok: $("xt-ok").classList.contains("on") }, xtDispos);
   };
 }
 
-/* ── 3 / 4 — parlez-nous de vous ──
-   Entre les references, qui sont des faits verifiables, et les disponibilites,
-   qui sont un calendrier, il manquait la PERSONNE. Sur un extra on ne se
-   rencontre pas avant le premier service : entendre une voix, c'est souvent ce
-   qui decide. Facultatif — refuser d'enregistrer n'ecarte personne, ca reste la
-   regle de toute l'app.
+/* ── 2 / 4 — parlez-nous de vous ──
+   Place JUSTE APRES la porte du statut, avant les references : on demande a
+   quelqu'un de se raconter pendant qu'il est encore en train de se dire oui,
+   pas apres lui avoir fait remplir quatre champs de coordonnees d'anciens
+   patrons. Les references demandent d'aller chercher des numeros ; ce n'est pas
+   le moment de couper l'elan.
+   Sur un extra on ne se rencontre pas avant le premier service : entendre une
+   voix, c'est souvent ce qui decide. Facultatif — refuser d'enregistrer n'ecarte
+   personne, ca reste la regle de toute l'app.
    L'enregistreur du parcours principal est reutilise tel quel : meme bouton,
    meme televersement, meme gestion du remplacement audio/video. */
 var XT_QUESTION = "Qui \u00eates-vous, et o\u00f9 avez-vous fait vos armes ? "
@@ -3547,7 +3554,7 @@ function xtVous(){
         ? '<video src="' + esc(fait) + '" controls playsinline preload="none"></video>'
         : '<audio src="' + esc(fait) + '" controls preload="none"></audio>') + '</div>' : '')
     + '</div>';
-  view(xtCarte(3, "PARLEZ-NOUS<br>DE VOUS",
+  view(xtCarte(2, "PARLEZ-NOUS<br>DE VOUS",
     "Un extra, on ne le rencontre pas avant le premier service. Une minute de voix en dit plus "
     + "qu\u2019une page de CV. C\u2019est facultatif, et \u00e7a n\u2019\u00e9carte personne.",
     h,
@@ -3555,12 +3562,12 @@ function xtVous(){
     + '<button class="btn sec" id="xt-back">Retour</button>'));
   $("xt-aud").onclick = function(){
     avantRemplacer(CAND.data[slot + "_url"], CAND.data[slot + "_type"], false, function(){
-      screenRec(slot, false, XT_QUESTION, "EXTRAS \u00b7 3 / 4", xtVous);
+      screenRec(slot, false, XT_QUESTION, "EXTRAS \u00b7 2 / 4", xtVous);
     });
   };
   $("xt-vid").onclick = function(){
     avantRemplacer(CAND.data[slot + "_url"], CAND.data[slot + "_type"], true, function(){
-      screenRec(slot, true, XT_QUESTION, "EXTRAS \u00b7 3 / 4", xtVous);
+      screenRec(slot, true, XT_QUESTION, "EXTRAS \u00b7 2 / 4", xtVous);
     });
   };
   if($("xt-sup")) $("xt-sup").onclick = function(){
@@ -3568,8 +3575,8 @@ function xtVous(){
     CAND.data[slot + "_url"] = null; CAND.data[slot + "_type"] = null; CAND.data[slot + "_err"] = null;
     candSave(patch, function(){ toast("Enregistrement supprim\u00e9"); xtVous(); });
   };
-  $("xt-back").onclick = xtRefs;
-  $("xt-go").onclick = xtDispos;
+  $("xt-back").onclick = xtStatut;
+  $("xt-go").onclick = xtRefs;
 }
 
 /* ── 4 / 4 — quand, et a quel point seul ── */
@@ -3616,7 +3623,7 @@ function xtDispos(){
       this.classList.toggle("on");
     };
   });
-  $("xt-back").onclick = xtVous;
+  $("xt-back").onclick = xtRefs;
   $("xt-go").onclick = function(){
     xtSave({ soirs: xtVals("xt-soirs"), frequence: xtVals("xt-freq"),
              prevenance: xtVals("xt-prev"), autonomie: xtVals("xt-auto"),
