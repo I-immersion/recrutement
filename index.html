@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.1 -->
+<!-- LUMIIA RECRUTE — v7.2 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -266,6 +266,10 @@ body.adm{background:#0d1117;}
   text-transform:uppercase;color:#8b98a8;margin-bottom:8px;}
 #admin .xtri{font-size:.86rem;color:#c3ccd6;margin-top:8px;line-height:1.45;}
 #admin .xtm{margin-top:12px;font-style:italic;color:#8b98a8;font-size:.88rem;}
+#admin .essai{margin-top:16px;padding:14px 16px;border-radius:10px;background:#191233;
+  border:1px dashed #5b3a9e;}
+#admin .essai .essait{font-family:'Nunito';font-weight:900;font-size:.78rem;letter-spacing:.09em;
+  text-transform:uppercase;color:#d8b4fe;margin-bottom:8px;}
 #admin tr.avdetrow .avdet{margin-top:0;}
 #admin th{background:#1c2530;color:#c3ccd6;font-family:'Nunito';font-weight:900;font-size:.74rem;
   text-transform:uppercase;letter-spacing:.04em;border:1px solid #2a323d;padding:9px 10px;text-align:left;white-space:nowrap;}
@@ -659,7 +663,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.1</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.2</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -672,7 +676,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.1";
+var VERSION = "v7.2";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -5432,7 +5436,21 @@ function extrasListe(){
   return L;
 }
 
+/* La fiche de test est retiree de LAST_CAND (v5.10) : un essai du parcours
+   extras n'apparaitrait donc nulle part, et on ne saurait pas s'il a march\u00e9.
+   On va la relire ici, et ici seulement, pour l'afficher a part — clairement
+   signalee comme un essai, jamais melangee aux vraies reponses. */
+var XT_ESSAI = null;
+
 function tabExtras(){
+  if(db && XT_ESSAI === null){
+    XT_ESSAI = false;
+    db.ref(FB_PATH + "/candidats/" + ADM_TEST_KEY).once("value").then(function(s){
+      var v = s.val();
+      XT_ESSAI = (v && v.extra) ? v : false;
+      if(ADM_TAB === "extras") tabExtras();
+    }).catch(function(){ XT_ESSAI = false; });
+  }
   var L = extrasListe();
   var h = '<div class="adm-sec"><h2>Extras</h2>'
     + '<p class="aide">Les personnes qui se sont d\u00e9clar\u00e9es int\u00e9ress\u00e9es par des extras depuis '
@@ -5440,9 +5458,12 @@ function tabExtras(){
     + 'ponctuelle, et \u00e7a suppose un statut d\u00e9j\u00e0 en place. Leur dossier complet reste dans '
     + 'l\u2019onglet Candidats.</p>';
 
+  h += blocEssaiExtra();
+
   if(!L.length){
     panneau(h + '<p class="aide">Personne pour le moment. Envoyez le message qui contient le bouton '
       + '\u00ab\u00a0extras\u00a0\u00bb et ils appara\u00eetront ici.</p></div>');
+    brancherEssaiExtra();
     return;
   }
 
@@ -5502,9 +5523,46 @@ function tabExtras(){
 
   panneau(h + '</div>');
   brancherPhotosZoom($("adm-tab"));
+  brancherEssaiExtra();
   var fs = document.querySelectorAll("#adm-tab [data-fiche]");
   for(var i=0;i<fs.length;i++) fs[i].onclick = function(){
     admFiche(LAST_CAND[this.getAttribute("data-fiche")]);
+  };
+}
+
+function blocEssaiExtra(){
+  var url = location.origin + location.pathname + "?x=" + ADM_TEST_KEY;
+  var h = '<div class="essai"><div class="essait">\ud83e\uddea Essayer le parcours extras</div>'
+    + '<div class="dim">Ce lien ouvre les trois \u00e9crans sur la <b>fiche de test</b>, '
+    + 'jamais sur un vrai candidat. Vos r\u00e9ponses d\u2019essai s\u2019affichent ci-dessous.</div>'
+    + '<div style="margin-top:10px"><a class="lien" href="' + esc(url) + '" target="_blank" rel="noopener">'
+    +   esc(url) + '</a></div>';
+  var x = (XT_ESSAI && XT_ESSAI.extra) ? XT_ESSAI.extra : null;
+  if(!x){
+    return h + '<div class="dim" style="margin-top:10px">Aucun essai enregistr\u00e9 pour le moment.</div></div>';
+  }
+  var rs = x.refs || [];
+  h += '<div class="xtg" style="margin-top:12px">'
+    + kv("Statut", x.statut === "oui" ? "d\u00e9clar\u00e9 en place" : "d\u00e9clar\u00e9 absent")
+    + kv("SIRET", x.siret ? esc(x.siret) : '<span class="dim">\u2014</span>')
+    + kv("Moments", x.soirs ? esc(String(x.soirs).split("|").join(", ")) : '<span class="dim">\u2014</span>')
+    + kv("Rythme", x.frequence ? esc(x.frequence) : '<span class="dim">\u2014</span>')
+    + kv("Pr\u00e9venance", x.prevenance ? esc(x.prevenance) : '<span class="dim">\u2014</span>')
+    + kv("Derri\u00e8re le bar", x.autonomie ? esc(x.autonomie) : '<span class="dim">\u2014</span>')
+    + kv("R\u00e9f\u00e9rences", rs.length + " saisie" + (rs.length > 1 ? "s" : ""))
+    + (x.mot ? kv("Mot", esc(x.mot)) : "")
+    + '</div>'
+    + '<button class="btn sec mini" id="xt-eff" style="margin-top:12px">Effacer cet essai</button>';
+  return h + '</div>';
+}
+
+function brancherEssaiExtra(){
+  if(!$("xt-eff")) return;
+  $("xt-eff").onclick = function(){
+    if(!db) return;
+    db.ref(FB_PATH + "/candidats/" + ADM_TEST_KEY + "/extra").remove()
+      .then(function(){ XT_ESSAI = null; toast("Essai effac\u00e9 \u2713"); tabExtras(); })
+      .catch(function(e){ toast("Non effac\u00e9 : " + e.message); });
   };
 }
 
@@ -6754,7 +6812,12 @@ function admCsv(){
   /* ?x=<fiche> — le bouton « extras » du mail. Meme mecanique que ?c= : la
      fiche est redemandee au guichet, jamais cherchee dans le stockage local,
      puisqu'on peut ouvrir le lien depuis n'importe quel appareil. */
-  var lienExtra = q.match(/[?&]x=(-[A-Za-z0-9_-]{18,30})/);
+  /* Le motif acceptait uniquement une cle Firebase (tiret initial, 20 signes),
+     ce qui excluait la fiche de test interne — donc rendait le parcours extras
+     intestable sans ecrire chez un vrai candidat. On accepte desormais ce que
+     le guichet lui-meme accepte ; un identifiant inconnu ressort en 404 et
+     affiche l'ecran d'erreur, ce qui est le bon comportement. */
+  var lienExtra = q.match(/[?&]x=([A-Za-z0-9_-]{6,64})/);
   if(lienExtra){
     if(sp && sp.parentNode) sp.remove();
     loadCfg(function(){
@@ -6777,7 +6840,7 @@ function admCsv(){
     return;
   }
 
-  var lienModif = q.match(/[?&]c=(-[A-Za-z0-9_-]{18,30})/);
+  var lienModif = q.match(/[?&]c=([A-Za-z0-9_-]{6,64})/);
   if(lienModif){
     if(sp && sp.parentNode) sp.remove();
     loadCfg(function(){
