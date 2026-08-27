@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.3 -->
+<!-- LUMIIA RECRUTE — v7.4 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -663,7 +663,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.3</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.4</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -676,7 +676,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.3";
+var VERSION = "v7.4";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3437,13 +3437,18 @@ function xtStatut(){
     + "pour ne pas vous faire perdre votre temps.",
     h,
     '<button class="btn" id="xt-go">CONTINUER</button>'));
-  chipsExclusifs(["xt-st"]);
+  /* UN SEUL gestionnaire par pastille. La version precedente appelait
+     chipsExclusifs() puis reaffectait onclick juste apres : la seconde
+     affectation ECRASAIT la premiere, plus aucune pastille ne s'allumait,
+     le champ SIRET ne s'ouvrait jamais et CONTINUER refusait d'avancer
+     — parcours bloque des le premier ecran.
+     onclick n'est pas un point d'accroche empilable : deux fonctions qui le
+     posent sur le meme element, c'est la derniere qui gagne, en silence. */
   var chips = document.querySelectorAll("#xt-st .chip");
   for(var i=0;i<chips.length;i++) chips[i].onclick = function(){
-    setTimeout(function(){
-      var v = chipVal("xt-st");
-      $("xt-siret").classList[v === "oui" ? "remove" : "add"]("hidden");
-    }, 10);
+    for(var z=0;z<chips.length;z++) chips[z].classList.remove("on");
+    this.classList.add("on");
+    $("xt-siret").classList[this.getAttribute("data-v") === "oui" ? "remove" : "add"]("hidden");
   };
   $("xt-go").onclick = function(){
     var v = chipVal("xt-st");
