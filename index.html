@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v6.10 -->
+<!-- LUMIIA RECRUTE — v7.0 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -99,6 +99,12 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 .qed{border:1px solid var(--bd);border-radius:12px;padding:12px;margin-top:10px;}
 .row2{display:flex;gap:10px;}
 .hidden{display:none!important;}
+.xtref{border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:12px 14px 16px;margin-top:14px;
+  background:rgba(255,255,255,.03);}
+.xtrn{font-family:'Nunito';font-weight:900;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cyan);}
+.xtref label.f{margin-top:12px;}
+.xtref input{margin-top:4px;}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--lime);color:var(--lime);padding:11px 18px;border-radius:99px;font-size:.9rem;z-index:999;}
 
 /* ── SPLASH ── */
@@ -240,6 +246,7 @@ body.adm{background:#0d1117;}
   border:1px solid #3a4552;color:#8b98a8;background:#1a212a;}
 #admin .avec.chaud{border-color:#8a5a20;background:rgba(255,170,60,.14);color:#ffc46b;}
 #admin .avdet{margin-top:16px;padding:15px 17px;border-radius:9px;background:#12171e;border:1px solid #3a2d63;}
+.fiche .apercu .lienbtn.cyan{background:#4dd9e8;color:#08222a;}
 .fiche .apercu .lienbtn{display:inline-block;padding:8px 16px;border-radius:7px;background:#a855f7;
   color:#12081f;font-family:'Nunito';font-weight:900;font-size:.8rem;letter-spacing:.06em;
   text-decoration:none;margin:4px 0;}
@@ -249,6 +256,16 @@ body.adm{background:#0d1117;}
 #admin .avdqt{font-weight:900;color:#c3ccd6;font-size:.86rem;margin-bottom:6px;}
 #admin tr.avsel td{background:#1c1638;}
 #admin tr.avdetrow td{background:#0e0a22;padding:0 12px 14px;border-top:none;}
+#admin .xtl{border:1px solid #2a323d;border-left:4px solid #4dd9e8;border-radius:10px;
+  padding:14px 16px 16px;margin-top:14px;background:#12171e;}
+#admin .xtl.off{border-left-color:#4a5563;opacity:.72;}
+#admin .xth{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;}
+#admin .xtg{margin-top:12px;}
+#admin .xtr{margin-top:12px;padding-top:11px;border-top:1px solid #232b36;}
+#admin .xtrt{font-family:'Nunito';font-weight:900;font-size:.74rem;letter-spacing:.09em;
+  text-transform:uppercase;color:#8b98a8;margin-bottom:8px;}
+#admin .xtri{font-size:.86rem;color:#c3ccd6;margin-top:8px;line-height:1.45;}
+#admin .xtm{margin-top:12px;font-style:italic;color:#8b98a8;font-size:.88rem;}
 #admin tr.avdetrow .avdet{margin-top:0;}
 #admin th{background:#1c2530;color:#c3ccd6;font-family:'Nunito';font-weight:900;font-size:.74rem;
   text-transform:uppercase;letter-spacing:.04em;border:1px solid #2a323d;padding:9px 10px;text-align:left;white-space:nowrap;}
@@ -635,7 +652,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v6.10</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.0</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -648,7 +665,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v6.10";
+var VERSION = "v7.0";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3343,6 +3360,217 @@ function screenFerme(){
   try { window.close(); } catch(e){}
 }
 
+/* ══════════════════════════════════════════════════════════════
+   PARCOURS EXTRAS — v7.0
+   ──────────────────────────────────────────────────────────────
+   Une voie SEPAREE, courte, ouverte depuis un bouton du mail. Trois
+   ecrans la ou la candidature salariee en compte sept : ces gens ont
+   deja rempli le parcours complet, leur profil, leurs experiences,
+   leur CV et leur photo sont deja dans la fiche. On ne redemande que
+   ce qu'on ne sait pas encore.
+
+   ON N'ENTRE ICI QUE PAR LE LIEN DU MAIL, qui porte l'identifiant de
+   la fiche. Pas de parcours extra depuis zero : ce n'est pas une
+   offre publique, c'est une proposition faite a des gens dont la
+   candidature a deja ete lue.
+
+   LE STATUT EST UNE PORTE, PAS UNE ETAPE. Un extra se facture ; il
+   faut donc DEJA une structure. L'app le constate, elle n'invite
+   personne a en creer une : orienter un candidat vers le statut
+   d'independant puis le faire travailler sur ses creneaux, c'est
+   exactement ce que l'URSSAF regarde en HCR. Qui repond non est
+   remercie, sa reponse est enregistree, et on s'arrete la.
+
+   Range dans candidats/<id>/extra — PAS dans un nouveau chemin
+   Firebase : aucune regle a republier, et la fiche reste le seul
+   endroit ou vit tout ce qui concerne une personne. L'onglet Extras
+   de l'admin lit ce sous-objet, les listes de candidatures l'ignorent.
+   ══════════════════════════════════════════════════════════════ */
+var XT = { refs: [] };
+
+function xtSave(patch, cb){
+  var x = CAND.data.extra || {};
+  Object.keys(patch || {}).forEach(function(k){ x[k] = patch[k]; });
+  x.maj = Date.now();
+  CAND.data.extra = x;
+  candLocalSave();
+  if(!db || !CAND.id){ if(cb) cb(); return; }
+  db.ref(FB_PATH + "/candidats/" + CAND.id + "/extra").update(x)
+    .then(function(){ if(cb) cb(); }).catch(function(){ if(cb) cb(); });
+}
+
+function xtCarte(n, titre, sous, contenu, btn){
+  return '<div class="card">'
+    + '<div class="stepno">EXTRAS \u00b7 ' + n + ' / 3</div>'
+    + '<div class="q">' + titre + '</div>'
+    + (sous ? '<div class="dim">' + sous + '</div>' : '')
+    + contenu + btn + '</div>';
+}
+
+/* ── 1 / 3 — le statut ── */
+function xtStatut(){
+  var x = CAND.data.extra || {};
+  var h = '<div class="chips" id="xt-st">'
+    + '<div class="chip' + (x.statut === "oui" ? " on" : "") + '" data-v="oui">Oui, j\u2019ai d\u00e9j\u00e0 un statut</div>'
+    + '<div class="chip' + (x.statut === "non" ? " on" : "") + '" data-v="non">Non, pas encore</div>'
+    + '</div>'
+    + '<div id="xt-siret" class="' + (x.statut === "oui" ? "" : "hidden") + '">'
+    +   '<label class="f" style="margin-top:20px">Num\u00e9ro SIRET</label>'
+    +   '<input id="xt-sir" inputmode="numeric" placeholder="14 chiffres" value="' + esc(x.siret || "") + '">'
+    +   '<label class="f">Nom de votre structure <span class="dim">(si diff\u00e9rent de votre nom)</span></label>'
+    +   '<input id="xt-soc" value="' + esc(x.societe || "") + '">'
+    + '</div>';
+  view(xtCarte(1, "VOUS FACTUREZ&nbsp;?",
+    "Les extras se font en facturation, pas en bulletin de paie. Il faut donc d\u00e9j\u00e0 "
+    + "un statut \u2014 micro-entreprise ou autre. On vous le demande d\u2019embl\u00e9e, "
+    + "pour ne pas vous faire perdre votre temps.",
+    h,
+    '<button class="btn" id="xt-go">CONTINUER</button>'));
+  chipsExclusifs(["xt-st"]);
+  var chips = document.querySelectorAll("#xt-st .chip");
+  for(var i=0;i<chips.length;i++) chips[i].onclick = function(){
+    setTimeout(function(){
+      var v = chipVal("xt-st");
+      $("xt-siret").classList[v === "oui" ? "remove" : "add"]("hidden");
+    }, 10);
+  };
+  $("xt-go").onclick = function(){
+    var v = chipVal("xt-st");
+    if(!v){ toast("Dites-nous o\u00f9 vous en \u00eates"); return; }
+    if(v === "non"){ xtSave({ statut:"non" }, xtSansStatut); return; }
+    var sir = ($("xt-sir").value || "").replace(/[^0-9]/g, "");
+    xtSave({ statut:"oui", siret:sir, societe:($("xt-soc").value || "").trim() }, xtRefs);
+  };
+}
+
+/* Refuser proprement vaut mieux que laisser esperer. Et on ne conseille a
+   personne de creer une structure pour nous : c'est une decision qui engage
+   bien au-dela de LUMIIA, et ce serait exactement le geste qui transforme un
+   extra en salarie deguise aux yeux d'un inspecteur. */
+function xtSansStatut(){
+  view('<div class="card center">'
+    + '<div style="font-size:2.8rem">\ud83e\udd1d</div>'
+    + '<div class="big" style="color:var(--lime)">MERCI D\u2019AVOIR<br>R\u00c9PONDU</div>'
+    + '<div class="mut" style="margin-top:12px">Sans statut d\u00e9j\u00e0 en place, on ne peut pas travailler '
+    + 'ensemble sur ce format-l\u00e0. Et on ne va pas vous pousser \u00e0 en cr\u00e9er un : \u00e7a vous engage '
+    + 'bien au-del\u00e0 de nous, et \u00e7a ne se d\u00e9cide pas pour quelques soir\u00e9es.</div>'
+    + '<div class="mut" style="margin-top:12px">On garde votre candidature. D\u00e8s qu\u2019un poste salari\u00e9 '
+    + 'se lib\u00e8re, vous \u00eates sur la liste \u2014 et la porte du bar est ouverte en attendant.</div>'
+    + '<button class="btn sec" id="xt-fin">Revenir \u00e0 l\u2019accueil</button></div>');
+  $("xt-fin").onclick = function(){ window.location.search = ""; };
+}
+
+/* ── 2 / 3 — les references ── */
+function xtLigneRef(i, r){
+  r = r || {};
+  return '<div class="xtref" data-i="' + i + '">'
+    + '<div class="xtrn">R\u00e9f\u00e9rence ' + (i + 1) + (i > 1 ? ' <span class="dim">(facultative)</span>' : '') + '</div>'
+    + '<label class="f">\u00c9tablissement et ville</label>'
+    + '<input class="xr-eta" value="' + esc(r.etab || "") + '" placeholder="Le Comptoir, Valence">'
+    + '<label class="f">Votre poste, et sur quelle p\u00e9riode</label>'
+    + '<input class="xr-post" value="' + esc(r.poste || "") + '" placeholder="Barman, \u00e9t\u00e9 2025">'
+    + '<label class="f">Qui peut parler de vous, et son num\u00e9ro</label>'
+    + '<input class="xr-nom" value="' + esc(r.nom || "") + '" placeholder="Pr\u00e9nom Nom">'
+    + '<input class="xr-tel" type="tel" inputmode="tel" value="' + esc(r.tel || "") + '" placeholder="06\u2026">'
+    + '</div>';
+}
+
+function xtRefs(){
+  var x = CAND.data.extra || {};
+  var rs = x.refs || [];
+  var h = '';
+  for(var i=0;i<3;i++) h += xtLigneRef(i, rs[i]);
+  h += '<div class="chips" style="margin-top:18px"><div class="chip' + (x.refs_ok ? " on" : "") + '" id="xt-ok">'
+    + 'Oui, vous pouvez les appeler</div></div>';
+  view(xtCarte(2, "QUI PEUT DIRE<br>DU BIEN DE VOUS&nbsp;?",
+    "Sur un extra, on n\u2019a pas trois semaines pour se rendre compte. Deux \u00e9tablissements o\u00f9 vous avez "
+    + "tenu un bar, et quelqu\u2019un qu\u2019on peut appeler : c\u2019est ce qui remplace la p\u00e9riode d\u2019essai.",
+    h,
+    '<button class="btn" id="xt-go">CONTINUER</button>'
+    + '<button class="btn sec" id="xt-back">Retour</button>'));
+  $("xt-ok").onclick = function(){ this.classList.toggle("on"); };
+  $("xt-back").onclick = xtStatut;
+  $("xt-go").onclick = function(){
+    var out = [], bl = document.querySelectorAll(".xtref");
+    for(var i=0;i<bl.length;i++){
+      var b = bl[i];
+      var o = { etab:(b.querySelector(".xr-eta").value || "").trim(),
+                poste:(b.querySelector(".xr-post").value || "").trim(),
+                nom:(b.querySelector(".xr-nom").value || "").trim(),
+                tel:(b.querySelector(".xr-tel").value || "").trim() };
+      if(o.etab || o.nom || o.tel) out.push(o);
+    }
+    if(out.length < 1){ toast("Au moins une r\u00e9f\u00e9rence, sinon on ne peut rien v\u00e9rifier"); return; }
+    xtSave({ refs: out, refs_ok: $("xt-ok").classList.contains("on") }, xtDispos);
+  };
+}
+
+/* ── 3 / 3 — quand, et a quel point seul ── */
+var XT_SOIRS = ["Vendredi soir","Samedi soir","Dimanche","En semaine si besoin","Soir\u00e9es priv\u00e9es"];
+var XT_FREQ  = ["1 \u00e0 2 fois par mois","Presque chaque week-end","Au coup par coup"];
+var XT_PREV  = ["La veille, \u00e7a me va","Deux ou trois jours","Une semaine"];
+var XT_AUTO  = ["Je peux tenir un bar seul","\u00c0 deux, sans probl\u00e8me","Je d\u00e9bute sur ce format"];
+
+function xtChips(id, liste, choisi, multi){
+  var d = String(choisi || "").split("|");
+  var h = '<div class="chips" id="' + id + '">';
+  liste.forEach(function(v){
+    h += '<div class="chip' + (d.indexOf(v) > -1 ? " on" : "") + '" data-v="' + esc(v) + '">' + esc(v) + '</div>';
+  });
+  return h + '</div>';
+}
+function xtVals(id){
+  var v = [], on = document.querySelectorAll("#" + id + " .chip.on");
+  for(var i=0;i<on.length;i++) v.push(on[i].getAttribute("data-v"));
+  return v.join("|");
+}
+
+function xtDispos(){
+  var x = CAND.data.extra || {};
+  var h = '<label class="f">Quels moments&nbsp;?</label>' + xtChips("xt-soirs", XT_SOIRS, x.soirs)
+    + '<label class="f" style="margin-top:18px">\u00c0 quel rythme&nbsp;?</label>' + xtChips("xt-freq", XT_FREQ, x.frequence)
+    + '<label class="f" style="margin-top:18px">On vous pr\u00e9vient combien de temps avant&nbsp;?</label>' + xtChips("xt-prev", XT_PREV, x.prevenance)
+    + '<label class="f" style="margin-top:18px">Derri\u00e8re le bar, vous en \u00eates o\u00f9&nbsp;?</label>' + xtChips("xt-auto", XT_AUTO, x.autonomie)
+    + '<label class="f" style="margin-top:18px">Quelque chose \u00e0 ajouter&nbsp;?</label>'
+    + '<textarea id="xt-mot" rows="3" placeholder="Facultatif">' + esc(x.mot || "") + '</textarea>';
+  view(xtCarte(3, "QUAND EST-CE<br>QU\u2019ON VOUS APPELLE&nbsp;?",
+    "Dernier \u00e9cran. On note vos disponibilit\u00e9s pour ne pas vous d\u00e9ranger un mardi \u00e0 14 h.",
+    h,
+    '<button class="btn" id="xt-go">JE VALIDE</button>'
+    + '<button class="btn sec" id="xt-back">Retour</button>'));
+  ["xt-soirs","xt-freq","xt-prev","xt-auto"].forEach(function(id){
+    var cs = document.querySelectorAll("#" + id + " .chip");
+    for(var i=0;i<cs.length;i++) cs[i].onclick = function(){
+      /* soirs : plusieurs choix. Les trois autres : un seul. */
+      if(this.parentNode.id !== "xt-soirs"){
+        var f = this.parentNode.querySelectorAll(".chip");
+        for(var j=0;j<f.length;j++) f[j].classList.remove("on");
+      }
+      this.classList.toggle("on");
+    };
+  });
+  $("xt-back").onclick = xtRefs;
+  $("xt-go").onclick = function(){
+    xtSave({ soirs: xtVals("xt-soirs"), frequence: xtVals("xt-freq"),
+             prevenance: xtVals("xt-prev"), autonomie: xtVals("xt-auto"),
+             mot: ($("xt-mot").value || "").trim(), etat: "complet",
+             envoye: Date.now() }, xtFin);
+  };
+}
+
+function xtFin(){
+  var pre = (CAND.data.prenom || "").trim();
+  view('<div class="card center">'
+    + '<div style="font-size:3rem">\ud83c\udf7b</div>'
+    + '<div class="big" style="color:var(--lime)">C\u2019EST NOT\u00c9<br>' + esc(pre ? pre.toUpperCase() : "") + '</div>'
+    + '<div class="mut" style="margin-top:12px">On vous rappelle pour en parler de vive voix, et v\u00e9rifier '
+    + 'qu\u2019on s\u2019entend bien avant un premier service.</div>'
+    + '<div class="mut" style="margin-top:12px">D\u2019ici l\u00e0, passez boire un verre. '
+    + 'C\u2019est encore le meilleur moyen de voir si l\u2019endroit vous va.</div>'
+    + '<button class="btn sec" id="xt-home">Revenir \u00e0 l\u2019accueil</button></div>');
+  $("xt-home").onclick = function(){ window.location.search = ""; };
+}
+
 /* ══════════ VUE TV — classement projeté ══════════ */
 function initTv(){
   if(!db){ $("lb").textContent = "Hors ligne"; return; }
@@ -3839,6 +4067,8 @@ function tabMessages(){
     + '<p class="aide">Les messages que vous pouvez envoyer depuis la fiche d\u2019un candidat. '
     + 'Le titre est ce que vous verrez dans la liste ; l\u2019objet et le texte sont ce que le candidat re\u00e7oit.<br>'
     + 'Dans le texte, <b>{prenom}</b>, <b>{nom}</b> et <b>{lien}</b> sont remplac\u00e9s \u00e0 l\u2019envoi '
+    + '\u2014 et <b>{lien_extra}</b> ouvre le parcours court des extras, sur sa propre ligne '
+    + 'il devient un bouton '
     + '\u2014 <b>{prenom} {nom}</b> ensemble donne la forme la plus formelle, celle utilis\u00e9e par d\u00e9faut '
     + '(<b>{lien}</b> = lien vers sa candidature, pour la reprendre ou la relire).<br>'
     + 'Un message doit \u00eatre enregistr\u00e9 ici pour pouvoir \u00eatre envoy\u00e9 : le serveur refuse d\u2019expédier '
@@ -4054,6 +4284,10 @@ function brancherEnvoi(c, racine){
        L'apercu montrait « lien vers sa candidature » — une formule ecrite du point
        de vue du recruteur, dans un texte cense montrer ce que LE CANDIDAT recoit.
        On montre desormais le bouton tel qu'il partira. */
+    /* {lien_extra} AVANT {lien} : la seconde chaine est contenue dans la
+       premiere, l'ordre inverse laisserait un « _extra } » orphelin. Meme
+       piege que cote serveur. */
+    s = s.split("{lien_extra}").join('<span class="lienbtn cyan">LES EXTRAS, \u00c7A M\u2019INT\u00c9RESSE</span>');
     s = s.split("{lien}").join('<span class="lienbtn">REPRENDRE MA CANDIDATURE</span>');
     return s;
   }
@@ -4202,6 +4436,7 @@ var ADM_TABS = [
   { k:"candidats",  n:"Candidats" },
   { k:"revue",      n:"Revue des réponses" },
   { k:"avis",       n:"Avis de l’équipe" },
+  { k:"extras",     n:"Extras" },
   { k:"suivi",      n:"Suivi & RDV" },
   { k:"messages",   n:"Messages" },
   { k:"stats",      n:"Statistiques" },
@@ -4270,7 +4505,7 @@ function admRender(){
 }
 
 function admTab(){
-  var f = { candidats:tabCandidats, revue:tabRevue, avis:tabAvis, suivi:tabSuivi, stats:tabStats, potentiel:tabPotentiel,
+  var f = { candidats:tabCandidats, revue:tabRevue, avis:tabAvis, extras:tabExtras, suivi:tabSuivi, stats:tabStats, potentiel:tabPotentiel,
             messages:tabMessages,
             textes:tabTextes, quiz:tabQuiz, situations:tabSituations,
             pitchs:tabPitchs, offre:tabOffre, listes:tabListes, reglages:tabReglages }[ADM_TAB];
@@ -5132,6 +5367,108 @@ function brancherEquipe(){
     JURY_CODES = cs;
     setTimeout(tabAvis, 350);
   };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ONGLET EXTRAS
+   ──────────────────────────────────────────────────────────────
+   Une liste a part, volontairement. Un extra n'est pas un candidat au
+   sens des postes salaries : ni le meme cadre, ni le meme engagement,
+   ni les memes questions. Les melanger dans la liste des candidatures
+   ferait perdre cette distinction — et c'est precisement celle qu'il
+   faut pouvoir montrer si on la demande un jour.
+   Les donnees vivent dans candidats/<id>/extra : le dossier de la
+   personne reste entier, seule la LECTURE est separee.
+   ══════════════════════════════════════════════════════════════ */
+function extrasListe(){
+  var L = [];
+  for(var k in LAST_CAND){
+    var c = LAST_CAND[k];
+    if(!c || !c.extra) continue;
+    c._k = k; L.push(c);
+  }
+  L.sort(function(a,b){ return (b.extra.maj || 0) - (a.extra.maj || 0); });
+  return L;
+}
+
+function tabExtras(){
+  var L = extrasListe();
+  var h = '<div class="adm-sec"><h2>Extras</h2>'
+    + '<p class="aide">Les personnes qui se sont d\u00e9clar\u00e9es int\u00e9ress\u00e9es par des extras depuis '
+    + 'le bouton du mail. Rien \u00e0 voir avec les postes salari\u00e9s : c\u2019est de la facturation, '
+    + 'ponctuelle, et \u00e7a suppose un statut d\u00e9j\u00e0 en place. Leur dossier complet reste dans '
+    + 'l\u2019onglet Candidats.</p>';
+
+  if(!L.length){
+    panneau(h + '<p class="aide">Personne pour le moment. Envoyez le message qui contient le bouton '
+      + '\u00ab\u00a0extras\u00a0\u00bb et ils appara\u00eetront ici.</p></div>');
+    return;
+  }
+
+  var avec = 0;
+  L.forEach(function(c){ if(c.extra.statut === "oui") avec++; });
+  h += '<div class="adm-bar" style="margin-top:6px"><span class="dim">'
+    + L.length + ' r\u00e9ponse' + (L.length > 1 ? "s" : "") + ' \u00b7 ' + avec + ' avec un statut'
+    + (avec > 1 ? "" : "") + '</span></div>';
+
+  L.forEach(function(c){
+    var x = c.extra || {};
+    var ok = x.statut === "oui";
+    h += '<div class="xtl' + (ok ? "" : " off") + '">'
+      + '<div class="xth"><div class="qui">'
+      +   (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">'
+                   : '<span class="vign vide">\u2014</span>')
+      +   '<span><b>' + esc(nomComplet(c)) + '</b><br>'
+      +   '<span class="dim">' + esc(c.tel || "") + (c.email ? ' \u00b7 ' + esc(c.email) : "") + '</span></span>'
+      + '</div>'
+      + '<div><span class="pill2 ' + (ok ? "hot" : "no") + '">'
+      +   (ok ? "Statut en place" : "Sans statut") + '</span> '
+      +   '<button class="btn sec mini" data-fiche="' + esc(c._k) + '">Fiche</button></div>'
+      + '</div>';
+
+    if(!ok){
+      h += '<div class="dim" style="margin-top:8px">A r\u00e9pondu qu\u2019elle n\u2019a pas encore de statut. '
+        + 'Rien \u00e0 faire \u2014 et surtout ne pas l\u2019inciter \u00e0 en cr\u00e9er un.</div></div>';
+      return;
+    }
+
+    h += '<div class="xtg">'
+      + kv("SIRET", x.siret ? esc(x.siret) : '<span class="dim">non renseign\u00e9</span>')
+      + (x.societe ? kv("Structure", esc(x.societe)) : "")
+      + kv("Moments", x.soirs ? esc(String(x.soirs).split("|").join(", ")) : '<span class="dim">\u2014</span>')
+      + kv("Rythme", x.frequence ? esc(x.frequence) : '<span class="dim">\u2014</span>')
+      + kv("Pr\u00e9venance", x.prevenance ? esc(x.prevenance) : '<span class="dim">\u2014</span>')
+      + kv("Derri\u00e8re le bar", x.autonomie ? esc(x.autonomie) : '<span class="dim">\u2014</span>')
+      + '</div>';
+
+    var rs = x.refs || [];
+    h += '<div class="xtr"><div class="xtrt">R\u00e9f\u00e9rences '
+      + (x.refs_ok ? '<span class="pill2 hot">appel autoris\u00e9</span>'
+                   : '<span class="pill2 no">ne pas appeler</span>') + '</div>';
+    if(!rs.length) h += '<div class="dim">Aucune r\u00e9f\u00e9rence donn\u00e9e.</div>';
+    rs.forEach(function(r){
+      h += '<div class="xtri"><b>' + esc(r.etab || "\u2014") + '</b>'
+        + (r.poste ? ' <span class="dim">\u00b7 ' + esc(r.poste) + '</span>' : "")
+        + '<br>' + esc(r.nom || "")
+        + (r.tel ? ' \u00b7 <a class="lien" href="tel:' + esc(r.tel) + '">' + esc(r.tel) + '</a>' : "")
+        + '</div>';
+    });
+    h += '</div>';
+
+    if(x.mot) h += '<div class="xtm">\u00ab\u00a0' + esc(x.mot) + '\u00a0\u00bb</div>';
+    h += '</div>';
+  });
+
+  panneau(h + '</div>');
+  brancherPhotosZoom($("adm-tab"));
+  var fs = document.querySelectorAll("#adm-tab [data-fiche]");
+  for(var i=0;i<fs.length;i++) fs[i].onclick = function(){
+    admFiche(LAST_CAND[this.getAttribute("data-fiche")]);
+  };
+}
+
+function kv(k, v){
+  return '<div class="kv"><span class="kk">' + k + '</span><span class="kvv">' + v + '</span></div>';
 }
 
 /* ── ONGLET CANDIDATS ── */
@@ -6334,6 +6671,32 @@ function admCsv(){
   /* Lien reçu par email : ?c=<identifiant de candidature>. Le navigateur qui
      l'ouvre peut n'avoir jamais vu cette candidature — on la redemande donc au
      guichet plutôt qu'au stockage local. */
+  /* ?x=<fiche> — le bouton « extras » du mail. Meme mecanique que ?c= : la
+     fiche est redemandee au guichet, jamais cherchee dans le stockage local,
+     puisqu'on peut ouvrir le lien depuis n'importe quel appareil. */
+  var lienExtra = q.match(/[?&]x=(-[A-Za-z0-9_-]{18,30})/);
+  if(lienExtra){
+    if(sp && sp.parentNode) sp.remove();
+    loadCfg(function(){
+      S.parcours = "nuit";
+      view('<div class="card center"><div class="sp-load" style="margin:10px auto"><i></i></div>'
+        + '<div class="mut" style="margin-top:12px">' + esc(T("mod_charge")) + '</div></div>');
+      guichetFiche(lienExtra[1], function(ok, fiche){
+        if(!ok){
+          view('<div class="card center"><div style="font-size:2.6rem">\ud83d\ude15</div>'
+            + '<div class="mut" style="margin-top:12px">' + Tb("mod_ko") + '</div>'
+            + '<button class="btn sec" id="mo-re">' + esc(T("mod_btn")) + '</button></div>');
+          $("mo-re").onclick = function(){ window.location.search = ""; };
+          return;
+        }
+        CAND.id = lienExtra[1]; CAND.data = fiche || {};
+        candLocalSave();
+        xtStatut();
+      });
+    });
+    return;
+  }
+
   var lienModif = q.match(/[?&]c=(-[A-Za-z0-9_-]{18,30})/);
   if(lienModif){
     if(sp && sp.parentNode) sp.remove();
