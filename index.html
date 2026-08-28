@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.8 -->
+<!-- LUMIIA RECRUTE — v7.9 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -663,7 +663,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.8</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.9</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -676,7 +676,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.8";
+var VERSION = "v7.9";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3429,7 +3429,7 @@ function xtStatut(){
     + '<div id="xt-siret" class="' + (x.statut === "oui" ? "" : "hidden") + '">'
     +   '<label class="f" style="margin-top:20px">Num\u00e9ro SIRET</label>'
     +   '<input id="xt-sir" inputmode="numeric" value="' + esc(x.siret || "") + '">'
-    +   '<label class="f">Nom de votre structure <span class="dim">(si diff\u00e9rent de votre nom)</span></label>'
+    +   '<label class="f">Nom de votre structure ou nom propre</label>'
     +   '<input id="xt-soc" value="' + esc(x.societe || "") + '">'
     + '</div>';
   view(xtCarte(1, "VOUS FACTUREZ&nbsp;?",
@@ -3455,8 +3455,18 @@ function xtStatut(){
     var v = chipVal("xt-st");
     if(!v){ toast("Dites-nous o\u00f9 vous en \u00eates"); return; }
     if(v === "non"){ xtSave({ statut:"non" }, xtSansStatut); return; }
+    /* Les deux sont exiges : sans SIRET ni nom, on ne peut pas recevoir une
+       facture, donc on ne peut pas faire travailler la personne. Le refuser
+       maintenant vaut mieux que le decouvrir le soir du service.
+       Quatorze chiffres : c'est la longueur d'un SIRET, et la verifier ici evite
+       une saisie de SIREN a neuf chiffres qu'on ne remarquerait qu'a la
+       facturation. */
     var sir = ($("xt-sir").value || "").replace(/[^0-9]/g, "");
-    xtSave({ statut:"oui", siret:sir, societe:($("xt-soc").value || "").trim() }, xtVous);
+    var soc = ($("xt-soc").value || "").trim();
+    if(!sir){ toast("Le num\u00e9ro SIRET est n\u00e9cessaire pour vous facturer"); return; }
+    if(sir.length !== 14){ toast("Un SIRET compte 14 chiffres \u2014 il en manque " + Math.abs(14 - sir.length)); return; }
+    if(!soc){ toast("Indiquez le nom de votre structure, ou votre nom propre"); return; }
+    xtSave({ statut:"oui", siret:sir, societe:soc }, xtVous);
   };
 }
 
@@ -3538,11 +3548,20 @@ function xtRefs(){
    L'enregistreur du parcours principal est reutilise tel quel : meme bouton,
    meme televersement, meme gestion du remplacement audio/video. */
 var XT_QUESTION = "Qui \u00eates-vous, et o\u00f9 avez-vous fait vos armes ? "
-  + "Une minute suffit : les lieux, l'ambiance que vous aimez, ce que vous savez tenir.";
+  + "Une \u00e0 deux minutes suffisent : les lieux, l'ambiance que vous aimez, ce que vous savez tenir.";
 
 function xtVous(){
+  var x = CAND.data.extra || {};
   var slot = SLOTS.xtra, fait = CAND.data[slot + "_url"], typ = CAND.data[slot + "_type"];
-  var h = '<div class="media' + (fait ? " ok" : "") + '" style="margin-top:16px">'
+  /* Ecrire ou parler : chacun s'exprime mieux dans un registre. Imposer le micro
+     ecarterait les timides, imposer le clavier ecarterait ceux qui racontent bien
+     et ecrivent mal. On propose les deux et on RECOMMANDE l'enregistrement, sans
+     l'exiger. */
+  var h = '<label class="f" style="margin-top:16px">\u00c9crivez-le, si vous pr\u00e9f\u00e9rez</label>'
+    + '<textarea id="xt-pres" rows="5">' + esc(x.presentation || "") + '</textarea>'
+    + '<label class="f" style="margin-top:20px">Ajouter un audio ou une vid\u00e9o '
+    +   '<span class="dim">\u2014 recommand\u00e9</span></label>'
+    + '<div class="media' + (fait ? " ok" : "") + '">'
     + '<div class="dim">' + esc(XT_QUESTION) + '</div>'
     + '<button class="btn sec mini' + clsMedia(false, typ, fait) + '" id="xt-aud">'
     +   esc(libMedia(false, typ, fait)) + '</button>'
@@ -3561,11 +3580,13 @@ function xtVous(){
     '<button class="btn" id="xt-go">CONTINUER</button>'
     + '<button class="btn sec" id="xt-back">Retour</button>'));
   $("xt-aud").onclick = function(){
+    xtEnregistrerPres(null);
     avantRemplacer(CAND.data[slot + "_url"], CAND.data[slot + "_type"], false, function(){
       screenRec(slot, false, XT_QUESTION, "EXTRAS \u00b7 2 / 4", xtVous);
     });
   };
   $("xt-vid").onclick = function(){
+    xtEnregistrerPres(null);
     avantRemplacer(CAND.data[slot + "_url"], CAND.data[slot + "_type"], true, function(){
       screenRec(slot, true, XT_QUESTION, "EXTRAS \u00b7 2 / 4", xtVous);
     });
@@ -3575,8 +3596,15 @@ function xtVous(){
     CAND.data[slot + "_url"] = null; CAND.data[slot + "_type"] = null; CAND.data[slot + "_err"] = null;
     candSave(patch, function(){ toast("Enregistrement supprim\u00e9"); xtVous(); });
   };
-  $("xt-back").onclick = xtStatut;
-  $("xt-go").onclick = xtRefs;
+  $("xt-back").onclick = function(){ xtEnregistrerPres(xtStatut); };
+  $("xt-go").onclick   = function(){ xtEnregistrerPres(xtRefs); };
+}
+
+/* Le texte est enregistre AVANT de quitter l'ecran, dans les deux sens : partir
+   en arriere ne doit pas effacer ce qu'on vient d'ecrire. */
+function xtEnregistrerPres(suite){
+  var t = $("xt-pres") ? ($("xt-pres").value || "").trim() : "";
+  xtSave({ presentation: t }, suite);
 }
 
 /* ── 4 / 4 — quand, et a quel point seul ── */
@@ -5588,6 +5616,10 @@ function tabExtras(){
     });
     h += '</div>';
 
+    if(x.presentation){
+      h += '<div class="xtr"><div class="xtrt">Ce qu\u2019il ou elle \u00e9crit</div>'
+        + '<div class="xtm" style="margin-top:0">' + esc(x.presentation) + '</div></div>';
+    }
     if(c.extramedia_url){
       h += '<div class="xtr"><div class="xtrt">Ce qu\u2019il ou elle raconte</div>'
         + '<div class="pprev">' + (c.extramedia_type === "video"
