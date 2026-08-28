@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.12 -->
+<!-- LUMIIA RECRUTE — v7.13 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -151,6 +151,7 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
   transition:width .06s linear;}
 .vum.actif i{background:var(--lime);}
 .vum[data-muet]{box-shadow:0 0 0 1px var(--danger);}
+.vumnom{font-size:.72rem;color:var(--dim);text-align:center;margin-bottom:6px;}
 .dispo{width:100%;border-collapse:separate;border-spacing:5px;margin-top:10px;}
 .dispo th{font-family:'Bebas Neue';font-size:.9rem;color:var(--dim);letter-spacing:.06em;font-weight:400;}
 .dispo td{text-align:center;}
@@ -676,7 +677,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.12</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.13</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -689,7 +690,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.12";
+var VERSION = "v7.13";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3219,13 +3220,27 @@ function screenRec(slot, video, question, titre, retour){
     }
     this.disabled = true;
     st.textContent = "Autorisez le micro" + (video ? " et la caméra" : "") + "…";
-    navigator.mediaDevices.getUserMedia(video ? { audio:true, video:{ facingMode:"user" } } : { audio:true })
+    /* On DEMANDE l'entree par defaut du systeme plutot que de laisser le
+       navigateur ressortir celle qu'il a retenue pour ce site. Cas reel du
+       28/08 : Chrome avait memorise « NDI Audio (Virtual) », un peripherique
+       virtuel laisse par un logiciel de streaming. Il ne capte rien : la video
+       s'enregistrait, s'affichait, se lisait — et restait parfaitement muette.
+       Le micro du Mac etait pourtant le defaut du systeme.
+       Une machine de studio a souvent trois ou quatre entrees virtuelles ; le
+       defaut systeme est presque toujours le bon choix. « ideal » et non
+       « exact » : si ce peripherique n'existe pas, le navigateur prend ce qu'il
+       a au lieu de refuser d'ouvrir le micro. */
+    var demandeAudio = { deviceId: { ideal: "default" } };
+    navigator.mediaDevices.getUserMedia(video
+        ? { audio: demandeAudio, video:{ facingMode:"user" } }
+        : { audio: demandeAudio })
     .then(function(s){
       stream = s;
       /* Une video sans piste audio est le seul cas ou l'enregistrement se
          deroule normalement et donne un fichier muet. Le dire tout de suite
          plutot que de laisser quelqu'un parler une minute pour rien. */
-      if(!stream.getAudioTracks().length){
+      var pisteA = stream.getAudioTracks()[0];
+      if(!pisteA){
         toast("Aucun micro d\u00e9tect\u00e9 : l\u2019enregistrement serait muet");
       }
       /* Le filtre precedent, en audio seul, acceptait AUSSI les conteneurs video :
@@ -3252,6 +3267,13 @@ function screenRec(slot, video, question, titre, retour){
          passe ; la barre reste plate, c'est le micro et non l'app. */
       var vum = el('<div class="vum"><i></i></div>');
       prev.appendChild(vum);
+      /* Le nom du micro reellement ouvert, sous la barre. Sans lui, on ne peut
+         pas savoir QUEL peripherique est en cause quand rien n'entre. */
+      if(pisteA && pisteA.label){
+        var nom = el('<div class="vumnom"></div>');
+        nom.textContent = "\ud83c\udf99 " + pisteA.label;
+        prev.appendChild(nom);
+      }
       var barre = vum.querySelector("i"), ac = null, raf = null, muetDepuis = 0;
       try {
         var AC = window.AudioContext || window.webkitAudioContext;
