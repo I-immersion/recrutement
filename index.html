@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.11 -->
+<!-- LUMIIA RECRUTE — v7.12 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -146,6 +146,11 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 .opt .os{color:var(--dim);font-size:.85rem;display:block;margin-top:2px;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px;}
 .grid2 .opt{margin-top:0;text-align:center;}
+.vum{height:10px;border-radius:99px;background:rgba(255,255,255,.08);margin:12px 0 4px;overflow:hidden;}
+.vum i{display:block;height:100%;width:0;border-radius:99px;background:var(--dim);
+  transition:width .06s linear;}
+.vum.actif i{background:var(--lime);}
+.vum[data-muet]{box-shadow:0 0 0 1px var(--danger);}
 .dispo{width:100%;border-collapse:separate;border-spacing:5px;margin-top:10px;}
 .dispo th{font-family:'Bebas Neue';font-size:.9rem;color:var(--dim);letter-spacing:.06em;font-weight:400;}
 .dispo td{text-align:center;}
@@ -671,7 +676,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.11</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.12</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -684,7 +689,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.11";
+var VERSION = "v7.12";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3178,6 +3183,8 @@ function recapCandidature(){
 /* ══════════════════════════════════════
    ÉCRAN D'ENREGISTREMENT (plein écran)
    ══════════════════════════════════════ */
+var recArret = null;   /* coupe le temoin de niveau, voir plus bas */
+
 function screenRec(slot, video, question, titre, retour){
   /* Rien sur cet ecran ne disait si on partait en audio ou en video : le mode est
      maintenant annonce en haut ET inscrit sur le bouton d'enregistrement. */
@@ -3200,6 +3207,7 @@ function screenRec(slot, video, question, titre, retour){
   $("r-ok").onclick   = function(){ nettoie(); retour(); };
 
   function nettoie(){
+    if(recArret) recArret();
     if(iv) clearInterval(iv);
     try{ if(mr && mr.state === "recording") mr.stop(); }catch(e){}
     if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
@@ -3214,8 +3222,20 @@ function screenRec(slot, video, question, titre, retour){
     navigator.mediaDevices.getUserMedia(video ? { audio:true, video:{ facingMode:"user" } } : { audio:true })
     .then(function(s){
       stream = s;
-      var mime = ["video/webm;codecs=vp8,opus","video/webm","video/mp4","audio/webm","audio/mp4"]
-        .filter(function(m){ return (video ? m.indexOf("video")===0 : true) && MediaRecorder.isTypeSupported(m); })[0];
+      /* Une video sans piste audio est le seul cas ou l'enregistrement se
+         deroule normalement et donne un fichier muet. Le dire tout de suite
+         plutot que de laisser quelqu'un parler une minute pour rien. */
+      if(!stream.getAudioTracks().length){
+        toast("Aucun micro d\u00e9tect\u00e9 : l\u2019enregistrement serait muet");
+      }
+      /* Le filtre precedent, en audio seul, acceptait AUSSI les conteneurs video :
+         « (video ? commence par video : true) » laisse tout passer quand video est
+         faux. On enregistrait donc une voix seule dans un conteneur video.
+         Chaque mode a maintenant sa propre liste. */
+      var mime = (video
+          ? ["video/webm;codecs=vp8,opus","video/webm;codecs=vp9,opus","video/webm","video/mp4"]
+          : ["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg"])
+        .filter(function(m){ return MediaRecorder.isTypeSupported(m); })[0];
       mr = new MediaRecorder(stream, mime ? { mimeType:mime } : undefined);
       var chunks = [];
       mr.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
@@ -3226,6 +3246,33 @@ function screenRec(slot, video, question, titre, retour){
         live.autoplay = true; live.muted = true; live.playsInline = true; live.srcObject = stream;
         live.style.maxHeight = "240px"; prev.appendChild(live);
       }
+      /* TEMOIN DE NIVEAU. Sans lui, un micro muet — coupe, occupe par une autre
+         application, ou mauvaise entree choisie dans le systeme — ne se voit
+         qu'a la relecture, quand il est trop tard. La barre bouge, la voix
+         passe ; la barre reste plate, c'est le micro et non l'app. */
+      var vum = el('<div class="vum"><i></i></div>');
+      prev.appendChild(vum);
+      var barre = vum.querySelector("i"), ac = null, raf = null, muetDepuis = 0;
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        ac = new AC();
+        var an = ac.createAnalyser(); an.fftSize = 512;
+        ac.createMediaStreamSource(stream).connect(an);
+        var buf = new Uint8Array(an.frequencyBinCount);
+        (function boucle(){
+          raf = requestAnimationFrame(boucle);
+          an.getByteTimeDomainData(buf);
+          var max = 0;
+          for(var b=0;b<buf.length;b++){ var d = Math.abs(buf[b] - 128); if(d > max) max = d; }
+          var pc = Math.min(100, Math.round(max / 60 * 100));
+          barre.style.width = pc + "%";
+          vum.className = "vum" + (pc > 4 ? " actif" : "");
+          if(pc <= 4){ muetDepuis++; if(muetDepuis === 180) vum.setAttribute("data-muet", "1"); }
+          else { muetDepuis = 0; vum.removeAttribute("data-muet"); }
+        })();
+      } catch(e){ vum.remove(); }
+      recArret = function(){ try{ if(raf) cancelAnimationFrame(raf); if(ac) ac.close(); }catch(e){} };
+
       var n = REC_MAX;
       st.innerHTML = '<span class="rec">● REC</span> <span id="r-cd">' + n + '</span>s';
       iv = setInterval(function(){
@@ -3238,6 +3285,7 @@ function screenRec(slot, video, question, titre, retour){
 
       function stop(){
         if(stopped) return; stopped = true;
+        if(recArret) recArret();
         clearInterval(iv);
         try{ mr.stop(); }catch(e){}
         stream.getTracks().forEach(function(t){ t.stop(); });
@@ -3249,6 +3297,7 @@ function screenRec(slot, video, question, titre, retour){
         prev.innerHTML = "";
         var pv = document.createElement(video ? "video" : "audio");
         pv.src = URL.createObjectURL(blob); pv.controls = true; pv.playsInline = true;
+        pv.muted = false; pv.volume = 1;
         pv.style.maxHeight = "220px"; prev.appendChild(pv);
         uploadMedia(blob, slot + (video ? "-video" : "-audio"), function(ok, u, code){
           if(ok){
