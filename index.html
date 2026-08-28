@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.9 -->
+<!-- LUMIIA RECRUTE — v7.11 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -104,6 +104,14 @@ label.f{display:block;font-size:.78rem;letter-spacing:.12em;text-transform:upper
 .xtrn{font-family:'Nunito';font-weight:900;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;
   color:var(--cyan);}
 .xtref label.f{margin-top:12px;}
+.xtacc{margin-top:12px;}
+.xtacc .xtacct{width:100%;text-align:left;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.10);border-radius:10px;padding:12px 14px;
+  color:var(--soft);font-family:'Nunito';font-weight:900;font-size:.88rem;cursor:pointer;}
+.xtacc .xtacct .fl{color:var(--cyan);}
+.xtacc .xtaccin{display:none;}
+.xtacc.ouvert .xtaccin{display:block;}
+.xtacc.ouvert .xtref{margin-top:8px;}
 .xtref input{margin-top:4px;}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--lime);color:var(--lime);padding:11px 18px;border-radius:99px;font-size:.9rem;z-index:999;}
 
@@ -663,7 +671,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.9</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.11</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -676,7 +684,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.9";
+var VERSION = "v7.11";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -3491,7 +3499,7 @@ function xtSansStatut(){
 function xtLigneRef(i, r){
   r = r || {};
   return '<div class="xtref" data-i="' + i + '">'
-    + '<div class="xtrn">R\u00e9f\u00e9rence ' + (i + 1) + ' <span class="dim">(facultative)</span></div>'
+    + (i === 0 ? '<div class="xtrn">R\u00e9f\u00e9rence 1 <span class="dim">(facultative)</span></div>' : '')
     + '<label class="f">\u00c9tablissement et ville</label>'
     + '<input class="xr-eta" value="' + esc(r.etab || "") + '">'
     + '<label class="f">Votre poste, et sur quelle p\u00e9riode</label>'
@@ -3505,8 +3513,21 @@ function xtLigneRef(i, r){
 function xtRefs(){
   var x = CAND.data.extra || {};
   var rs = x.refs || [];
-  var h = '';
-  for(var i=0;i<3;i++) h += xtLigneRef(i, rs[i]);
+  /* La premiere reference est ouverte, les deux autres repliees. Trois blocs
+     identiques deplies d'un coup donnent l'impression qu'il faut tout remplir,
+     alors qu'aucun n'est obligatoire. Une reference deja saisie s'ouvre d'office :
+     on ne cache pas a quelqu'un ce qu'il a ecrit. */
+  var h = xtLigneRef(0, rs[0]);
+  for(var i=1;i<3;i++){
+    var pleine = !!(rs[i] && (rs[i].etab || rs[i].nom || rs[i].tel));
+    h += '<div class="xtacc' + (pleine ? ' ouvert' : '') + '" data-acc="' + i + '">'
+      + '<button class="xtacct" data-ouvre="' + i + '">'
+      +   '<span class="fl">' + (pleine ? '\u25be' : '\u25b8') + '</span> '
+      +   'Ajouter une ' + (i === 1 ? 'deuxi\u00e8me' : 'troisi\u00e8me') + ' r\u00e9f\u00e9rence'
+      + '</button>'
+      + '<div class="xtaccin">' + xtLigneRef(i, rs[i]) + '</div>'
+      + '</div>';
+  }
   h += '<div class="chips" style="margin-top:18px"><div class="chip' + (x.refs_ok ? " on" : "") + '" id="xt-ok">'
     + 'Oui, vous pouvez les appeler</div></div>';
   view(xtCarte(3, "QUI PEUT DIRE<br>DU BIEN DE VOUS&nbsp;?",
@@ -3516,6 +3537,12 @@ function xtRefs(){
     h,
     '<button class="btn" id="xt-go">CONTINUER</button>'
     + '<button class="btn sec" id="xt-back">Retour</button>'));
+  var accs = document.querySelectorAll(".xtacct");
+  for(var a=0;a<accs.length;a++) accs[a].onclick = function(){
+    var boite = this.parentNode;
+    boite.classList.toggle("ouvert");
+    this.querySelector(".fl").textContent = boite.classList.contains("ouvert") ? "\u25be" : "\u25b8";
+  };
   $("xt-ok").onclick = function(){ this.classList.toggle("on"); };
   $("xt-back").onclick = xtVous;
   $("xt-go").onclick = function(){
@@ -3547,8 +3574,9 @@ function xtRefs(){
    personne, ca reste la regle de toute l'app.
    L'enregistreur du parcours principal est reutilise tel quel : meme bouton,
    meme televersement, meme gestion du remplacement audio/video. */
-var XT_QUESTION = "Qui \u00eates-vous, et o\u00f9 avez-vous fait vos armes ? "
-  + "Une \u00e0 deux minutes suffisent : les lieux, l'ambiance que vous aimez, ce que vous savez tenir.";
+var XT_QUESTION = "Qui \u00eates-vous, et o\u00f9 avez-vous fait votre exp\u00e9rience ? "
+  + "Une \u00e0 deux minutes suffisent : les lieux, l'ambiance que vous aimez, "
+  + "ce que vous aimez dans ce m\u00e9tier et ce que vous n'aimez pas.";
 
 function xtVous(){
   var x = CAND.data.extra || {};
@@ -3574,8 +3602,8 @@ function xtVous(){
         : '<audio src="' + esc(fait) + '" controls preload="none"></audio>') + '</div>' : '')
     + '</div>';
   view(xtCarte(2, "PARLEZ-NOUS<br>DE VOUS",
-    "Un extra, on ne le rencontre pas avant le premier service. Une minute de voix en dit plus "
-    + "qu\u2019une page de CV. C\u2019est facultatif, et \u00e7a n\u2019\u00e9carte personne.",
+    "Une minute de voix ou de vid\u00e9o en dit plus qu\u2019une page de CV. "
+    + "C\u2019est facultatif, mais c\u2019est plus vivant. Lancez-vous&nbsp;!",
     h,
     '<button class="btn" id="xt-go">CONTINUER</button>'
     + '<button class="btn sec" id="xt-back">Retour</button>'));
@@ -3610,7 +3638,7 @@ function xtEnregistrerPres(suite){
 /* ── 4 / 4 — quand, et a quel point seul ── */
 var XT_SOIRS = ["Vendredi soir","Samedi soir","Dimanche","En semaine si besoin","Soir\u00e9es priv\u00e9es"];
 var XT_FREQ  = ["1 \u00e0 2 fois par mois","Presque chaque week-end","Au coup par coup"];
-var XT_PREV  = ["La veille, \u00e7a me va","Deux ou trois jours","Une semaine"];
+var XT_PREV  = ["Sur l'instant","La veille, \u00e7a me va","Deux ou trois jours","Une semaine"];
 var XT_AUTO  = ["Je peux tenir un bar seul","\u00c0 deux, sans probl\u00e8me","Je d\u00e9bute sur ce format"];
 
 function xtChips(id, liste, choisi, multi){
@@ -3627,13 +3655,41 @@ function xtVals(id){
   return v.join("|");
 }
 
+/* Meme grille que la derniere etape du parcours salarie : sept jours, trois
+   moments, une case a cocher. Emmanuel la lit deja d'un coup d'oeil ailleurs
+   dans l'app, autant garder le meme objet. */
+function xtGrille(g, JRS, CRE){
+  var h = '<table class="dispo"><tr><th></th>';
+  CRE.forEach(function(c){ h += '<th>' + c + '</th>'; });
+  h += '</tr>';
+  JRS.forEach(function(j){
+    h += '<tr><td class="dj">' + j + '</td>';
+    CRE.forEach(function(c){
+      var k = j + '-' + c;
+      h += '<td><span class="cx' + (g.indexOf(k) > -1 ? ' on' : '') + '" data-k="' + k + '">\u2713</span></td>';
+    });
+    h += '</tr>';
+  });
+  return h + '</table>';
+}
+
 function xtDispos(){
   var x = CAND.data.extra || {};
-  var h = '<label class="f">Quels moments&nbsp;?</label>' + xtChips("xt-soirs", XT_SOIRS, x.soirs)
+  var g = x.grille || "";
+  var CRE = ["Matin","Apr\u00e8s-midi","Soir"];
+  var JRS = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
+  var h = '<label class="f">Vos jours de disponibilit\u00e9s pour des extras</label>'
+    + xtChips("xt-soirs", XT_SOIRS, x.soirs)
     + '<label class="f" style="margin-top:18px">\u00c0 quel rythme&nbsp;?</label>' + xtChips("xt-freq", XT_FREQ, x.frequence)
     + '<label class="f" style="margin-top:18px">On vous pr\u00e9vient combien de temps avant&nbsp;?</label>' + xtChips("xt-prev", XT_PREV, x.prevenance)
     + '<label class="f" style="margin-top:18px">Derri\u00e8re le bar, vous en \u00eates o\u00f9&nbsp;?</label>' + xtChips("xt-auto", XT_AUTO, x.autonomie)
-    + '<label class="f" style="margin-top:18px">Quelque chose \u00e0 ajouter&nbsp;?</label>'
+    /* La grille sert a UNE chose : savoir quand decrocher son telephone. Les
+       pastilles au-dessus disent quand la personne peut TRAVAILLER, ce qui n'a
+       rien a voir avec les moments ou elle peut PARLER. */
+    + '<label class="f" style="margin-top:22px">Quand peut-on vous appeler pour en parler&nbsp;?</label>'
+    + '<div class="dim">Cochez les moments o\u00f9 vous d\u00e9crochez volontiers.</div>'
+    + xtGrille(g, JRS, CRE)
+    + '<label class="f" style="margin-top:22px">Quelque chose \u00e0 ajouter&nbsp;?</label>'
     + '<textarea id="xt-mot" rows="3" placeholder="Facultatif">' + esc(x.mot || "") + '</textarea>';
   view(xtCarte(4, "QUAND EST-CE<br>QU\u2019ON VOUS APPELLE&nbsp;?",
     "Dernier \u00e9cran. On note vos disponibilit\u00e9s pour ne pas vous d\u00e9ranger un mardi \u00e0 14 h.",
@@ -3651,10 +3707,15 @@ function xtDispos(){
       this.classList.toggle("on");
     };
   });
+  var cxs = document.querySelectorAll(".dispo .cx");
+  for(var q=0;q<cxs.length;q++) cxs[q].onclick = function(){ this.classList.toggle("on"); };
   $("xt-back").onclick = xtRefs;
   $("xt-go").onclick = function(){
+    var gr = [], on = document.querySelectorAll(".dispo .cx.on");
+    for(var i=0;i<on.length;i++) gr.push(on[i].getAttribute("data-k"));
     xtSave({ soirs: xtVals("xt-soirs"), frequence: xtVals("xt-freq"),
              prevenance: xtVals("xt-prev"), autonomie: xtVals("xt-auto"),
+             grille: gr.join("|"),
              mot: ($("xt-mot").value || "").trim(), etat: "complet",
              envoye: Date.now() }, xtFin);
   };
@@ -3665,8 +3726,7 @@ function xtFin(){
   view('<div class="card center">'
     + '<div style="font-size:3rem">\ud83c\udf7b</div>'
     + '<div class="big" style="color:var(--lime)">C\u2019EST NOT\u00c9<br>' + esc(pre ? pre.toUpperCase() : "") + '</div>'
-    + '<div class="mut" style="margin-top:12px">On vous rappelle pour en parler de vive voix, et v\u00e9rifier '
-    + 'qu\u2019on s\u2019entend bien avant un premier service.</div>'
+    + '<div class="mut" style="margin-top:12px">On vous rappelle pour en parler de vive voix.</div>'
     + '<div class="mut" style="margin-top:12px">D\u2019ici l\u00e0, passez boire un verre. '
     + 'C\u2019est encore le meilleur moyen de voir si l\u2019endroit vous va.</div>'
     + '<button class="btn sec" id="xt-home">Revenir \u00e0 l\u2019accueil</button></div>');
@@ -5600,6 +5660,8 @@ function tabExtras(){
       + kv("Rythme", x.frequence ? esc(x.frequence) : '<span class="dim">\u2014</span>')
       + kv("Pr\u00e9venance", x.prevenance ? esc(x.prevenance) : '<span class="dim">\u2014</span>')
       + kv("Derri\u00e8re le bar", x.autonomie ? esc(x.autonomie) : '<span class="dim">\u2014</span>')
+      + kv("Joignable", x.grille ? esc(String(x.grille).split("|").join(", "))
+                                 : '<span class="dim">\u2014</span>')
       + '</div>';
 
     var rs = x.refs || [];
