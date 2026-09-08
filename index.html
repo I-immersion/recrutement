@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.21 -->
+<!-- LUMIIA RECRUTE — v7.22 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -558,6 +558,16 @@ body.adm{background:#0d1117;}
 #admin .compte .fraz{margin-left:8px;padding:5px 11px;border-radius:7px;border:1px solid #3a4552;
   background:transparent;color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.82rem;cursor:pointer;}
 #admin .compte .fraz:hover{color:#e6edf3;border-color:#58a6ff;}
+#admin .recents{margin:0 0 12px;padding:12px 14px;border-radius:10px;background:#12210f;
+  border:1px solid #3f6b2a;}
+#admin .recents .rect{color:#b8ff3c;font-family:'Bebas Neue',sans-serif;font-size:1rem;
+  letter-spacing:.1em;margin-bottom:9px;}
+#admin .recents .recl{display:flex;flex-wrap:wrap;gap:8px;}
+#admin .recents .recc{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:9px;
+  border:1px solid #3f6b2a;background:#0f1a0c;color:#e6edf3;font-family:'Nunito';font-size:.86rem;
+  cursor:pointer;text-align:left;}
+#admin .recents .recc:hover{border-color:#b8ff3c;}
+#admin .recents .recc .mono{color:#8fae76;font-size:.8rem;}
 #admin .archbloc{margin-top:18px;border:1px solid #7a3030;border-radius:10px;background:#1c1315;}
 #admin .archbloc .archbtn{width:100%;text-align:left;padding:13px 16px;background:transparent;
   border:none;color:#ffb4b4;font-family:'Nunito';font-weight:900;font-size:.95rem;cursor:pointer;}
@@ -791,7 +801,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.21</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.22</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -804,7 +814,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.21";
+var VERSION = "v7.22";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4940,7 +4950,7 @@ var REV_I = 0, REV_REFUSES = false;
    supprime pas — on les sort du champ de vision, et un bouton les rappelle. */
 function revRefuse(c){
   var k = c.suivi_statut || "nouveau";
-  return k === "ecarte" || k === "ecarte2" || k === "sans_suite";
+  return k === "ecarte" || k === "ecarte2" || k === "sans_suite" || k === "indispo";
 }
 
 function revQuestions(){
@@ -6037,6 +6047,7 @@ var SUIVI = [
   { k:"contacte_tel",n:"Contacté tél",            c:"" },
   { k:"mail_envoye", n:"Envoyé mail",             c:"" },
   { k:"rdv",         n:"RDV fixé",                c:"hot" },
+  { k:"indispo",     n:"Candidat plus disponible",c:"no" },
   { k:"rdv2",        n:"Demande 2ème rendez-vous",c:"hot" },
   { k:"retenu",      n:"Retenu",                  c:"hot" },
   { k:"ecarte",      n:"Écarté",                  c:"no" },
@@ -6055,8 +6066,8 @@ var SUIVI_ETAPES = [
   { n:1, t:"Réception",           ks:["nouveau"] },
   { n:2, t:"Tri sur dossier",     ks:["a_contacter","ecarte"] },
   { n:3, t:"Prise de contact",    ks:["contacte_tel","mail_envoye"] },
-  { n:4, t:"Rendez-vous",         ks:["rdv"] },
-  { n:5, t:"Décision interne",    ks:["retenu","rdv2","ecarte"] },
+  { n:4, t:"Rendez-vous",         ks:["rdv","indispo"] },
+  { n:5, t:"Décision interne",    ks:["retenu","rdv2","ecarte","indispo"] },
   { n:6, t:"Second rendez-vous",  ks:["retenu2","ecarte2"], si:"rdv2" },
   { n:7, t:"Candidat averti",     ks:["averti_non","averti_mail","averti_tel"] }
 ];
@@ -6744,7 +6755,7 @@ function tabSuivi(){
   var retard = "", aFaire = "", rdv = "", nR = 0, nF = 0, nV = 0;
   arr.slice().sort(function(a,b){ return (a.relance_date||"9") < (b.relance_date||"9") ? -1 : 1; }).forEach(function(c){
     if(!c.relance_date) return;
-    if(["retenu","retenu2","ecarte","ecarte2","sans_suite"].indexOf(c.suivi_statut) > -1) return;
+    if(["retenu","retenu2","ecarte","ecarte2","sans_suite","indispo"].indexOf(c.suivi_statut) > -1) return;
     if(c.relance_date < auj){ retard += ligne(c, c.relance_date); nR++; }
     else { aFaire += ligne(c, c.relance_date); nF++; }
   });
@@ -7251,7 +7262,7 @@ function tabReglages(){
 /* ── TABLEAU COMPARATIF ── */
 /* Trois lectures d'un coup d'oeil, sans ouvrir la fiche : ce qui a ete decide,
    ce qu'on en a pense apres l'avoir vu, et si la personne a ete prevenue. */
-var DECISIONS = { retenu:1, ecarte:1, retenu2:1, ecarte2:1, sans_suite:1, rdv2:1 };
+var DECISIONS = { retenu:1, ecarte:1, retenu2:1, ecarte2:1, sans_suite:1, rdv2:1, indispo:1 };
 function decisionCell(c){
   var st = c.suivi_statut || "";
   if(!DECISIONS[st]) return '<span class="dim">\u2014</span>';
@@ -7331,7 +7342,7 @@ function admCandidats(){
      Deux exceptions : quand on filtre explicitement sur l'un de ces statuts, et
      quand une recherche est en cours — chercher quelqu'un et ne pas le trouver
      parce qu'il etait dans un bloc replie, c'est un piege. */
-  var ARCH = ["ecarte","ecarte2","sans_suite"];
+  var ARCH = ["ecarte","ecarte2","sans_suite","indispo"];
   var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite");
   var actifs = arr, archives = [];
   if(separer){
@@ -7396,6 +7407,37 @@ function admCandidats(){
     return h + '</tbody></table>';
   }
 
+  /* « Je ne vois pas les derniers inscrits. » Le tableau est trie par
+     potentiel : une candidature toute fraiche, souvent incomplete, tombe donc
+     tout en bas — et si elle a ete ecartee, dans le bloc replie encore
+     dessous. Ce bandeau est calcule sur la base ENTIERE, avant filtre, avant
+     recherche, avant archives : ce qui est arrive recemment se voit, point.
+     Il ne remplace pas le tableau, il empeche seulement de rater quelqu'un. */
+  var SEPT_J = 7 * 24 * 3600 * 1000, maintenant = Date.now();
+  var recents = [];
+  for(var rk in LAST_CAND){
+    var rc = LAST_CAND[rk]; rc._k = rk;
+    var quand = rc.ts || rc.maj || 0;
+    if(quand && (maintenant - quand) < SEPT_J) recents.push(rc);
+  }
+  recents.sort(function(a,b){ return (b.ts||b.maj||0) - (a.ts||a.maj||0); });
+  var bandeau = "";
+  if(recents.length){
+    bandeau = '<div class="recents"><div class="rect">Arrivées ces 7 derniers jours \u00b7 '
+      + recents.length + '</div><div class="recl">';
+    recents.forEach(function(rc){
+      var dd = new Date(rc.ts || rc.maj || 0);
+      bandeau += '<button class="recc" data-k="' + rc._k + '">'
+        + '<b>' + esc(nomComplet(rc) || "sans nom") + '</b>'
+        + '<span class="mono">' + dd.toLocaleDateString("fr-FR") + '</span>'
+        + '<span class="pill2 ' + suiviDe(rc.suivi_statut).c + '">' + esc(suiviDe(rc.suivi_statut).n) + '</span>'
+        + '<span class="pill2 ' + (rc.statut === "complet" ? "hot" : "wip") + '">'
+        + (rc.statut === "complet" ? "complète" : "étape " + (rc.etape||1)) + '</span>'
+        + '</button>';
+    });
+    bandeau += '</div></div>';
+  }
+
   var compte = '<div class="compte"><b>' + totalBase + '</b> candidature' + (totalBase > 1 ? 's' : '')
     + ' en base \u00b7 <b>' + actifs.length + '</b> dans la liste'
     + (archives.length ? ' \u00b7 <b>' + archives.length + '</b> en archives, plus bas' : '')
@@ -7404,7 +7446,7 @@ function admCandidats(){
     + ((cachesFiltre || cachesRech) ? ' <button class="fraz" id="a-raz2">Tout afficher</button>' : '')
     + '</div>';
 
-  var h = compte + (actifs.length ? tableCand(actifs)
+  var h = bandeau + compte + (actifs.length ? tableCand(actifs)
     : '<p class="aide">Aucune candidature active' + (archives.length ? ' \u2014 tout est en archives, dépliez le bloc ci-dessous.' : '.') + '</p>')
     + '<p class="aide">Tri\u00e9 par potentiel d\u00e9croissant. Les cinq barres donnent le profil : '
     + 'm\u00e9tier, terrain, posture, engagement, praticit\u00e9. Le potentiel n\u2019\u00e9limine personne, il range la pile \u2014 '
@@ -7429,6 +7471,8 @@ function admCandidats(){
   for(var i=0;i<trs.length;i++) trs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
   if($("a-arch")) $("a-arch").onclick = function(){ ADM_ARCH = !ADM_ARCH; admCandidats(); };
   if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_Q = ""; admTab(); };
+  var rcs = $("a-cand").querySelectorAll(".recc[data-k]");
+  for(var r=0;r<rcs.length;r++) rcs[r].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
   var ths = $("a-cand").querySelectorAll("th[data-tri]");
   for(var j=0;j<ths.length;j++) ths[j].onclick = function(){ ADM_TRI = this.getAttribute("data-tri"); admCandidats(); };
   brancherPhotosZoom($("a-cand"));
