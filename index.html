@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.37 -->
+<!-- LUMIIA RECRUTE — v7.38 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -879,7 +879,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.37</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.38</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -894,7 +894,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.37";
+var VERSION = "v7.38";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4336,6 +4336,15 @@ function couleurPot(p){
 
 function admLoad(){
   document.body.classList.add("adm");
+  /* ?admin&onglet=creneaux — le mail d'alerte pointe droit sur l'onglet
+     concerne : arriver sur « Candidats » et devoir chercher, c'est trois
+     clics de plus a chaque notification. */
+  var qOng = window.location.search.match(/[?&]onglet=([a-z_]+)/);
+  if(qOng){
+    for(var iO=0;iO<ADM_TABS.length;iO++){
+      if(ADM_TABS[iO].k === qOng[1]){ ADM_TAB = qOng[1]; break; }
+    }
+  }
   voyantDemarrer();
   loadCfg(function(){
     normaliserPrenomNom();
@@ -7500,6 +7509,22 @@ function creEcranCandidat(id, fiche){
 }
 var CRE_CHANGE = false;
 
+/* Alerte a l'equipe. Le navigateur du candidat n'envoie que deux
+   identifiants : c'est le serveur qui relit le creneau dans la base et
+   refuse d'ecrire si la reservation ne s'y trouve pas. Un echec ici
+   n'annule JAMAIS la reservation — le creneau est pris, c'est le seul
+   fait qui compte ; l'alerte n'est qu'un confort. */
+var CRE_NOTIF_URL = "https://reservation.lumiia.fr/api/recrutement-notif.php";
+function creAlerter(cle, id){
+  try{
+    fetch(CRE_NOTIF_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: id, cle: cle })
+    }).catch(function(){});
+  }catch(e){}
+}
+
 /* La transaction ne porte que sur « cand » : c'est le seul champ que deux
    personnes peuvent se disputer, et le limiter a lui evite d'ecraser une
    modification faite par l'admin au meme instant sur l'horaire. */
@@ -7523,6 +7548,7 @@ function creReserver(cle, id, nom, cb){
       rdv_date: c.d, rdv_heure: c.h, suivi_statut: "rdv", suivi_maj: Date.now()
     }).catch(function(){});
     creVersGoogle(c, nom, function(){});
+    creAlerter(cle, id);
     cb(true);
   });
 }
