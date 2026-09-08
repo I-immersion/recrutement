@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.31 -->
+<!-- LUMIIA RECRUTE — v7.33 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -558,6 +558,28 @@ body.adm{background:#0d1117;}
 #admin .compte .fraz{margin-left:8px;padding:5px 11px;border-radius:7px;border:1px solid #3a4552;
   background:transparent;color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.82rem;cursor:pointer;}
 #admin .compte .fraz:hover{color:#e6edf3;border-color:#58a6ff;}
+/* Voyant de connexion (v7.33) */
+.voyant{display:inline-flex;align-items:center;gap:7px;margin-left:14px;padding:5px 12px;
+  border-radius:999px;border:1px solid #3a4552;background:#12171e;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:900;letter-spacing:.04em;
+  color:#8b98a8;vertical-align:middle;}
+.voyant:hover{border-color:#58a6ff;color:#e6edf3;}
+.voyant i{width:9px;height:9px;border-radius:50%;background:#7d8b9c;flex:0 0 auto;}
+.voyant.ok i{background:#3fdc84;box-shadow:0 0 8px rgba(63,220,132,.8);}
+.voyant.ok{color:#8ee0ac;border-color:#2f6b45;}
+.voyant.off i{background:#ff6b6b;box-shadow:0 0 8px rgba(255,107,107,.8);}
+.voyant.off{color:#ff9c9c;border-color:#7a3030;}
+.voyant.warn i{background:#ffb02e;box-shadow:0 0 8px rgba(255,176,46,.8);}
+.voyant.warn{color:#f0d79c;border-color:#7a6030;}
+.voyant-p{max-width:1400px;margin:0 auto 14px;padding:14px 16px;border-radius:11px;
+  background:#12171e;border:1px solid #2a323d;}
+.voyant-p .vl{display:flex;align-items:center;gap:10px;padding:6px 0;color:#c3ccd6;font-size:.9rem;}
+.voyant-p .vl b{min-width:170px;color:#e6edf3;}
+.voyant-p .vp{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:#7d8b9c;}
+.voyant-p .vp.ok{background:#3fdc84;} .voyant-p .vp.ko{background:#ff6b6b;}
+.voyant-p .vp.att{background:#ffb02e;}
+.voyant-p .vd{color:#8b98a8;font-size:.82rem;}
+
 /* Boîte aux lettres (v7.29) */
 .balc{padding:16px;border:1px solid #2a323d;border-radius:11px;background:#12171e;margin-bottom:14px;}
 .balt{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.08em;color:#b8ff3c;}
@@ -843,7 +865,9 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.31</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.33</span>
+    <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
+  <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -856,7 +880,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.31";
+var VERSION = "v7.33";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4298,6 +4322,7 @@ function couleurPot(p){
 
 function admLoad(){
   document.body.classList.add("adm");
+  voyantDemarrer();
   loadCfg(function(){
     normaliserPrenomNom();
     admRender();
@@ -4995,7 +5020,7 @@ var REV_I = 0, REV_REFUSES = false;
    supprime pas — on les sort du champ de vision, et un bouton les rappelle. */
 function revRefuse(c){
   var k = c.suivi_statut || "nouveau";
-  return k === "ecarte" || k === "ecarte2" || k === "sans_suite" || k === "indispo";
+  return k === "ecarte" || k === "ecarte_dossier" || k === "ecarte2" || k === "sans_suite" || k === "indispo";
 }
 
 function revQuestions(){
@@ -6105,7 +6130,8 @@ var SUIVI = [
   { k:"indispo",     n:"Candidat plus disponible",c:"no" },
   { k:"rdv2",        n:"2ème rendez-vous à décider",c:"wip" },
   { k:"retenu",      n:"Retenu",                  c:"hot" },
-  { k:"ecarte",      n:"Écarté",                  c:"no" },
+  { k:"ecarte_dossier", n:"Écarté sur dossier",   c:"no" },
+  { k:"ecarte",      n:"Écarté après entretien",   c:"no" },
   { k:"retenu2",     n:"Retenu après 2ème RDV",   c:"hot" },
   { k:"ecarte2",     n:"Écarté après 2ème RDV",   c:"no" },
   { k:"averti_non",  n:"Pas encore averti",       c:"wip" },
@@ -6131,17 +6157,23 @@ var SUIVI = [
 var D1_KS = { retenu:1, rdv2:1, ecarte:1 };
 var D2_KS = { retenu2:1, ecarte2:1 };
 var AV_KS = { averti_non:1, averti_mail:1, averti_tel:1 };
-var BASE_KS = { nouveau:1, a_contacter:1, contacte_tel:1, mail_envoye:1, rdv:1, indispo:1 };
+var BASE_KS = { nouveau:1, a_contacter:1, contacte_tel:1, mail_envoye:1, rdv:1, indispo:1, ecarte_dossier:1 };
 
 function etatDe(c){
   c = c || {};
   var st = c.suivi_statut || "nouveau";
   var d1 = c.decision1 || "", d2 = c.decision2 || "", av = c.averti || "";
-  /* Reprise des fiches d'avant la v7.28. « Ecarte » reste ambigu — il vaut
-     etape 2 ou etape 5 — donc on ne le promeut PAS en decision1 : le tri sur
-     dossier est le cas de loin le plus frequent, et une decision inventee
-     serait pire qu'une decision absente. */
-  if(!d1 && st !== "ecarte" && D1_KS[st]) d1 = st;
+  /* Reprise des fiches d'avant la v7.32 : « ecarte » y voulait dire les deux
+     choses. On le relit comme un ecartement SUR DOSSIER — de loin le cas le
+     plus frequent — sauf si l'entretien a laisse des traces, auquel cas c'est
+     bien une decision d'apres rencontre. Depuis la v7.32 les deux gestes ont
+     chacun leur cle et l'ambiguite ne peut plus naitre. */
+  if(st === "ecarte"){
+    var vuAvant = !!(c.rdv_cr || c.rdv2_cr || (c.rdv_notes && Object.keys(c.rdv_notes).length));
+    if(vuAvant){ if(!d1) d1 = "ecarte"; }
+    else st = "ecarte_dossier";
+  }
+  if(!d1 && D1_KS[st]) d1 = st;
   if(!d2 && D2_KS[st]){ d2 = st; if(!d1) d1 = "rdv2"; }
   if(!av && AV_KS[st]) av = st;
   var base = BASE_KS[st] ? st : ((d1 || d2 || av) ? "rdv" : st);
@@ -6167,7 +6199,7 @@ function champDe(k){
 
 var SUIVI_ETAPES = [
   { n:1, t:"Réception",           ks:["nouveau"] },
-  { n:2, t:"Tri sur dossier",     ks:["a_contacter","ecarte"] },
+  { n:2, t:"Tri sur dossier",     ks:["a_contacter","ecarte_dossier"] },
   { n:3, t:"Prise de contact",    ks:["contacte_tel","mail_envoye"] },
   { n:4, t:"Rendez-vous",         ks:["rdv","indispo"] },
   { n:5, t:"Décision interne",    ks:["retenu","rdv2","ecarte","indispo"] },
@@ -6559,7 +6591,7 @@ function brancherUnRdv(c, zone, ecrire, apres){
       dire("Enregistré ✓");
       if(apres) apres();
     }).catch(function(e){
-      dire("NON ENREGISTRÉ — " + (e && e.message ? e.message : "réessayez") + " (vos réponses restent à l’écran)", "ko");
+      voyantEchec(e); dire("NON ENREGISTRÉ — " + (e && e.message ? e.message : "réessayez") + " (vos réponses restent à l’écran)", "ko");
     });
   }
   function poser(cle, val){
@@ -6748,9 +6780,6 @@ function brancherSuivi(c, racine){
       if(zone && zone.textContent === txt) zone.className = "svmsg hidden";
     }, 2500);
   }
-  function peindre(k){
-    for(var z=0;z<ch.length;z++) ch[z].classList.toggle("on", ch[z].getAttribute("data-sv") === k);
-  }
   function rafraichirHist(){
     var box = racine.querySelector("#sv-hist");
     if(box) box.innerHTML = histHtml(c);
@@ -6846,14 +6875,89 @@ function brancherSuivi(c, racine){
     if(b2) b2.innerHTML = rdvRecapHtml(c, RDV_NS.r2);
   }
   brancherRdvForm(c, racine, ecrire, rafraichirRecap);
-
 }
 
-function envoyerWorkspace(item){
-  if(!db){ toast("Base indisponible"); return; }
-  db.ref("workspace_inbox").push(item)
-    .then(function(){ toast("Déposé dans Workspace — à intégrer d’un clic"); })
-    .catch(function(e){ toast("Échec : " + e.message); });
+/* ══════════════════════════════════════════════════════════════
+   VOYANT DE CONNEXION (v7.33)
+   ──────────────────────────────────────────────────────────────
+   Vert : la base repond. Rouge : plus de reseau — ce qu'on tape n'est
+   plus enregistre, et il vaut mieux le savoir tout de suite qu'en
+   fermant l'onglet. Orange : connecte, mais une ecriture a ete refusee
+   depuis l'ouverture (une regle manquante, typiquement) ; l'ecran ne
+   peut pas faire semblant que tout va bien.
+
+   Un clic lance un controle complet des acces reellement utilises. Il ne
+   fait que LIRE : verifier ne doit jamais rien modifier, sinon le
+   controle devient lui-meme une source de bruit dans la base.
+   ══════════════════════════════════════════════════════════════ */
+var VOYANT_ETAT = "att", VOYANT_ERR = "";
+
+function voyantPeindre(){
+  var b = document.getElementById("voyant"), t = document.getElementById("voyant-t");
+  if(!b || !t) return;
+  b.className = "voyant " + VOYANT_ETAT;
+  t.textContent = VOYANT_ETAT === "ok" ? "connecté"
+                : VOYANT_ETAT === "off" ? "hors ligne"
+                : VOYANT_ETAT === "warn" ? "écriture refusée" : "…";
+  b.title = VOYANT_ERR || "Cliquer pour vérifier tous les accès";
+}
+/* Appele depuis les catch d'ecriture : une erreur silencieuse est pire
+   qu'une erreur affichee. */
+function voyantEchec(e){
+  var m = (e && e.message) || String(e || "");
+  if(m.indexOf("PERMISSION") === -1 && m.indexOf("permission") === -1) return;
+  VOYANT_ERR = m; if(VOYANT_ETAT === "ok") VOYANT_ETAT = "warn";
+  voyantPeindre();
+}
+function voyantDemarrer(){
+  if(!db) return;
+  db.ref(".info/connected").on("value", function(s){
+    var ok = s.val() === true;
+    VOYANT_ETAT = ok ? (VOYANT_ERR ? "warn" : "ok") : "off";
+    voyantPeindre();
+  });
+  var b = document.getElementById("voyant");
+  if(b) b.onclick = voyantControle;
+  voyantPeindre();
+}
+
+function voyantControle(){
+  var p = document.getElementById("voyant-p");
+  if(!p) return;
+  if(!p.classList.contains("hidden") && p.getAttribute("data-fait") === "1"){
+    p.classList.add("hidden"); p.removeAttribute("data-fait"); return;
+  }
+  var essais = [
+    { n:"Réseau Firebase",     r:".info/connected" },
+    { n:"Réglages",            r:FB_PATH + "/config" },
+    { n:"Candidatures",        r:FB_PATH + "/candidats" },
+    { n:"Créneaux",            r:FB_PATH + "/creneaux" },
+    { n:"Boîte aux lettres",   r:"recrutement_inbox" },
+    { n:"Roadmap",             r:"roadmap" }
+  ];
+  p.classList.remove("hidden"); p.setAttribute("data-fait", "1");
+  p.innerHTML = essais.map(function(e){
+    return '<div class="vl" data-r="' + esc(e.r) + '"><span class="vp att"></span><b>'
+      + esc(e.n) + '</b><span class="vd">vérification…</span></div>';
+  }).join("") + '<div class="vl"><span class="vp"></span><b>Miroir Google Agenda</b><span class="vd">'
+    + (creAgendaCfg().url ? "configuré" : "non configuré — report manuel") + '</span></div>';
+
+  essais.forEach(function(e){
+    var ligne = p.querySelector('.vl[data-r="' + e.r + '"]');
+    var t0 = Date.now();
+    db.ref(e.r).limitToFirst(1).once("value").then(function(s){
+      var nb = 0;
+      if(e.r === ".info/connected") nb = s.val() === true ? 1 : 0;
+      else nb = s.numChildren ? s.numChildren() : 0;
+      ligne.querySelector(".vp").className = "vp ok";
+      ligne.querySelector(".vd").textContent = "lecture OK · " + (Date.now() - t0) + " ms";
+    }).catch(function(err){
+      ligne.querySelector(".vp").className = "vp ko";
+      var m = (err && err.message) || "";
+      ligne.querySelector(".vd").textContent = (m.indexOf("PERMISSION") > -1)
+        ? "accès refusé — règle Firebase manquante ou réservée" : ("échec — " + m);
+    });
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -6894,12 +6998,16 @@ function tabInbox(){
     + '<p class="aide">Ce que Claude prépare et que vous intégrez d’un clic : créneaux, réglages, '
     + 'corrections de fiches. Rien n’est écrit tant que vous n’avez pas cliqué. '
     + 'Vous pouvez tout ignorer.</p><div id="bal-l"><p class="aide">Chargement…</p></div></div>');
+  balRef().off();
   balRef().on("value", function(s){
     BAL_CACHE = s.val() || {};
     if($("bal-l")) balDessiner();
   }, function(e){
+    /* Un jure tombe ici avec la meme erreur qu'une regle absente : ce n'est
+       pas la meme cause et il ne faut pas lui faire croire a une panne. */
     var m = (e && e.message || "").indexOf("PERMISSION") > -1
-      ? "La règle Firebase « recrutement_inbox » n’est pas publiée — le détail est dans la conversation."
+      ? (estAdmin() ? "La règle Firebase « recrutement_inbox » n’est pas publiée."
+                    : "Cet onglet est réservé à l’administrateur.")
       : "Lecture impossible : " + e.message;
     if($("bal-l")) $("bal-l").innerHTML = '<div class="crvide">' + esc(m) + '</div>';
   });
@@ -7026,7 +7134,7 @@ function balIntegrer(id){
     var r = db.ref(FB_PATH + "/" + String(a.chemin).replace(/^\/+/, ""));
     var p = a.fusion ? r.update(a.valeur) : r.set(a.valeur);
     p.then(function(){ balMsg(id, "Intégration… " + faits + " / " + actions.length); suivant(); })
-     .catch(function(e){ rate = { libelle: a.libelle || a.chemin, err: e.message }; suivant(); });
+     .catch(function(e){ voyantEchec(e); rate = { libelle: a.libelle || a.chemin, err: e.message }; suivant(); });
   }
   suivant();
 }
@@ -7162,11 +7270,14 @@ function tabCreneaux(){
     var patch = { agenda: { url: ($("cr-url").value || "").trim(), cle: ($("cr-cle").value || "").trim() } };
     db.ref(FB_PATH + "/config").update(patch)
       .then(function(){ CFG.agenda = patch.agenda; toast("Adresse enregistrée ✓"); })
-      .catch(function(e){ toast("Échec : " + e.message); });
+      .catch(function(e){ voyantEchec(e); toast("Échec : " + e.message); });
   };
 
   /* Sans gestionnaire d'erreur, une lecture refusee laissait « Chargement… »
      a l'ecran indefiniment : l'ecran mentait sur ce qui se passait. */
+  /* Sans off() prealable, chaque passage sur l'onglet empilait un ecouteur
+     de plus : au dixieme, dix redessins pour un seul changement. */
+  creRef().off();
   creRef().on("value", function(s){
     CRE_CACHE = s.val() || {};
     if($("cr-liste")) creDessinerAdmin();
@@ -7218,14 +7329,14 @@ function creDessinerAdmin(){
 
   var sup = $("cr-liste").querySelectorAll("[data-del]");
   for(var i=0;i<sup.length;i++) sup[i].onclick = function(){
-    creRef().child(this.getAttribute("data-del")).remove().catch(function(e){ toast("Échec : " + e.message); });
+    creRef().child(this.getAttribute("data-del")).remove().catch(function(e){ voyantEchec(e); toast("Échec : " + e.message); });
   };
   var lib = $("cr-liste").querySelectorAll("[data-lib]");
   for(var j=0;j<lib.length;j++) lib[j].onclick = function(){
     /* Liberer ne touche pas la fiche du candidat : la date y reste, et c'est
        voulu — on ne réécrit pas le suivi de quelqu'un dans son dos. */
     creRef().child(this.getAttribute("data-lib")).update({ cand:"", nom:"" })
-      .catch(function(e){ toast("Échec : " + e.message); });
+      .catch(function(e){ voyantEchec(e); toast("Échec : " + e.message); });
   };
 }
 
@@ -7234,7 +7345,10 @@ function creEcranCandidat(id, fiche){
   var nom = ((fiche.prenom || "") + " " + (fiche.nom || "")).trim();
   function dessine(){
     var l = creListe(CRE_CACHE);
-    var mien = l.filter(function(c){ return c.cand === id; })[0];
+    /* CRE_CHANGE etait pose par le bouton mais jamais relu : cliquer
+       « Choisir un autre creneau » redessinait le meme ecran de confirmation.
+       Le bouton ne servait a rien. */
+    var mien = CRE_CHANGE ? null : l.filter(function(c){ return c.cand === id; })[0];
     var libres = l.filter(function(c){ return !c.cand && !crePasse(c); });
     var h = '<div class="card"><div class="stepno">RENDEZ-VOUS</div>';
 
@@ -7350,7 +7464,7 @@ function tabSuivi(){
   var retard = "", aFaire = "", rdv = "", nR = 0, nF = 0, nV = 0;
   arr.slice().sort(function(a,b){ return (a.relance_date||"9") < (b.relance_date||"9") ? -1 : 1; }).forEach(function(c){
     if(!c.relance_date) return;
-    if(["retenu","retenu2","ecarte","ecarte2","sans_suite","indispo"].indexOf(statutEffectif(c)) > -1) return;
+    if(["retenu","retenu2","ecarte","ecarte_dossier","ecarte2","sans_suite","indispo"].indexOf(statutEffectif(c)) > -1) return;
     if(c.relance_date < auj){ retard += ligne(c, c.relance_date); nR++; }
     else { aFaire += ligne(c, c.relance_date); nF++; }
   });
@@ -7882,7 +7996,6 @@ function aEteVu(c){
   return !!VU_STATUTS[statutEffectif(c)];
 }
 
-var DECISIONS = { retenu:1, ecarte:1, retenu2:1, ecarte2:1, sans_suite:1, rdv2:1, indispo:1 };
 function decisionCell(c){
   var e = etatDe(c), h = "";
   if(e.d1) h += '<span class="pill2 ' + suiviDe(e.d1).c + '">' + esc(suiviDe(e.d1).n) + '</span>';
@@ -7969,12 +8082,12 @@ function admCandidats(){
      Deux exceptions : quand on filtre explicitement sur l'un de ces statuts, et
      quand une recherche est en cours — chercher quelqu'un et ne pas le trouver
      parce qu'il etait dans un bloc replie, c'est un piege. */
-  var ARCH = ["ecarte","ecarte2","sans_suite","indispo"];
+  var ARCH = ["ecarte","ecarte_dossier","ecarte2","sans_suite","indispo"];
   /* Filtrer sur la rencontre sans deplier les archives cacherait justement
      ceux qu'on a vus puis ecartes — c'est-a-dire une bonne partie de la
      reponse a la question posee. */
-  var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte2"
-                  || ADM_FILTRE === "sv:sans_suite" || ADM_VU);
+  var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte_dossier"
+                  || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_VU);
   var actifs = arr, archives = [];
   if(separer){
     actifs = [];
@@ -8081,8 +8194,13 @@ function admCandidats(){
     defs.forEach(function(d){ par[d.id] = d; });
     /* Un ordre garde peut citer une colonne disparue ou en oublier une nouvelle :
        on repart toujours de la liste de reference, l'ordre ne fait que la trier. */
-    var ordre = ordreColonnes().filter(function(id){ return par[id]; });
-    defs.forEach(function(d){ if(ordre.indexOf(d.id) === -1) ordre.push(d.id); });
+    /* Filtre contre la liste de reference ET dedoublonne : un ordre abime,
+       d'ou qu'il vienne, ne doit jamais afficher deux fois la meme colonne. */
+    var vus = {}, ordre = [];
+    ordreColonnes().forEach(function(id){
+      if(par[id] && !vus[id]){ vus[id] = 1; ordre.push(id); }
+    });
+    defs.forEach(function(d){ if(!vus[d.id]) ordre.push(d.id); });
 
     var h = '<table class="cmp"><thead><tr>';
     ordre.forEach(function(id){
@@ -8161,8 +8279,11 @@ function admCandidats(){
       ev.preventDefault();
       var vise = this.getAttribute("data-col");
       if(!attrape || attrape === vise) return;
+      /* Quand les archives sont depliees il y a DEUX tableaux, donc deux jeux
+         d'en-tetes. Lire ceux de la page entiere donnait un ordre de 42
+         colonnes en double. On ne lit que le tableau ou l'on vient de lacher. */
       var ordre = [];
-      var l = $("a-cand").querySelectorAll("th[data-col]");
+      var l = this.closest("table").querySelectorAll("th[data-col]");
       for(var z=0;z<l.length;z++) ordre.push(l[z].getAttribute("data-col"));
       ordre.splice(ordre.indexOf(attrape), 1);
       ordre.splice(ordre.indexOf(vise), 0, attrape);
