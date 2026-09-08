@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.26 -->
+<!-- LUMIIA RECRUTE — v7.27 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -558,6 +558,33 @@ body.adm{background:#0d1117;}
 #admin .compte .fraz{margin-left:8px;padding:5px 11px;border-radius:7px;border:1px solid #3a4552;
   background:transparent;color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.82rem;cursor:pointer;}
 #admin .compte .fraz:hover{color:#e6edf3;border-color:#58a6ff;}
+/* Créneaux (v7.27) */
+.crenew{padding:14px;border:1px solid #2a323d;border-radius:10px;background:#12171e;margin-bottom:18px;}
+.crenew input{background:#0f141b;border:1px solid #313b48;color:#e6edf3;border-radius:7px;
+  font-family:'Nunito';font-size:.94rem;padding:9px 11px;margin-top:5px;width:100%;color-scheme:dark;}
+.crmsg{margin-top:10px;font-weight:700;font-size:.85rem;color:#8ee0ac;min-height:17px;}
+.crmsg.ko{color:#ff9c9c;}
+.crjour{margin-top:16px;}
+.crjt{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.1em;color:#58a6ff;
+  margin-bottom:8px;text-transform:capitalize;}
+.crl{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:8px;
+  border:1px solid #2a323d;background:#12171e;margin-top:6px;}
+.crl.pris{border-color:#3f6b2a;background:#12210f;}
+.crl.passe{opacity:.45;}
+.crl .crh{font-family:'Nunito';font-weight:900;color:#e6edf3;min-width:120px;}
+.crl .crn{flex:1;color:#b8ff3c;font-weight:700;font-size:.9rem;}
+.crl .crx{padding:6px 12px;border-radius:7px;border:1px solid #3a4552;background:transparent;
+  color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.8rem;cursor:pointer;}
+.crl .crx:hover{color:#ff9c9c;border-color:#7a3030;}
+.crchoix{display:inline-block;margin:0 8px 8px 0;padding:14px 20px;border-radius:10px;
+  border:1px solid #3a4552;background:#12171e;color:#e6edf3;font-family:'Nunito';font-size:1.05rem;cursor:pointer;}
+.crchoix:hover{border-color:#b8ff3c;background:#12210f;}
+.crchoix:disabled{opacity:.4;cursor:default;}
+.crok{margin-top:14px;padding:16px;border-radius:10px;background:#12210f;border:1px solid #3f6b2a;
+  color:#e6edf3;font-size:1.1rem;line-height:1.6;}
+.crvide{margin-top:14px;padding:14px;border-radius:10px;background:#2a2413;border:1px solid #6d5a22;
+  color:#f0dfa6;line-height:1.5;}
+
 #admin table.cmp th[data-col]{cursor:grab;user-select:none;}
 #admin table.cmp th[data-col].prise{opacity:.45;}
 #admin table.cmp th[data-col].cible{box-shadow:inset 3px 0 0 #58a6ff;}
@@ -797,7 +824,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.26</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.27</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -810,7 +837,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.26";
+var VERSION = "v7.27";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -1333,6 +1360,7 @@ function loadCfg(cb){
       if(v.offre_nuit) CFG.offre_nuit = v.offre_nuit;
       if(v.offre_jour) CFG.offre_jour = v.offre_jour;
       if(v.games) CFG.games = v.games;
+      if(v.agenda) CFG.agenda = v.agenda;   /* miroir Google Agenda, v7.27 */
       if(v.postes) CFG.postes = v.postes;
       if(v.experiences) CFG.experiences = v.experiences;
       if(v.savoirs) CFG.savoirs = v.savoirs;
@@ -4799,6 +4827,7 @@ var ADM_TABS = [
   { k:"avis",       n:"Avis de l’équipe" },
   { k:"extras",     n:"Extras" },
   { k:"suivi",      n:"Suivi & RDV" },
+  { k:"creneaux",   n:"Créneaux" },
   { k:"messages",   n:"Messages" },
   { k:"stats",      n:"Statistiques" },
   { k:"potentiel",  n:"Potentiel" },
@@ -4900,7 +4929,7 @@ function admRender(){
 }
 
 function admTab(){
-  var f = { candidats:tabCandidats, revue:tabRevue, avis:tabAvis, extras:tabExtras, suivi:tabSuivi, stats:tabStats, potentiel:tabPotentiel,
+  var f = { candidats:tabCandidats, revue:tabRevue, avis:tabAvis, extras:tabExtras, suivi:tabSuivi, creneaux:tabCreneaux, stats:tabStats, potentiel:tabPotentiel,
             messages:tabMessages,
             textes:tabTextes, quiz:tabQuiz, situations:tabSituations,
             pitchs:tabPitchs, offre:tabOffre, listes:tabListes, reglages:tabReglages }[ADM_TAB];
@@ -6749,6 +6778,280 @@ function envoyerWorkspace(item){
     .catch(function(e){ toast("Échec : " + e.message); });
 }
 
+/* ══════════════════════════════════════════════════════════════
+   CRENEAUX DE RENDEZ-VOUS (v7.27)
+   ──────────────────────────────────────────────────────────────
+   Le besoin tient en une phrase : le candidat choisit un creneau libre.
+   Il n'y a donc ni compte, ni code, ni saisie de nom — il arrive par son
+   lien personnel ?rdv=<id>, l'app sait deja qui il est.
+
+   Les creneaux vivent a part des candidats, dans /recrutement/creneaux :
+   un creneau existe avant qu'on sache qui le prendra, et doit rester
+   lisible par quelqu'un qui n'a acces a aucune fiche.
+     /recrutement/creneaux/<cle> = { d:"2026-09-15", h:"14:30", duree:30,
+                                     cand:"<id ou vide>", nom:"", ts }
+
+   La reservation passe par une TRANSACTION sur le seul champ « cand ».
+   Deux candidats peuvent tres bien ouvrir leur lien en meme temps ; sans
+   cela, le second ecraserait le premier et deux personnes se
+   presenteraient a la meme heure sans que rien ne l'ait signale.
+
+   Google Agenda est un MIROIR, jamais la source : l'echec de l'envoi
+   n'annule pas la reservation, il se signale a l'admin. L'adresse du
+   script se colle dans l'onglet Créneaux, elle n'est pas dans le code.
+   ══════════════════════════════════════════════════════════════ */
+var CRE_PATH = "/creneaux";
+var CRE_CACHE = {};
+
+function creRef(){ return db.ref(FB_PATH + CRE_PATH); }
+function creJourFR(d){
+  if(!d) return "";
+  var p = String(d).split("-");
+  if(p.length !== 3) return d;
+  var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  var J = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+  var M = ["janvier","février","mars","avril","mai","juin","juillet","août",
+           "septembre","octobre","novembre","décembre"];
+  return J[dt.getDay()] + " " + dt.getDate() + " " + M[dt.getMonth()];
+}
+function creTri(a, b){
+  if(a.d !== b.d) return a.d < b.d ? -1 : 1;
+  return (a.h || "") < (b.h || "") ? -1 : 1;
+}
+function creListe(obj){
+  var l = [];
+  for(var k in (obj || {})){ var o = obj[k] || {}; o._k = k; l.push(o); }
+  return l.sort(creTri);
+}
+function creFin(c){
+  var p = (c.h || "00:00").split(":");
+  var t = Number(p[0]) * 60 + Number(p[1]) + (Number(c.duree) || 30);
+  return String(Math.floor(t / 60) % 24).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
+}
+function crePasse(c){
+  var p = (c.d || "").split("-"), h = (c.h || "00:00").split(":");
+  if(p.length !== 3) return false;
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), Number(h[0]), Number(h[1])) < new Date();
+}
+
+/* ── Miroir Google Agenda (facultatif) ────────────────────────────────── */
+function creAgendaCfg(){ return (CFG && CFG.agenda) || {}; }
+function creVersGoogle(c, nomCand, cb){
+  var a = creAgendaCfg();
+  if(!a.url){ if(cb) cb(false, "pas configuré"); return; }
+  var corps = JSON.stringify({
+    cle: a.cle || "",
+    titre: "Entretien recrutement — " + (nomCand || "candidat"),
+    debut: c.d + "T" + (c.h || "00:00") + ":00",
+    duree: Number(c.duree) || 30,
+    description: "Créneau réservé depuis LUMIIA RECRUTE."
+  });
+  /* text/plain volontairement : un en-tete JSON declencherait une requete
+     preliminaire que les scripts Google ne savent pas honorer. */
+  fetch(a.url, { method:"POST", body: corps, headers:{ "Content-Type":"text/plain;charset=utf-8" } })
+    .then(function(r){ return r.json(); })
+    .then(function(r){ if(cb) cb(!!(r && r.ok), r && r.err); })
+    .catch(function(e){ if(cb) cb(false, e.message); });
+}
+
+/* ══════════ ONGLET CRENEAUX (admin) ══════════ */
+function tabCreneaux(){
+  var a = creAgendaCfg();
+  var h = '<div class="adm-sec"><h2>Créneaux de rendez-vous</h2>'
+    + '<p class="aide">Vous ouvrez des créneaux ici. Le candidat reçoit son lien personnel et '
+    + 'choisit celui qui lui convient : son nom est déjà connu, il n’a rien à saisir. '
+    + 'Un créneau déjà pris n’est plus proposé.</p>'
+
+    + '<div class="crenew">'
+    +   '<div class="fgrid">'
+    +     '<div class="txrow"><label class="f">Date</label><input type="date" id="cr-d"></div>'
+    +     '<div class="txrow"><label class="f">De</label><input type="time" id="cr-h" value="14:00"></div>'
+    +     '<div class="txrow"><label class="f">Durée (min)</label><input type="number" id="cr-dur" value="30" min="10" step="5"></div>'
+    +     '<div class="txrow"><label class="f">Combien à la suite</label><input type="number" id="cr-n" value="1" min="1" max="20"></div>'
+    +   '</div>'
+    +   '<button class="btn" id="cr-add">Ouvrir ces créneaux</button>'
+    +   '<div class="crmsg" id="cr-msg"></div>'
+    + '</div>'
+    + '<div id="cr-liste"><p class="aide">Chargement…</p></div>'
+
+    + '<div class="adm-sec" style="margin-top:26px"><h2>Miroir Google Agenda</h2>'
+    + '<p class="aide">Facultatif. Sans adresse, tout fonctionne : les créneaux réservés '
+    + 'apparaissent ici et dans la fiche du candidat, et vous reportez sur Google à la main. '
+    + 'Avec l’adresse du script, chaque réservation crée l’événement toute seule.</p>'
+    + '<div class="fgrid">'
+    +   '<div class="txrow"><label class="f">Adresse du script (…/exec)</label>'
+    +     '<input type="text" id="cr-url" value="' + esc(a.url || "") + '" placeholder="https://script.google.com/macros/s/…/exec"></div>'
+    +   '<div class="txrow"><label class="f">Clé partagée</label>'
+    +     '<input type="text" id="cr-cle" value="' + esc(a.cle || "") + '"></div>'
+    + '</div>'
+    + boutonSauver("cr-save", "ENREGISTRER L’ADRESSE")
+    + '</div></div>';
+  panneau(h);
+
+  $("cr-add").onclick = function(){
+    var d = $("cr-d").value, h0 = $("cr-h").value;
+    var dur = Math.max(5, Number($("cr-dur").value) || 30);
+    var n = Math.min(20, Math.max(1, Number($("cr-n").value) || 1));
+    if(!d || !h0){ creMsg("Il manque la date ou l’heure.", "ko"); return; }
+    var p = h0.split(":"), t = Number(p[0]) * 60 + Number(p[1]), lot = {};
+    for(var i = 0; i < n; i++){
+      var cle = creRef().push().key;
+      lot[cle] = { d:d, h: String(Math.floor(t / 60) % 24).padStart(2,"0") + ":" + String(t % 60).padStart(2,"0"),
+                   duree: dur, cand:"", nom:"", ts: Date.now() };
+      t += dur;
+    }
+    creMsg("Enregistrement…");
+    creRef().update(lot)
+      .then(function(){ creMsg(n + " créneau" + (n > 1 ? "x" : "") + " ouvert" + (n > 1 ? "s" : "") + " ✓"); })
+      .catch(function(e){ creMsg("Échec : " + e.message, "ko"); });
+  };
+  $("cr-save").onclick = function(){
+    var patch = { agenda: { url: ($("cr-url").value || "").trim(), cle: ($("cr-cle").value || "").trim() } };
+    db.ref(FB_PATH + "/config").update(patch)
+      .then(function(){ CFG.agenda = patch.agenda; toast("Adresse enregistrée ✓"); })
+      .catch(function(e){ toast("Échec : " + e.message); });
+  };
+
+  creRef().on("value", function(s){
+    CRE_CACHE = s.val() || {};
+    if($("cr-liste")) creDessinerAdmin();
+  });
+}
+function creMsg(t, genre){
+  var e = $("cr-msg"); if(!e) return;
+  e.className = "crmsg" + (genre === "ko" ? " ko" : "");
+  e.textContent = t;
+}
+
+function creDessinerAdmin(){
+  var l = creListe(CRE_CACHE);
+  if(!l.length){ $("cr-liste").innerHTML = '<p class="aide">Aucun créneau ouvert pour l’instant.</p>'; return; }
+  var libres = l.filter(function(c){ return !c.cand && !crePasse(c); }).length;
+  var h = '<div class="compte"><b>' + l.length + '</b> créneau' + (l.length > 1 ? 'x' : '')
+    + ' \u00b7 <b>' + libres + '</b> encore libre' + (libres > 1 ? 's' : '')
+    + ' \u00b7 <b>' + l.filter(function(c){ return !!c.cand; }).length + '</b> réservé'
+    + (l.filter(function(c){ return !!c.cand; }).length > 1 ? 's' : '') + '</div>';
+  var jour = "";
+  l.forEach(function(c){
+    if(c.d !== jour){
+      if(jour) h += '</div>';
+      jour = c.d;
+      h += '<div class="crjour"><div class="crjt">' + esc(creJourFR(c.d)) + '</div>';
+    }
+    var pris = !!c.cand, passe = crePasse(c);
+    h += '<div class="crl' + (pris ? " pris" : "") + (passe ? " passe" : "") + '">'
+      + '<span class="crh">' + esc(c.h) + ' – ' + esc(creFin(c)) + '</span>'
+      + '<span class="crn">' + (pris ? esc(c.nom || "réservé") : '<span class="dim">libre</span>') + '</span>'
+      + (pris
+          ? '<button class="crx" data-lib="' + c._k + '">Libérer</button>'
+          : '<button class="crx" data-del="' + c._k + '">Supprimer</button>')
+      + '</div>';
+  });
+  if(jour) h += '</div>';
+  $("cr-liste").innerHTML = h;
+
+  var sup = $("cr-liste").querySelectorAll("[data-del]");
+  for(var i=0;i<sup.length;i++) sup[i].onclick = function(){
+    creRef().child(this.getAttribute("data-del")).remove().catch(function(e){ toast("Échec : " + e.message); });
+  };
+  var lib = $("cr-liste").querySelectorAll("[data-lib]");
+  for(var j=0;j<lib.length;j++) lib[j].onclick = function(){
+    /* Liberer ne touche pas la fiche du candidat : la date y reste, et c'est
+       voulu — on ne réécrit pas le suivi de quelqu'un dans son dos. */
+    creRef().child(this.getAttribute("data-lib")).update({ cand:"", nom:"" })
+      .catch(function(e){ toast("Échec : " + e.message); });
+  };
+}
+
+/* ══════════ ECRAN CANDIDAT — ?rdv=<id> ══════════ */
+function creEcranCandidat(id, fiche){
+  var nom = ((fiche.prenom || "") + " " + (fiche.nom || "")).trim();
+  function dessine(){
+    var l = creListe(CRE_CACHE);
+    var mien = l.filter(function(c){ return c.cand === id; })[0];
+    var libres = l.filter(function(c){ return !c.cand && !crePasse(c); });
+    var h = '<div class="card"><div class="stepno">RENDEZ-VOUS</div>';
+
+    if(mien){
+      h += '<div class="q">C’est noté, ' + esc(fiche.prenom || "") + '.</div>'
+        + '<div class="crok"><b>' + esc(creJourFR(mien.d)) + '</b><br>'
+        + esc(mien.h) + ' – ' + esc(creFin(mien)) + '<br>'
+        + '<span class="dim">LUMIIA · 1 route de Fontagnal, Aouste-sur-Sye</span></div>'
+        + '<p class="mut">Un empêchement ? Vous pouvez changer de créneau tant qu’il en reste.</p>'
+        + '<button class="btn sec" id="cr-chg">Choisir un autre créneau</button></div>';
+      view(h);
+      $("cr-chg").onclick = function(){ CRE_CHANGE = true; dessine(); };
+      return;
+    }
+
+    h += '<div class="q">Bonjour ' + esc(fiche.prenom || "") + ', choisissez votre créneau</div>'
+      + '<div class="dim">Un entretien d’environ 30 minutes, à LUMIIA.</div>';
+    if(!libres.length){
+      h += '<div class="crvide">Aucun créneau libre pour le moment. '
+        + 'Nous vous recontactons très vite pour convenir d’un horaire.</div></div>';
+      view(h); return;
+    }
+    var jour = "";
+    libres.forEach(function(c){
+      if(c.d !== jour){
+        if(jour) h += '</div>';
+        jour = c.d;
+        h += '<div class="crjour"><div class="crjt">' + esc(creJourFR(c.d)) + '</div>';
+      }
+      h += '<button class="crchoix" data-cre="' + c._k + '">'
+        + '<b>' + esc(c.h) + '</b><span class="dim"> – ' + esc(creFin(c)) + '</span></button>';
+    });
+    h += '</div><div class="crmsg" id="cr-msg"></div></div>';
+    view(h);
+
+    var bts = document.querySelectorAll(".crchoix[data-cre]");
+    for(var i=0;i<bts.length;i++) bts[i].onclick = function(){
+      var cle = this.getAttribute("data-cre");
+      for(var z=0;z<bts.length;z++) bts[z].disabled = true;
+      creMsg("Réservation…");
+      creReserver(cle, id, nom, function(ok, err){
+        if(!ok){
+          for(var z2=0;z2<bts.length;z2++) bts[z2].disabled = false;
+          creMsg(err || "Ce créneau vient d’être pris, choisissez-en un autre.", "ko");
+          return;
+        }
+        CRE_CHANGE = false;
+        dessine();
+      });
+    };
+  }
+
+  creRef().on("value", function(s){ CRE_CACHE = s.val() || {}; dessine(); });
+}
+var CRE_CHANGE = false;
+
+/* La transaction ne porte que sur « cand » : c'est le seul champ que deux
+   personnes peuvent se disputer, et le limiter a lui evite d'ecraser une
+   modification faite par l'admin au meme instant sur l'horaire. */
+function creReserver(cle, id, nom, cb){
+  creRef().child(cle + "/cand").transaction(function(actuel){
+    if(actuel && actuel !== id) return;          /* deja pris : on abandonne */
+    return id;
+  }, function(err, valide){
+    if(err){ cb(false, "Erreur : " + err.message); return; }
+    if(!valide){ cb(false, "Ce créneau vient d’être pris."); return; }
+    creRef().child(cle).update({ nom: nom, ts: Date.now() });
+    /* On libere les autres creneaux du meme candidat : on ne peut pas etre a
+       deux endroits, et un creneau fantome bloque quelqu'un d'autre. */
+    for(var k in CRE_CACHE){
+      if(k !== cle && CRE_CACHE[k] && CRE_CACHE[k].cand === id){
+        creRef().child(k).update({ cand:"", nom:"" });
+      }
+    }
+    var c = CRE_CACHE[cle] || {};
+    db.ref(FB_PATH + "/candidats/" + id).update({
+      rdv_date: c.d, rdv_heure: c.h, suivi_statut: "rdv", suivi_maj: Date.now()
+    }).catch(function(){});
+    creVersGoogle(c, nom, function(){});
+    cb(true);
+  });
+}
+
 /* ══════════ ONGLET SUIVI & RENDEZ-VOUS ══════════ */
 function tabSuivi(){
   var arr = [];
@@ -7896,6 +8199,30 @@ function admCsv(){
      intestable sans ecrire chez un vrai candidat. On accepte desormais ce que
      le guichet lui-meme accepte ; un identifiant inconnu ressort en 404 et
      affiche l'ecran d'erreur, ce qui est le bon comportement. */
+  /* ?rdv=<fiche> — le candidat choisit son creneau. Meme mecanique que ?x= :
+     la fiche est redemandee au guichet, jamais cherchee en local, puisque le
+     lien s'ouvre depuis n'importe quel appareil. */
+  var lienRdv = q.match(/[?&]rdv=([A-Za-z0-9_-]{6,64})/);
+  if(lienRdv){
+    if(sp && sp.parentNode) sp.remove();
+    loadCfg(function(){
+      S.parcours = "nuit";
+      view('<div class="card center"><div class="sp-load" style="margin:10px auto"><i></i></div>'
+        + '<div class="mut" style="margin-top:12px">' + esc(T("mod_charge")) + '</div></div>');
+      guichetFiche(lienRdv[1], function(ok, fiche){
+        if(!ok){
+          view('<div class="card center"><div style="font-size:2.6rem">\ud83d\ude15</div>'
+            + '<div class="mut" style="margin-top:12px">' + Tb("mod_ko") + '</div>'
+            + '<button class="btn sec" id="mo-re">' + esc(T("mod_btn")) + '</button></div>');
+          $("mo-re").onclick = function(){ window.location.search = ""; };
+          return;
+        }
+        creEcranCandidat(lienRdv[1], fiche || {});
+      });
+    });
+    return;
+  }
+
   var lienExtra = q.match(/[?&]x=([A-Za-z0-9_-]{6,64})/);
   if(lienExtra){
     if(sp && sp.parentNode) sp.remove();
