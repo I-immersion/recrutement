@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.16 -->
+<!-- LUMIIA RECRUTE — v7.17 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -544,59 +544,52 @@ body.adm{background:#0d1117;}
   box-shadow:0 18px 60px rgba(0,0,0,.6);}
 .photoz .pzl{color:#c3ccd6;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;letter-spacing:.02em;}
 
-/* ── Prise de notes pendant RDV (v7.14) ── */
-.rdvz{position:fixed;inset:0;z-index:320;background:rgba(1,4,9,.94);display:flex;
-  flex-direction:column;align-items:center;padding:0;overflow:hidden;}
-.rdvz .rdvbox{width:min(760px,100%);height:100%;display:flex;flex-direction:column;
-  background:#10151c;border-left:1px solid #262f3b;border-right:1px solid #262f3b;}
-.rdvz .rdvhead{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:14px 16px;
-  border-bottom:1px solid #262f3b;background:#0c1116;}
-.rdvz .rdvhead .rt{flex:1;min-width:0;}
-.rdvz .rdvhead .rt b{display:block;font-family:'Bebas Neue',sans-serif;font-size:1.35rem;
-  letter-spacing:.08em;color:#b8ff3c;line-height:1.1;}
-.rdvz .rdvhead .rt span{display:block;color:#8b98a8;font-size:.82rem;font-weight:700;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.rdvz .rdvx{flex:0 0 auto;width:38px;height:38px;border-radius:9px;border:1px solid #3a4552;
-  background:#1a212a;color:#e6edf3;font-size:1.2rem;cursor:pointer;line-height:1;}
-.rdvz .rdvbody{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 24px;}
-.rdvz .rdvblc{margin-top:18px;}
-.rdvz .rdvblc:first-child{margin-top:4px;}
-.rdvz .rdvttl{padding:8px 12px;border-radius:8px;font-family:'Bebas Neue',sans-serif;
-  font-size:1.05rem;letter-spacing:.12em;color:#08130a;}
-.rdvz .rdvq{margin-top:12px;}
-.rdvz .rdvq p{color:#e6edf3;font-weight:900;font-size:.95rem;line-height:1.4;}
-.rdvz .rdvq textarea{margin-top:7px;min-height:76px;background:#0f141b;border:1px solid #313b48;
-  color:#e6edf3;border-radius:8px;font-size:1rem;line-height:1.45;resize:vertical;}
-.rdvz .rdvq textarea:focus{outline:none;border-color:#4dd9e8;}
-.rdvz .rdvfoot{flex:0 0 auto;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
-  border-top:1px solid #262f3b;background:#0c1116;display:flex;gap:10px;align-items:center;}
-.rdvz .rdvfoot .btn{margin-top:0;flex:1;}
-.rdvz .rdvfoot .btn.sec{flex:0 0 auto;padding:12px 18px;}
-.rdvz .rdvmsg{padding:0 16px 10px;color:#8ee0ac;font-weight:700;font-size:.86rem;background:#0c1116;}
-.rdvz .rdvmsg.ko{color:#ff9c9c;}
-@media(max-width:640px){
-  .rdvz .rdvbox{width:100%;border:none;}
-  .rdvz .rdvfoot{flex-direction:column-reverse;align-items:stretch;}
-  .rdvz .rdvfoot .btn.sec{flex:1 1 auto;}
-}
-.rdvz .rdvq .oui{display:flex;gap:8px;margin-top:8px;}
-.rdvz .rdvq .oui button{flex:0 0 auto;padding:9px 20px;border-radius:999px;border:1px solid #3a4552;
-  background:#0f141b;color:#8b98a8;font-family:'Nunito';font-weight:900;font-size:.9rem;cursor:pointer;}
-.rdvz .rdvq .oui button.on[data-v="oui"]{background:#173021;border-color:#2f6b45;color:#8ee0ac;}
-.rdvz .rdvq .oui button.on[data-v="non"]{background:#3a1d1d;border-color:#7a3030;color:#ff9c9c;}
-.rdvz .rdvq .sq{color:#8b98a8;font-weight:700;font-size:.84rem;margin-top:9px;}
-.rdvz .rdvq input.court{margin-top:8px;background:#0f141b;border:1px solid #313b48;color:#e6edf3;
+/* ── Formulaire de rendez-vous, en ligne dans la fiche (v7.17) ── */
+.rdvform .rdvblc{margin-top:16px;}
+.rdvform .rdvblc:first-child{margin-top:2px;}
+.rdvform .rdvttl{padding:7px 11px;border-radius:7px;font-family:'Bebas Neue',sans-serif;
+  font-size:1rem;letter-spacing:.12em;color:#08130a;}
+.rdvform .rdvq{margin-top:11px;}
+.rdvform .rdvq p{color:#e6edf3;font-weight:900;font-size:.92rem;line-height:1.4;}
+.rdvform .rdvq textarea{margin-top:6px;min-height:64px;background:#0f141b;border:1px solid #313b48;
+  color:#e6edf3;border-radius:8px;font-size:.98rem;line-height:1.45;resize:vertical;}
+.rdvform .rdvq textarea:focus{outline:none;border-color:#4dd9e8;}
+.rdvform .rdvq .oui{display:flex;gap:8px;margin-top:7px;}
+.rdvform .rdvq .oui button{flex:0 0 auto;padding:8px 19px;border-radius:999px;border:1px solid #3a4552;
+  background:#0f141b;color:#8b98a8;font-family:'Nunito';font-weight:900;font-size:.88rem;cursor:pointer;}
+.rdvform .rdvq .oui button.on[data-v="oui"]{background:#173021;border-color:#2f6b45;color:#8ee0ac;}
+.rdvform .rdvq .oui button.on[data-v="non"]{background:#3a1d1d;border-color:#7a3030;color:#ff9c9c;}
+.rdvform .rdvq .sq{color:#8b98a8;font-weight:700;font-size:.82rem;margin-top:8px;}
+.rdvform .rdvq input.court{margin-top:7px;background:#0f141b;border:1px solid #313b48;color:#e6edf3;
   border-radius:8px;max-width:220px;}
-.rdvz .notes5{display:flex;gap:8px;margin-top:9px;}
-.rdvz .notes5 button{flex:1;padding:12px 0;border-radius:9px;border:1px solid #3a4552;background:#0f141b;
-  color:#8b98a8;font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.06em;cursor:pointer;}
-.rdvz .notes5 button.on{background:#a855f7;border-color:#a855f7;color:#fff;}
+.rdvform .notes5{display:flex;gap:7px;margin-top:8px;}
+.rdvform .notes5 button{flex:1;padding:11px 0;border-radius:9px;border:1px solid #3a4552;background:#0f141b;
+  color:#8b98a8;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.06em;cursor:pointer;}
+.rdvform .notes5 button.on{background:#a855f7;border-color:#a855f7;color:#fff;}
+.rdvform .rdvmsg{margin-top:10px;font-weight:700;font-size:.86rem;color:#8ee0ac;}
+.rdvform .rdvmsg.ko{color:#ff9c9c;}
 
-/* Bloc « LE RENDEZ-VOUS » dans la fiche */
-.fiche .suivi .rdvbtn{background:linear-gradient(90deg,#a855f7,#7c3aed);color:#fff;}
-.fiche .suivi .rdvpan{margin-top:10px;padding:14px;border:1px solid #4a3070;border-radius:10px;
-  background:rgba(168,85,247,.07);}
-.fiche .suivi .rdvpan .btn{margin-top:12px;}
+/* Accordeons de la fiche (v7.17) — il y a trop d'information pour tout
+   afficher : on ne montre que les titres, et on ouvre ce qu'on veut lire. */
+.fiche details.fbox > summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;
+  margin-bottom:0;}
+.fiche details.fbox > summary::-webkit-details-marker{display:none;}
+.fiche details.fbox > summary::before{content:"\25b8";flex:0 0 auto;color:#58a6ff;font-size:.85rem;
+  transition:transform .15s;}
+.fiche details.fbox[open] > summary::before{transform:rotate(90deg);}
+.fiche details.fbox.act > summary::before{color:#d8b4fe;}
+.fiche details.fbox > .fbody{margin-top:12px;}
+.fiche details.fbox:not([open]){padding-bottom:14px;}
+
+/* Accordeon « LE RENDEZ-VOUS », dans le bloc de suivi */
+.fiche .suivi details.rdvacc{margin-top:12px;padding:12px 14px 14px;border:1px solid #5b3a9e;
+  border-radius:10px;background:rgba(168,85,247,.08);}
+.fiche .suivi details.rdvacc > summary{cursor:pointer;list-style:none;display:flex;align-items:center;
+  gap:9px;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:.11em;color:#d8b4fe;}
+.fiche .suivi details.rdvacc > summary::-webkit-details-marker{display:none;}
+.fiche .suivi details.rdvacc > summary::before{content:"\25b8";color:#a855f7;font-size:.8rem;transition:transform .15s;}
+.fiche .suivi details.rdvacc[open] > summary::before{transform:rotate(90deg);}
+.fiche .suivi details.rdvacc .fgrid{margin-top:12px;}
 .fiche .suivi .rdvrec{margin-top:10px;padding:10px 12px;border-radius:8px;background:#12212e;
   border:1px solid #294055;color:#9fd0e8;font-weight:700;font-size:.88rem;line-height:1.5;}
 
@@ -753,7 +746,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.16</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.17</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -766,7 +759,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.16";
+var VERSION = "v7.17";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4943,8 +4936,12 @@ function etoilesHtml(k, n){
    la personne, ou l'inverse. L'impression generale est le jugement sur
    QUELQU'UN, pose une fois, apres avoir lu tout le dossier.
    Rangee a part des notes de reponses : /candidats/<id>/impression/<membre>. */
-function impressionTous(c){ return c.impression || {}; }
-function impressionDe(c, id){ return impressionTous(c)[id] || {}; }
+/* Deux impressions, deux moments (v7.17). AVANT le rendez-vous : le jugement
+   sur dossier, celui du jury. APRES : ce qu'on en pense une fois la personne
+   rencontree. Deux champs distincts, jamais fusionnes — leur ecart est
+   precisement ce qu'on veut pouvoir lire. */
+function impressionTous(c, champ){ return (c && c[champ || "impression"]) || {}; }
+function impressionDe(c, id, champ){ return impressionTous(c, champ)[id] || {}; }
 
 /* Moyenne des impressions, une personne = une voix (il n'y en a qu'une chacun,
    la question de la ponderation ne se pose donc pas ici). */
@@ -4954,28 +4951,32 @@ function impressionMoy(c){
   return n ? { moy: Math.round(t / n * 10) / 10, n: n, vals: vals } : null;
 }
 
-function impressionSave(idCand, patch){
+function impressionSave(idCand, patch, champ){
   var c = LAST_CAND[idCand]; if(!c) return;
   if(!MEMBRE){ toast("Choisissez d\u2019abord votre nom"); return; }
-  c.impression = c.impression || {};
-  var cur = c.impression[MEMBRE] || {};
+  champ = champ || "impression";
+  c[champ] = c[champ] || {};
+  var cur = c[champ][MEMBRE] || {};
   if(patch.n   !== undefined) cur.n = patch.n;
   if(patch.txt !== undefined) cur.txt = patch.txt;
   cur.ts = Date.now();
-  c.impression[MEMBRE] = cur;
-  var p = {}; p["impression/" + MEMBRE] = cur;
+  c[champ][MEMBRE] = cur;
+  var p = {}; p[champ + "/" + MEMBRE] = cur;
   majCandidat(idCand, p).catch(function(e){ toast("Impression non enregistr\u00e9e : " + e.message); });
 }
 
 /* Le bloc de saisie, identique dans la fiche et dans le tableau de bord :
    une seule facon de le dessiner, une seule facon de le brancher. */
-function blocImpression(c){
-  var m = impressionDe(c, MEMBRE);
+function blocImpression(c, champ){
+  var apres = champ === "impression2";
+  var m = impressionDe(c, MEMBRE, apres ? "impression2" : "impression");
   return '<div class="impbloc">'
-    + '<div class="impt">Votre impression g\u00e9n\u00e9rale sur ' + esc(nomComplet(c)) + '</div>'
-    + '<div class="impl">' + etoilesHtml("imp:" + c._k, m.n)
+    + '<div class="impt">Votre impression g\u00e9n\u00e9rale sur ' + esc(nomComplet(c))
+    +   (apres ? " \u2014 apr\u00e8s l\u2019avoir rencontr\u00e9" : " \u2014 sur dossier") + '</div>'
+    + '<div class="impl">' + etoilesHtml((apres ? "im2:" : "imp:") + c._k, m.n)
     +   '<textarea class="imptxt" rows="2" data-c="' + esc(c._k) + '" '
-    +     'placeholder="Ce que vous en pensez, en deux lignes\u2026">' + esc(m.txt || "") + '</textarea>'
+    +     'data-champ="' + (apres ? "impression2" : "impression") + '" '
+    +     'placeholder="' + (apres ? "Ce que vous en retenez apr\u00e8s l\u2019entretien\u2026" : "Ce que vous en pensez, en deux lignes\u2026") + '">' + esc(m.txt || "") + '</textarea>'
     + '</div></div>';
 }
 
@@ -4985,20 +4986,21 @@ function brancherImpression(racine){
   var ets = racine.querySelectorAll('.impbloc .etoiles .et');
   for(var i=0;i<ets.length;i++) ets[i].onclick = function(){
     var box = this.parentNode, cle = box.getAttribute("data-c"), n = +this.getAttribute("data-n");
-    if(cle.indexOf("imp:") !== 0) return;
+    var champ = cle.indexOf("im2:") === 0 ? "impression2" : (cle.indexOf("imp:") === 0 ? "impression" : null);
+    if(!champ) return;
     if(n === box.querySelectorAll(".et.on").length) n = 0;   /* re-cliquer efface */
     var es = box.querySelectorAll(".et");
     for(var j=0;j<es.length;j++){ if(j < n) es[j].classList.add("on"); else es[j].classList.remove("on"); }
-    impressionSave(cle.slice(4), { n:n });
+    impressionSave(cle.slice(4), { n:n }, champ);
   };
   var tas = racine.querySelectorAll(".imptxt");
   for(var t=0;t<tas.length;t++) (function(ta){
-    var tmr = null;
+    var tmr = null, ch = ta.getAttribute("data-champ") || "impression";
     ta.oninput = function(){
       clearTimeout(tmr);
-      tmr = setTimeout(function(){ impressionSave(ta.getAttribute("data-c"), { txt: ta.value }); }, 700);
+      tmr = setTimeout(function(){ impressionSave(ta.getAttribute("data-c"), { txt: ta.value }, ch); }, 700);
     };
-    ta.onblur = function(){ clearTimeout(tmr); impressionSave(ta.getAttribute("data-c"), { txt: ta.value }); };
+    ta.onblur = function(){ clearTimeout(tmr); impressionSave(ta.getAttribute("data-c"), { txt: ta.value }, ch); };
   })(tas[t]);
 }
 
@@ -5969,7 +5971,10 @@ var SUIVI = [
   { k:"rdv2",        n:"Demande 2ème rendez-vous",c:"hot" },
   { k:"retenu",      n:"Retenu",                  c:"hot" },
   { k:"sans_suite",  n:"Sans suite",              c:"no" },
-  { k:"ecarte",      n:"Écarté",                  c:"no" }
+  { k:"ecarte",      n:"Écarté",                  c:"no" },
+  { k:"averti_non",  n:"Pas encore averti",       c:"wip" },
+  { k:"averti_mail", n:"Averti par mail",         c:"" },
+  { k:"averti_tel",  n:"Averti par tél",          c:"" }
 ];
 var SUIVI_ETAPES = [
   { n:1, t:"Réception",         ks:["nouveau"] },
@@ -5977,7 +5982,8 @@ var SUIVI_ETAPES = [
   { n:3, t:"Prise de contact",  ks:["contacte_tel","mail_envoye"] },
   { n:4, t:"Rendez-vous",       ks:["rdv"] },
   { n:5, t:"Après l’entretien", ks:["rdv2"] },
-  { n:6, t:"Décision",          ks:["retenu","sans_suite","ecarte"] }
+  { n:6, t:"Décision interne",  ks:["retenu","sans_suite","ecarte"] },
+  { n:7, t:"Candidat averti",   ks:["averti_non","averti_mail","averti_tel"] }
 ];
 /* Statuts d'avant la v7.16. Ils ne sont plus proposables, mais restent lisibles :
    sans eux, toute fiche deja qualifiee serait silencieusement retombee sur
@@ -6085,22 +6091,20 @@ function histHtml(c){
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PRISE DE NOTES PENDANT RDV (v7.15)
+   LE RENDEZ-VOUS — trame d'entretien, en ligne dans la fiche (v7.17)
    ──────────────────────────────────────────────────────────────
-   Trame du premier entretien, ouverte en plein ecran depuis le panneau
-   « LE RENDEZ-VOUS » du bloc Suivi. Trois formes de question :
-     - texte libre (defaut)
-     - "ouinon" : deux boutons OUI / NON, plus un champ d'observation
-     - "court"  : une ligne (duree de l'entretien)
-   Le brouillon est garde en localStorage a chaque geste (cle par
-   candidat) pour qu'une fermeture accidentelle en plein entretien ne
-   perde rien. A la validation, tout est assemble en un texte horodate
-   pousse dans suivi_hist par la fonction ecrire() du bloc suivi — un
-   seul chemin d'ecriture — et le verdict de fin (note globale sur 5 +
-   observation) est aussi ecrit a part dans rdv_cr, pour pouvoir etre
-   relu d'un coup d'oeil sans deplier tout l'historique.
-   L'observation generale est POSTERIEURE a la rencontre : elle ne
-   remplace pas l'impression generale du jury, qui est donnee avant.
+   Jusqu'a la v7.16 la trame vivait dans une fenetre plein ecran ouverte
+   par un bouton, lui-meme cache derriere un autre bouton. Deux clics
+   avant d'ecrire la premiere reponse, en plein entretien. Elle est
+   desormais le contenu direct de l'accordeon « LE RENDEZ-VOUS ».
+   Trois formes de question : texte libre (defaut), "ouinon" (deux
+   boutons plus un champ d'observation), "court" (une ligne).
+   Le brouillon est garde en localStorage a chaque geste, par candidat,
+   pour qu'une fermeture accidentelle ne perde rien. A la validation,
+   tout est assemble en un texte horodate pousse dans suivi_hist par la
+   fonction ecrire() du bloc suivi — un seul chemin d'ecriture — et le
+   verdict de fin (note sur 5 + observation) est aussi ecrit a part dans
+   rdv_cr, pour etre relu d'un coup d'oeil.
    ══════════════════════════════════════════════════════════════ */
 var RDV_TRAME = [
   { t:"Cadre", c:"#94a3b8", q:[
@@ -6109,7 +6113,8 @@ var RDV_TRAME = [
   ]},
   { t:"Le lieu", c:"#a855f7", q:[
     { q:"Vous connaissez LUMIIA ? Vous êtes déjà venu ?" },
-    { q:"Avec ce que vous en savez, vous imaginez quoi comme journée type ici ?" }
+    { q:"Avec ce que vous en savez, vous imaginez quoi comme journée type ici ?" },
+    { q:"Le poste, c’est aussi préparer le snacking sucré et salé tous les jours, et nettoyer derrière. Comment vous le sentez ?" }
   ]},
   { t:"Parcours", c:"#4dd9e8", q:[
     { q:"Racontez-moi le job où vous vous êtes le plus amusé." },
@@ -6146,8 +6151,8 @@ function rdvCle(c){ return "lumiia_rdvnotes_" + ((c && c._k) || "x"); }
 function rdvBrouillon(c){
   try{ return JSON.parse(localStorage.getItem(rdvCle(c)) || "{}") || {}; }catch(e){ return {}; }
 }
-/* Recapitulatif du dernier compte rendu de rendez-vous, affiche dans le
-   panneau pour ne pas avoir a deplier l'historique. */
+/* Recapitulatif du dernier compte rendu de rendez-vous, pour ne pas avoir a
+   deplier tout l'historique. */
 function rdvRecapHtml(c){
   var r = c && c.rdv_cr;
   if(!r) return "";
@@ -6161,18 +6166,9 @@ function rdvRecapHtml(c){
   return h + '</div>';
 }
 
-/* ecrire  : la fonction du bloc suivi, qui parle a la base et rafraichit
-             l'historique. Reutilisee telle quelle plutot que d'ouvrir un
-             second chemin d'ecriture qui pourrait diverger.
-   apres   : rappel apres enregistrement, pour rafraichir le recapitulatif. */
-function ouvrirNotesRDV(c, ecrire, apres){
+function rdvFormHtml(c){
   var d0 = rdvBrouillon(c);
-  var nom = ((c.prenom||"") + " " + (c.nom||"")).trim() || "Candidat";
-  var h = '<div class="rdvz"><div class="rdvbox">'
-    + '<div class="rdvhead"><div class="rt"><b>Prise de notes pendant RDV</b><span>'
-    + esc(nom) + '</span></div><button class="rdvx" id="rdv-x">✕</button></div>'
-    + '<div class="rdvbody">';
-
+  var h = '<div class="rdvform">';
   RDV_TRAME.forEach(function(b, ib){
     h += '<div class="rdvblc"><div class="rdvttl" style="background:' + b.c + '">'
       + esc(b.t.toUpperCase()) + '</div>';
@@ -6199,8 +6195,6 @@ function ouvrirNotesRDV(c, ecrire, apres){
     });
     h += '</div>';
   });
-
-  /* Verdict de fin — ce que l'on pense APRES avoir vu la personne. */
   h += '<div class="rdvblc"><div class="rdvttl" style="background:#ffffff">OBSERVATION GÉNÉRALE</div>'
     + '<div class="rdvq"><p>Ce que vous retenez de la rencontre</p>'
     + '<textarea data-rdv="obs" rows="4">' + esc(d0["obs"] || "") + '</textarea>'
@@ -6210,29 +6204,28 @@ function ouvrirNotesRDV(c, ecrire, apres){
     h += '<button type="button" data-n="' + n + '"'
       + (String(d0["note"] || "") === String(n) ? ' class="on"' : '') + '>' + n + '</button>';
   }
-  h += '</div></div></div>';
-
-  h += '</div><div class="rdvmsg hidden" id="rdv-msg"></div>'
-    + '<div class="rdvfoot">'
+  h += '</div></div></div>'
+    + '<div class="rdvmsg" id="rdv-msg"></div>'
     + '<button class="btn" id="rdv-ok">Ajouter au compte rendu</button>'
-    + '<button class="btn sec" id="rdv-close">Fermer</button>'
-    + '</div></div></div>';
+    + '</div>';
+  return h;
+}
 
-  var o = el(h);
-  document.body.appendChild(o);
-  var msg = o.querySelector("#rdv-msg");
-  var brouillon = {};
-  Object.keys(d0).forEach(function(x){ brouillon[x] = d0[x]; });
+/* ecrire : la fonction du bloc suivi, qui parle a la base et rafraichit
+   l'historique. Reutilisee telle quelle plutot que d'ouvrir un second chemin
+   d'ecriture qui pourrait diverger.
+   apres  : rappel apres enregistrement, pour rafraichir le recapitulatif. */
+function brancherRdvForm(c, racine, ecrire, apres){
+  var zone = racine.querySelector(".rdvform");
+  if(!zone) return;                      /* pas encore a l'etape 4 */
+  var msg = zone.querySelector("#rdv-msg");
+  var brouillon = rdvBrouillon(c);
+  var enregistre = false;
 
   function dire(txt, genre){
     msg.className = "rdvmsg" + (genre === "ko" ? " ko" : "");
-    msg.textContent = txt;
+    msg.textContent = txt || "";
   }
-  /* Passe a vrai une fois le compte rendu enregistre. Sans ce verrou, le
-     fermer() qui suit l'enregistrement rappelait garder() et REECRIVAIT le
-     brouillon qu'on venait de purger : l'entretien suivant rouvrait la
-     trame pre-remplie avec les reponses du precedent. */
-  var enregistre = false;
   function garder(){
     if(enregistre) return;
     try{ localStorage.setItem(rdvCle(c), JSON.stringify(brouillon)); }catch(e){}
@@ -6242,11 +6235,11 @@ function ouvrirNotesRDV(c, ecrire, apres){
     garder();
   }
 
-  var champs = o.querySelectorAll("[data-rdv]");
+  var champs = zone.querySelectorAll("[data-rdv]");
   for(var i=0;i<champs.length;i++){
     champs[i].oninput = function(){ poser(this.getAttribute("data-rdv"), this.value); };
   }
-  var groupes = o.querySelectorAll(".oui[data-oui]");
+  var groupes = zone.querySelectorAll(".oui[data-oui]");
   for(var g=0; g<groupes.length; g++){
     (function(grp){
       var bts = grp.querySelectorAll("button");
@@ -6259,24 +6252,14 @@ function ouvrirNotesRDV(c, ecrire, apres){
       };
     })(groupes[g]);
   }
-  var notes = o.querySelectorAll("#rdv-note5 button");
+  var notes = zone.querySelectorAll("#rdv-note5 button");
   for(var m=0;m<notes.length;m++) notes[m].onclick = function(){
     for(var z=0;z<notes.length;z++) notes[z].className = "";
     this.className = "on";
     poser("note", this.getAttribute("data-n"));
   };
 
-  function fermer(){
-    garder();
-    document.removeEventListener("keydown", auClavier);
-    if(o.parentNode) o.parentNode.removeChild(o);
-  }
-  function auClavier(ev){ if(ev.key === "Escape") fermer(); }
-  document.addEventListener("keydown", auClavier);
-  o.querySelector("#rdv-x").onclick = fermer;
-  o.querySelector("#rdv-close").onclick = fermer;
-
-  o.querySelector("#rdv-ok").onclick = function(){
+  zone.querySelector("#rdv-ok").onclick = function(){
     var bt = this, blocs = [];
     RDV_TRAME.forEach(function(b, ib){
       var lignes = [];
@@ -6296,8 +6279,7 @@ function ouvrirNotesRDV(c, ecrire, apres){
     var obs  = (brouillon["obs"] || "").trim();
     var note = brouillon["note"] || "";
     if(obs || note){
-      blocs.push("OBSERVATION GÉNÉRALE" + (note ? " — " + note + "/5" : "")
-        + (obs ? "\n" + obs : ""));
+      blocs.push("OBSERVATION GÉNÉRALE" + (note ? " — " + note + "/5" : "") + (obs ? "\n" + obs : ""));
     }
     if(!blocs.length){ dire("Aucune réponse saisie : rien à ajouter.", "ko"); return; }
 
@@ -6308,7 +6290,7 @@ function ouvrirNotesRDV(c, ecrire, apres){
     dire("Enregistrement\u2026");
     var hist = histTab(c).slice();
     hist.push({ ts: maintenant, st: c.suivi_statut || "nouveau", txt: txt });
-    var patch = {
+    ecrire({
       suivi_hist: hist,
       rdv_cr: {
         ts: maintenant,
@@ -6317,14 +6299,13 @@ function ouvrirNotesRDV(c, ecrire, apres){
         ponctuel: brouillon["r:0-0"] || "",
         duree: (brouillon["0-1"] || "").trim()
       }
-    };
-    ecrire(patch, null, "Compte rendu du rendez-vous ajouté ✓").then(function(ok){
+    }, null, "Compte rendu du rendez-vous ajouté ✓").then(function(ok){
       bt.disabled = false;
-      if(!ok){ dire("NON ENREGISTRÉ — vos notes restent ici, réessayez.", "ko"); return; }
+      if(!ok){ dire("NON ENREGISTRÉ — vos notes restent à l’écran, réessayez.", "ko"); return; }
       enregistre = true;
       try{ localStorage.removeItem(rdvCle(c)); }catch(e){}
+      dire("Compte rendu enregistré ✓");
       if(apres) apres();
-      fermer();
       toast("Compte rendu du rendez-vous enregistré");
     });
   };
@@ -6336,7 +6317,7 @@ function blocSuivi(c){
   /* La zone rendez-vous n'apparait qu'a partir de l'etape 4 — mais elle ne
      disparait plus ensuite : une fois l'entretien passe, on doit pouvoir
      relire ses notes depuis n'importe quelle etape suivante. */
-  var voirRdv = !ancien && (["rdv","rdv2","retenu","sans_suite"].indexOf(st) > -1
+  var voirRdv = !ancien && (["rdv","rdv2","retenu","sans_suite","averti_non","averti_mail","averti_tel"].indexOf(st) > -1
                             || !!c.rdv_date || !!c.rdv_cr);
   var h = '<div class="suivi">'
     + '<label class="f">Parcours <span class="dim" style="font-weight:700;text-transform:none">— enregistré dès que vous cliquez</span></label>';
@@ -6356,22 +6337,34 @@ function blocSuivi(c){
     /* L'observation appartient a l'etape : elle ne s'affiche que tant qu'on y est,
        et chacune garde la sienne (obs_<statut>). */
     if(actif){
-      h += '<div class="obsz"><label class="f">Observation — ' + esc(suiviDe(st).n) + '</label>'
-        + '<textarea id="sv-obs" data-obs="obs_' + st + '" rows="2" placeholder="Ce qu\u2019il faut retenir de cette étape\u2026">'
-        + esc(c["obs_" + st] || "") + '</textarea></div>';
+      /* L'observation appartient a l'ETAPE, pas au statut : a l'etape 6, ce
+         qu'on note vaut qu'on retienne ou qu'on ecarte. On relit l'ancienne
+         cle par statut pour ne rien perdre de ce qui a ete saisi en v7.16. */
+      var cleObs = "obs_e" + e.n;
+      var valObs = c[cleObs];
+      if(valObs === undefined || valObs === "") valObs = c["obs_" + st] || "";
+      h += '<div class="obsz"><label class="f">Observation — ' + esc(e.t) + '</label>'
+        + '<textarea id="sv-obs" data-obs="' + cleObs + '" rows="2" placeholder="Ce qu\u2019il faut retenir de cette étape\u2026">'
+        + esc(valObs) + '</textarea></div>';
+    }
+    /* Etape 7 : quand le candidat a-t-il ete prevenu. */
+    if(e.n === 7 && actif){
+      h += '<div class="fgrid" style="margin-top:12px"><div class="txrow">'
+        + '<label class="f">Averti le</label>'
+        + '<input type="date" id="sv-avdate" value="' + esc(c.averti_date||"") + '"></div></div>';
     }
     if(e.n === 4 && voirRdv){
-      h += '<div class="rdvzone">'
+      /* Un accordeon comme les autres : on l'ouvre, la trame est la. Plus de
+         bouton intermediaire — un bouton qui ouvre un panneau qui contient un
+         bouton, c'est un clic de trop en plein entretien. */
+      h += '<details class="rdvacc" id="sv-rdvacc"><summary>\ud83d\udcc5 LE RENDEZ-VOUS</summary>'
         +   '<div class="fgrid">'
         +     '<div class="txrow"><label class="f">Date</label><input type="date" id="sv-rdvd" value="' + esc(c.rdv_date||"") + '"></div>'
         +     '<div class="txrow"><label class="f">Heure</label><input type="time" id="sv-rdvh" value="' + esc(c.rdv_heure||"") + '"></div>'
         +   '</div>'
-        +   '<button class="btn rdvbtn" id="sv-rdv">\ud83d\udcc5 LE RENDEZ-VOUS</button>'
-        +   '<div class="rdvpan hidden" id="sv-rdvpan">'
-        +     '<div id="sv-rdvrec">' + rdvRecapHtml(c) + '</div>'
-        +     '<button class="btn sec" id="sv-notes">\ud83d\udcdd Prise de notes pendant RDV</button>'
-        +   '</div>'
-        + '</div>';
+        +   '<div id="sv-rdvrec">' + rdvRecapHtml(c) + '</div>'
+        +   rdvFormHtml(c)
+        + '</details>';
     }
     h += '</div></div>';
   });
@@ -6473,7 +6466,7 @@ function brancherSuivi(c, racine){
   };
 
   /* DATES ET HEURE — enregistrees des qu'elles changent. */
-  [["#sv-rdvd","rdv_date"],["#sv-rdvh","rdv_heure"]].forEach(function(p){
+  [["#sv-rdvd","rdv_date"],["#sv-rdvh","rdv_heure"],["#sv-avdate","averti_date"]].forEach(function(p){
     var champ = racine.querySelector(p[0]);
     if(!champ) return;
     champ.onchange = function(){
@@ -6503,19 +6496,11 @@ function brancherSuivi(c, racine){
   /* PANNEAU « LE RENDEZ-VOUS » (v7.15) — depliant, toujours accessible.
      La prise de notes ne part que d'ici ; on lui passe « ecrire » pour que
      l'ecriture reste sur le meme chemin que le compte rendu manuel. */
-  var btRdv = racine.querySelector("#sv-rdv");
-  var panRdv = racine.querySelector("#sv-rdvpan");
-  if(btRdv && panRdv) btRdv.onclick = function(){ panRdv.classList.toggle("hidden"); };
-
   function rafraichirRecap(){
     var box = racine.querySelector("#sv-rdvrec");
     if(box) box.innerHTML = rdvRecapHtml(c);
   }
-  var btn = racine.querySelector("#sv-notes");
-  if(btn) btn.onclick = function(){
-    if(occupe) return;
-    ouvrirNotesRDV(c, ecrire, rafraichirRecap);
-  };
+  brancherRdvForm(c, racine, ecrire, rafraichirRecap);
 
   racine.querySelector("#sv-ws").onclick = function(){
     var champD = racine.querySelector("#sv-rdvd");
@@ -7225,9 +7210,13 @@ function admFiche(c){
     if(!a.length) return '<span class="dim">—</span>';
     return a.map(function(x){ return '<span class="pill2 ' + (cls||"") + '">' + esc(x) + '</span>'; }).join(" ");
   }
-  function boite(titre, contenu, cls){
-    return '<div class="fbox' + (cls ? " " + cls : "") + '"><div class="stepno">'
-      + titre + '</div>' + contenu + '</div>';
+  /* Une fiche complete fait douze sections : tout deplier d'un coup noie ce
+     qu'on cherche. Chaque section est donc un accordeon a titre explicite ;
+     seules celles sur lesquelles on AGIT s'ouvrent d'elles-memes. */
+  function boite(titre, contenu, cls, ouvert){
+    return '<details class="fbox' + (cls ? " " + cls : "") + '"' + (ouvert ? " open" : "") + '>'
+      + '<summary class="stepno">' + titre + '</summary>'
+      + '<div class="fbody">' + contenu + '</div></details>';
   }
   /* Une liste de cases cochees ne dit que la moitie de l'histoire. Voir en face
      ce qui n'a PAS ete coche evite de croire qu'une competence manque alors
@@ -7384,8 +7373,9 @@ function admFiche(c){
        /recrutement/candidats doit rester ouverte pour que les candidats
        eux-memes puissent deposer et completer leur dossier. C'est donc une
        retenue d'interface, et elle est assumee comme telle. */
-    + boite("Impression g\u00e9n\u00e9rale", blocImpression(c), "act")
-    + (estAdmin() ? boite("Suivi — appels et rendez-vous", blocSuivi(c)) : "")
+    + boite("Impression g\u00e9n\u00e9rale — AVANT rendez-vous", blocImpression(c, "impression"), "act", true)
+    + boite("Impression g\u00e9n\u00e9rale — APR\u00c8S rendez-vous", blocImpression(c, "impression2"), "act", !!c.rdv_cr)
+    + (estAdmin() ? boite("Parcours de suivi", blocSuivi(c), "", true) : "")
     + (estAdmin() ? boite("Envoyer un message", blocEnvoi(c), "act") : "")
     + boite("Potentiel", ph)
     + '<div class="fgrid">'
