@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.15 -->
+<!-- LUMIIA RECRUTE — v7.16 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -599,6 +599,26 @@ body.adm{background:#0d1117;}
 .fiche .suivi .rdvpan .btn{margin-top:12px;}
 .fiche .suivi .rdvrec{margin-top:10px;padding:10px 12px;border-radius:8px;background:#12212e;
   border:1px solid #294055;color:#9fd0e8;font-weight:700;font-size:.88rem;line-height:1.5;}
+
+/* Echelle d'etapes (v7.16) */
+.fiche .suivi .etapes{margin-top:10px;border:1px solid #232b35;border-radius:10px;overflow:hidden;}
+.fiche .suivi .etp{display:flex;gap:11px;align-items:flex-start;padding:11px 12px;border-top:1px solid #232b35;}
+.fiche .suivi .etp:first-child{border-top:none;}
+.fiche .suivi .etp.on{background:rgba(88,166,255,.06);}
+.fiche .suivi .etpn{flex:0 0 auto;width:23px;height:23px;border-radius:50%;background:#161d26;
+  border:1px solid #3a4552;color:#7d8b9c;font-weight:900;font-size:.78rem;line-height:21px;text-align:center;margin-top:2px;}
+.fiche .suivi .etp.on .etpn{background:#58a6ff;border-color:#58a6ff;color:#04121f;}
+.fiche .suivi .etpc{flex:1;min-width:0;}
+.fiche .suivi .etpt{color:#7d8b9c;font-size:.68rem;letter-spacing:.11em;text-transform:uppercase;font-weight:900;}
+.fiche .suivi .etp .chips{margin-top:7px;}
+.fiche .suivi .obsz{margin-top:11px;}
+.fiche .suivi .obsz label.f{margin-top:0;}
+.fiche .suivi .obsz textarea{margin-top:6px;}
+.fiche .suivi .rdvzone{margin-top:12px;padding:12px;border:1px solid #4a3070;border-radius:10px;
+  background:rgba(168,85,247,.07);}
+.fiche .suivi .rdvzone .fgrid{margin-top:0;}
+.fiche .suivi .svold{margin-top:10px;padding:10px 12px;border-radius:8px;background:#3a2d13;
+  border:1px solid #7a6030;color:#f0d79c;font-weight:700;font-size:.86rem;line-height:1.5;}
 #admin .qui{display:flex;align-items:center;gap:9px;}
 #admin .vign,.fiche .vign{width:38px;height:38px;border-radius:8px;object-fit:cover;flex:0 0 auto;
   border:1px solid #303a48;background:#0f141a;}
@@ -733,7 +753,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.15</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.16</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -746,7 +766,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.15";
+var VERSION = "v7.16";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -5887,7 +5907,7 @@ function tabCandidats(){
     + '<div class="chip' + (ADM_FILTRE==="tous"?" on":"") + '" data-f="tous">Toutes</div>'
     + '<div class="chip' + (ADM_FILTRE==="complet"?" on":"") + '" data-f="complet">Complètes</div>'
     + '<div class="chip' + (ADM_FILTRE==="en cours"?" on":"") + '" data-f="en cours">Abandons</div>';
-  SUIVI.forEach(function(s2){
+  SUIVI.concat(SUIVI_ANCIENS).forEach(function(s2){
     h += '<div class="chip' + (ADM_FILTRE==="sv:"+s2.k?" on":"") + '" data-f="sv:' + s2.k + '">' + esc(s2.n) + '</div>';
   });
   /* L'export reste a l'admin : un fichier de 26 telephones et adresses qui sort
@@ -5936,19 +5956,46 @@ function meule(c){
    untel, rendez-vous mardi 14 h), déposée dans /workspace_inbox et intégrée
    d'un clic — pas une copie de la fiche.
    ══════════════════════════════════════════════════════════════ */
+/* Le suivi est un PARCOURS, pas une liste de puces : six etapes numerotees,
+   chacune offrant les seules issues possibles a ce moment-la. On ne repond pas
+   toujours par telephone, d'ou deux voies a l'etape 3. Chaque etape porte son
+   propre champ d'observation, visible uniquement tant qu'on y est. */
 var SUIVI = [
-  { k:"nouveau",   n:"À traiter",     c:"" },
-  { k:"a_rappeler",n:"À rappeler",    c:"wip" },
-  { k:"appele",    n:"Appelé",        c:"" },
-  { k:"rdv",       n:"RDV fixé",      c:"hot" },
-  { k:"rencontre", n:"Rencontré",     c:"hot" },
-  { k:"retenu",    n:"Retenu",        c:"hot" },
-  { k:"sans_suite",n:"Sans suite",    c:"no" },
-  { k:"ecarte",    n:"Écarté",        c:"no" }
+  { k:"nouveau",     n:"À traiter",               c:"" },
+  { k:"a_contacter", n:"À contacter",             c:"wip" },
+  { k:"contacte_tel",n:"Contacté tél",            c:"" },
+  { k:"mail_envoye", n:"Envoyé mail",             c:"" },
+  { k:"rdv",         n:"RDV fixé",                c:"hot" },
+  { k:"rdv2",        n:"Demande 2ème rendez-vous",c:"hot" },
+  { k:"retenu",      n:"Retenu",                  c:"hot" },
+  { k:"sans_suite",  n:"Sans suite",              c:"no" },
+  { k:"ecarte",      n:"Écarté",                  c:"no" }
+];
+var SUIVI_ETAPES = [
+  { n:1, t:"Réception",         ks:["nouveau"] },
+  { n:2, t:"Tri sur dossier",   ks:["a_contacter","ecarte"] },
+  { n:3, t:"Prise de contact",  ks:["contacte_tel","mail_envoye"] },
+  { n:4, t:"Rendez-vous",       ks:["rdv"] },
+  { n:5, t:"Après l’entretien", ks:["rdv2"] },
+  { n:6, t:"Décision",          ks:["retenu","sans_suite","ecarte"] }
+];
+/* Statuts d'avant la v7.16. Ils ne sont plus proposables, mais restent lisibles :
+   sans eux, toute fiche deja qualifiee serait silencieusement retombee sur
+   « À traiter » — une perte de travail invisible, donc la pire. */
+var SUIVI_ANCIENS = [
+  { k:"a_rappeler", n:"À rappeler (ancien)", c:"wip" },
+  { k:"appele",     n:"Appelé (ancien)",     c:"" },
+  { k:"rencontre",  n:"Rencontré (ancien)",  c:"hot" }
 ];
 function suiviDe(k){
-  for(var i=0;i<SUIVI.length;i++) if(SUIVI[i].k === (k || "nouveau")) return SUIVI[i];
+  k = k || "nouveau";
+  for(var i=0;i<SUIVI.length;i++) if(SUIVI[i].k === k) return SUIVI[i];
+  for(var j=0;j<SUIVI_ANCIENS.length;j++) if(SUIVI_ANCIENS[j].k === k) return SUIVI_ANCIENS[j];
   return SUIVI[0];
+}
+function suiviAncien(k){
+  for(var j=0;j<SUIVI_ANCIENS.length;j++) if(SUIVI_ANCIENS[j].k === k) return true;
+  return false;
 }
 function jourFR(d){
   if(!d) return "";
@@ -6284,29 +6331,51 @@ function ouvrirNotesRDV(c, ecrire, apres){
 }
 
 function blocSuivi(c){
-  var st = suiviDe(c.suivi_statut);
+  var st = (c.suivi_statut || "nouveau");
+  var ancien = suiviAncien(st);
+  /* La zone rendez-vous n'apparait qu'a partir de l'etape 4 — mais elle ne
+     disparait plus ensuite : une fois l'entretien passe, on doit pouvoir
+     relire ses notes depuis n'importe quelle etape suivante. */
+  var voirRdv = !ancien && (["rdv","rdv2","retenu","sans_suite"].indexOf(st) > -1
+                            || !!c.rdv_date || !!c.rdv_cr);
   var h = '<div class="suivi">'
-    + '<label class="f">Statut <span class="dim" style="font-weight:700;text-transform:none">— enregistré dès que vous cliquez</span></label>'
-    + '<div class="chips" id="sv-st">';
-  SUIVI.forEach(function(s2){
-    h += '<div class="chip' + (s2.k === st.k ? " on" : "") + '" data-sv="' + s2.k + '">' + esc(s2.n) + '</div>';
+    + '<label class="f">Parcours <span class="dim" style="font-weight:700;text-transform:none">— enregistré dès que vous cliquez</span></label>';
+  if(ancien){
+    h += '<div class="svold">Statut hérité : <b>' + esc(suiviDe(st).n) + '</b>'
+      + ' — choisissez l’étape correspondante ci-dessous pour le reprendre dans le parcours.</div>';
+  }
+  h += '<div class="etapes" id="sv-st">';
+  SUIVI_ETAPES.forEach(function(e){
+    var actif = !ancien && e.ks.indexOf(st) > -1;
+    h += '<div class="etp' + (actif ? " on" : "") + '"><div class="etpn">' + e.n + '</div><div class="etpc">'
+      + '<div class="etpt">' + esc(e.t) + '</div><div class="chips">';
+    e.ks.forEach(function(k){
+      h += '<div class="chip' + (k === st ? " on" : "") + '" data-sv="' + k + '">' + esc(suiviDe(k).n) + '</div>';
+    });
+    h += '</div>';
+    /* L'observation appartient a l'etape : elle ne s'affiche que tant qu'on y est,
+       et chacune garde la sienne (obs_<statut>). */
+    if(actif){
+      h += '<div class="obsz"><label class="f">Observation — ' + esc(suiviDe(st).n) + '</label>'
+        + '<textarea id="sv-obs" data-obs="obs_' + st + '" rows="2" placeholder="Ce qu\u2019il faut retenir de cette étape\u2026">'
+        + esc(c["obs_" + st] || "") + '</textarea></div>';
+    }
+    if(e.n === 4 && voirRdv){
+      h += '<div class="rdvzone">'
+        +   '<div class="fgrid">'
+        +     '<div class="txrow"><label class="f">Date</label><input type="date" id="sv-rdvd" value="' + esc(c.rdv_date||"") + '"></div>'
+        +     '<div class="txrow"><label class="f">Heure</label><input type="time" id="sv-rdvh" value="' + esc(c.rdv_heure||"") + '"></div>'
+        +   '</div>'
+        +   '<button class="btn rdvbtn" id="sv-rdv">\ud83d\udcc5 LE RENDEZ-VOUS</button>'
+        +   '<div class="rdvpan hidden" id="sv-rdvpan">'
+        +     '<div id="sv-rdvrec">' + rdvRecapHtml(c) + '</div>'
+        +     '<button class="btn sec" id="sv-notes">\ud83d\udcdd Prise de notes pendant RDV</button>'
+        +   '</div>'
+        + '</div>';
+    }
+    h += '</div></div>';
   });
-  h += '</div><div class="fgrid" style="margin-top:14px">'
-    + '<div class="txrow"><label class="f">Prochaine action le</label><input type="date" id="sv-rel" value="' + esc(c.relance_date||"") + '"></div>'
-    + '</div>'
-    /* Le rendez-vous a son propre panneau : c'est le seul endroit d'ou
-       part la prise de notes, et le seul ou vivent la date et l'heure.
-       Le bouton est toujours visible, quel que soit le statut : un
-       entretien peut commencer avant qu'on ait pense a changer la puce. */
-    + '<button class="btn rdvbtn" id="sv-rdv">📅 LE RENDEZ-VOUS</button>'
-    + '<div class="rdvpan hidden" id="sv-rdvpan">'
-    +   '<div class="fgrid">'
-    +     '<div class="txrow"><label class="f">Date</label><input type="date" id="sv-rdvd" value="' + esc(c.rdv_date||"") + '"></div>'
-    +     '<div class="txrow"><label class="f">Heure</label><input type="time" id="sv-rdvh" value="' + esc(c.rdv_heure||"") + '"></div>'
-    +   '</div>'
-    +   '<div id="sv-rdvrec">' + rdvRecapHtml(c) + '</div>'
-    +   '<button class="btn sec" id="sv-notes">📝 Prise de notes pendant RDV</button>'
-    + '</div>'
+  h += '</div>'
     + '<label class="f">Ajouter au compte rendu</label>'
     + '<textarea id="sv-note" rows="3" placeholder="Ce qu\u2019on s\u2019est dit, ce qu\u2019il faut retenir\u2026"></textarea>'
     + '<div class="factions" style="margin-top:12px;border:none;padding-top:0">'
@@ -6316,6 +6385,16 @@ function blocSuivi(c){
     + '<div id="sv-err" class="svmsg hidden"></div>'
     + '<div id="sv-hist">' + histHtml(c) + '</div>';
   return h + '</div>';
+}
+
+/* Changer d'etape change ce qui doit s'afficher (observation, zone rendez-vous).
+   Repeindre les puces ne suffit donc plus : on reconstruit le bloc et on le
+   rebranche. Le remplacement du noeud emporte les anciens ecouteurs avec lui. */
+function redessinerSuivi(c, racine){
+  var vieux = racine.querySelector(".suivi");
+  if(!vieux || !vieux.parentNode) return;
+  vieux.parentNode.replaceChild(el(blocSuivi(c)), vieux);
+  brancherSuivi(c, racine);
 }
 
 /* ── branchements du bloc suivi (appelé après insertion dans le DOM) ── */
@@ -6362,24 +6441,39 @@ function brancherSuivi(c, racine){
     }).then(function(ok){ occupe = false; return ok; });
   }
 
-  /* STATUT — le clic enregistre. */
+  /* STATUT — le clic enregistre, puis le bloc est reconstruit : l'etape
+     atteinte n'ouvre pas les memes champs que la precedente. */
   for(var i=0;i<ch.length;i++) ch[i].onclick = function(){
     if(occupe) return;
     var k = this.getAttribute("data-sv");
     if(!k) return;
-    var ancien = c.suivi_statut || "nouveau";
-    if(k === ancien) return;
+    var avant = c.suivi_statut || "nouveau";
+    if(k === avant) return;
     peindre(k);
     message("Enregistrement\u2026", "ok");
     var hist = histTab(c).slice();
     hist.push({ ts: Date.now(), st: k, txt: "" });
     ecrire({ suivi_statut: k, suivi_hist: hist },
-           function(){ peindre(ancien); },
-           "Statut enregistré ✓");
+           function(){ peindre(avant); },
+           "Statut enregistré ✓").then(function(ok){
+      if(!ok) return;
+      toast("Statut : " + suiviDe(k).n);
+      redessinerSuivi(c, racine);
+    });
+  };
+
+  /* OBSERVATION DE L'ETAPE — enregistree quand on quitte le champ. */
+  var obs = racine.querySelector("#sv-obs");
+  if(obs) obs.onchange = function(){
+    if(occupe) return;
+    var cle = obs.getAttribute("data-obs");
+    var avant2 = c[cle] || "";
+    var patch = {}; patch[cle] = obs.value || "";
+    ecrire(patch, function(){ obs.value = avant2; }, "Observation enregistrée ✓");
   };
 
   /* DATES ET HEURE — enregistrees des qu'elles changent. */
-  [["#sv-rel","relance_date"],["#sv-rdvd","rdv_date"],["#sv-rdvh","rdv_heure"]].forEach(function(p){
+  [["#sv-rdvd","rdv_date"],["#sv-rdvh","rdv_heure"]].forEach(function(p){
     var champ = racine.querySelector(p[0]);
     if(!champ) return;
     champ.onchange = function(){
@@ -6424,9 +6518,11 @@ function brancherSuivi(c, racine){
   };
 
   racine.querySelector("#sv-ws").onclick = function(){
-    var d = racine.querySelector("#sv-rdvd").value || racine.querySelector("#sv-rel").value;
-    if(!d){ toast("Mettez d’abord une date de rendez-vous ou de rappel"); return; }
-    var rdv = !!racine.querySelector("#sv-rdvd").value;
+    var champD = racine.querySelector("#sv-rdvd");
+    var d = champD ? champD.value : "";
+    if(!d){ toast("Passez d’abord le candidat en « RDV fixé » et mettez une date"); return; }
+    var rdv = true;
+    var champH = racine.querySelector("#sv-rdvh");
     var nom = ((c.prenom||"") + " " + (c.nom||"")).trim() || "candidat";
     envoyerWorkspace({
       kind: "task",
@@ -6437,7 +6533,7 @@ function brancherSuivi(c, racine){
         + (function(){ var h = histTab(c); return h.length ? "\nDernier échange : " + (h[h.length-1].txt || "—") : ""; })(),
       link: window.location.origin + window.location.pathname + "?admin",
       due: d,
-      dueTime: rdv ? (racine.querySelector("#sv-rdvh").value || null) : null,
+      dueTime: (champH && champH.value) || null,
       prio: "normal"
     });
   };
