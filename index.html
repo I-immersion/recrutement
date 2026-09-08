@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.33 -->
+<!-- LUMIIA RECRUTE — v7.34 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -694,6 +694,13 @@ body.adm{background:#0d1117;}
 .fiche details.fbox > .fbody{margin-top:12px;}
 .fiche details.fbox:not([open]){padding-bottom:14px;}
 
+.fiche .suivi .lienrdv{margin-top:12px;padding:11px 13px;border-radius:9px;background:#0f141b;
+  border:1px solid #313b48;}
+.fiche .suivi .lienrdv .f{margin-top:0;}
+.fiche .suivi .lienrdv code{display:block;margin-top:6px;color:#9fd0e8;font-size:.82rem;
+  word-break:break-all;font-family:ui-monospace,Menlo,monospace;}
+.fiche .suivi .lienrdv .btn{margin-top:10px;}
+
 /* Le deuxieme rendez-vous porte une autre couleur que le premier : dans une
    fiche qui en contient deux, il faut pouvoir dire lequel on lit sans lire. */
 .fiche .suivi details.rdvacc.deux{border-color:#1f6f5c;background:rgba(45,212,164,.08);}
@@ -865,7 +872,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.33</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.34</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -880,7 +887,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.33";
+var VERSION = "v7.34";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6400,6 +6407,12 @@ var RDV_NS = {
   r2: { id:"r2", trame:"RDV2_TRAME", notes:"rdv2_notes", cr:"rdv2_cr", titre:"LE DEUXIÈME RENDEZ-VOUS" }
 };
 function rdvTrame(ns){ return ns.trame === "RDV2_TRAME" ? RDV2_TRAME : RDV_TRAME; }
+/* Le lien personnel de reservation. La substitution de {lien} et {lien_extra}
+   se fait cote serveur (recrutement-envoi.php) : tant qu'un {lien_rdv} n'y est
+   pas ajoute, on copie l'adresse a la main depuis la fiche. */
+function lienRdvDe(c){
+  return location.origin + location.pathname + "?rdv=" + ((c && c._k) || "");
+}
 function rdvCle(c, ns){ return "lumiia_rdvnotes_" + (ns ? ns.id + "_" : "") + ((c && c._k) || "x"); }
 
 /* Les reponses vivent DANS LA FICHE, en base — pas seulement dans un texte
@@ -6730,6 +6743,9 @@ function blocSuivi(c){
         +     '<div class="txrow"><label class="f">Date</label><input type="date" id="sv-rdvd" value="' + esc(c.rdv_date||"") + '"></div>'
         +     '<div class="txrow"><label class="f">Heure</label><input type="time" id="sv-rdvh" value="' + esc(c.rdv_heure||"") + '"></div>'
         +   '</div>'
+        +   '<div class="lienrdv"><div class="f">Lien de réservation à envoyer au candidat</div>'
+        +     '<code id="sv-lienurl">' + esc(lienRdvDe(c)) + '</code>'
+        +     '<button class="btn sec" id="sv-lienrdv">Copier le lien</button></div>'
         +   '<div id="sv-rdvrec">' + rdvRecapHtml(c) + '</div>'
         +   rdvFormHtml(c)
         + '</details>';
@@ -6874,6 +6890,22 @@ function brancherSuivi(c, racine){
     var b2 = racine.querySelector("#sv-rdv2rec");
     if(b2) b2.innerHTML = rdvRecapHtml(c, RDV_NS.r2);
   }
+  var btLien = racine.querySelector("#sv-lienrdv");
+  if(btLien) btLien.onclick = function(){
+    var url = lienRdvDe(c), bt = this;
+    function fait(){ bt.textContent = "Lien copié ✓"; setTimeout(function(){ bt.textContent = "Copier le lien"; }, 2000); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(fait).catch(function(){ toast(url); });
+    } else {
+      /* Repli pour les contextes sans presse-papiers : on selectionne le texte,
+         un Cmd+C suffit. Mieux qu'un bouton qui ne fait rien. */
+      var e = racine.querySelector("#sv-lienurl");
+      if(e){ var r = document.createRange(); r.selectNode(e);
+             window.getSelection().removeAllRanges(); window.getSelection().addRange(r); }
+      toast("Sélectionné — faites Cmd+C");
+    }
+  };
+
   brancherRdvForm(c, racine, ecrire, rafraichirRecap);
 }
 
