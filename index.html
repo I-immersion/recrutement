@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.14 -->
+<!-- LUMIIA RECRUTE — v7.15 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -579,6 +579,26 @@ body.adm{background:#0d1117;}
   .rdvz .rdvfoot{flex-direction:column-reverse;align-items:stretch;}
   .rdvz .rdvfoot .btn.sec{flex:1 1 auto;}
 }
+.rdvz .rdvq .oui{display:flex;gap:8px;margin-top:8px;}
+.rdvz .rdvq .oui button{flex:0 0 auto;padding:9px 20px;border-radius:999px;border:1px solid #3a4552;
+  background:#0f141b;color:#8b98a8;font-family:'Nunito';font-weight:900;font-size:.9rem;cursor:pointer;}
+.rdvz .rdvq .oui button.on[data-v="oui"]{background:#173021;border-color:#2f6b45;color:#8ee0ac;}
+.rdvz .rdvq .oui button.on[data-v="non"]{background:#3a1d1d;border-color:#7a3030;color:#ff9c9c;}
+.rdvz .rdvq .sq{color:#8b98a8;font-weight:700;font-size:.84rem;margin-top:9px;}
+.rdvz .rdvq input.court{margin-top:8px;background:#0f141b;border:1px solid #313b48;color:#e6edf3;
+  border-radius:8px;max-width:220px;}
+.rdvz .notes5{display:flex;gap:8px;margin-top:9px;}
+.rdvz .notes5 button{flex:1;padding:12px 0;border-radius:9px;border:1px solid #3a4552;background:#0f141b;
+  color:#8b98a8;font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.06em;cursor:pointer;}
+.rdvz .notes5 button.on{background:#a855f7;border-color:#a855f7;color:#fff;}
+
+/* Bloc « LE RENDEZ-VOUS » dans la fiche */
+.fiche .suivi .rdvbtn{background:linear-gradient(90deg,#a855f7,#7c3aed);color:#fff;}
+.fiche .suivi .rdvpan{margin-top:10px;padding:14px;border:1px solid #4a3070;border-radius:10px;
+  background:rgba(168,85,247,.07);}
+.fiche .suivi .rdvpan .btn{margin-top:12px;}
+.fiche .suivi .rdvrec{margin-top:10px;padding:10px 12px;border-radius:8px;background:#12212e;
+  border:1px solid #294055;color:#9fd0e8;font-weight:700;font-size:.88rem;line-height:1.5;}
 #admin .qui{display:flex;align-items:center;gap:9px;}
 #admin .vign,.fiche .vign{width:38px;height:38px;border-radius:8px;object-fit:cover;flex:0 0 auto;
   border:1px solid #303a48;background:#0f141a;}
@@ -713,7 +733,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.14</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.15</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -726,7 +746,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.14";
+var VERSION = "v7.15";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6018,33 +6038,60 @@ function histHtml(c){
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PRISE DE NOTES PENDANT RDV (v7.14)
+   PRISE DE NOTES PENDANT RDV (v7.15)
    ──────────────────────────────────────────────────────────────
-   Trame du premier entretien, ouverte en plein ecran depuis le bloc
-   Suivi. Chaque reponse est un champ libre ; le brouillon est garde en
-   localStorage a chaque frappe (cle par candidat) pour qu'une fermeture
-   accidentelle en plein entretien ne perde rien. A la validation, les
-   reponses non vides sont assemblees en un seul texte et poussees dans
-   l'historique par le meme chemin que le compte rendu manuel.
+   Trame du premier entretien, ouverte en plein ecran depuis le panneau
+   « LE RENDEZ-VOUS » du bloc Suivi. Trois formes de question :
+     - texte libre (defaut)
+     - "ouinon" : deux boutons OUI / NON, plus un champ d'observation
+     - "court"  : une ligne (duree de l'entretien)
+   Le brouillon est garde en localStorage a chaque geste (cle par
+   candidat) pour qu'une fermeture accidentelle en plein entretien ne
+   perde rien. A la validation, tout est assemble en un texte horodate
+   pousse dans suivi_hist par la fonction ecrire() du bloc suivi — un
+   seul chemin d'ecriture — et le verdict de fin (note globale sur 5 +
+   observation) est aussi ecrit a part dans rdv_cr, pour pouvoir etre
+   relu d'un coup d'oeil sans deplier tout l'historique.
+   L'observation generale est POSTERIEURE a la rencontre : elle ne
+   remplace pas l'impression generale du jury, qui est donnee avant.
    ══════════════════════════════════════════════════════════════ */
 var RDV_TRAME = [
+  { t:"Cadre", c:"#94a3b8", q:[
+    { q:"Arrivé à l’heure", type:"ouinon", obs:false },
+    { q:"Durée de l’entretien", type:"court", ph:"ex. 25 min" }
+  ]},
   { t:"Le lieu", c:"#a855f7", q:[
-    "Vous connaissez LUMIIA ? Vous êtes déjà venu ?",
-    "Avec ce que vous en savez, vous imaginez quoi comme journée type ici ?"
+    { q:"Vous connaissez LUMIIA ? Vous êtes déjà venu ?" },
+    { q:"Avec ce que vous en savez, vous imaginez quoi comme journée type ici ?" }
   ]},
   { t:"Parcours", c:"#4dd9e8", q:[
-    "Racontez-moi le job où vous vous êtes le plus amusé.",
-    "Et celui que vous avez le moins aimé — pourquoi ?"
+    { q:"Racontez-moi le job où vous vous êtes le plus amusé." },
+    { q:"Et celui que vous avez le moins aimé — pourquoi ?" }
+  ]},
+  { t:"Expérience", c:"#f08a24", q:[
+    { q:"Expérience en bar", type:"ouinon", sq:"Où, combien de temps, quoi exactement" },
+    { q:"Expérience en animation ou en accueil", type:"ouinon", sq:"Où, combien de temps, quoi exactement" },
+    { q:"Déjà eu un différend avec des collègues ou la direction dans un poste précédent ?",
+      type:"ouinon", sq:"Comment avez-vous géré la situation ?" }
+  ]},
+  { t:"Autonomie", c:"#b8ff3c", q:[
+    { q:"Vous est-il déjà arrivé de tenir un poste seul, sans personne pour vous dire quoi faire ? Racontez." },
+    { q:"Quand il n’y a plus rien d’urgent à faire et que personne ne vous demande rien, vous faites quoi ?" },
+    { q:"Seul sur un poste toute une après-midi : plutôt à l’aise, ou pas votre truc ?" }
   ]},
   { t:"Disponibilités", c:"#ff6b6b", q:[
-    "Vendredi et samedi soir jusqu’à 2h : possible sur la durée, ou dépannage ?",
-    "Mercredi et jeudi après-midi ?",
-    "Décembre, vacances scolaires, jours fériés ?",
-    "Comment venez-vous ? (fins de soirée tardives)",
-    "Autres engagements réguliers, autre employeur, cursus ?"
+    { q:"Vendredi et samedi soir jusqu’à 2h : possible sur la durée, ou dépannage ?" },
+    { q:"Mercredi et jeudi après-midi ?" },
+    { q:"Décembre, vacances scolaires, jours fériés ?" },
+    { q:"Comment venez-vous ? (fins de soirée tardives)" },
+    { q:"Autres engagements réguliers, autre employeur, cursus ?" }
+  ]},
+  { t:"Extras", c:"#ffd700", q:[
+    { q:"Intéressé par des extras (renforts ponctuels, soirées) ?", type:"ouinon",
+      sq:"Quelles périodes, quel rythme" }
   ]},
   { t:"Ses questions", c:"#d946ef", q:[
-    "Est-ce que vous avez des questions pour moi ?"
+    { q:"A posé des questions ?", type:"ouinon", sq:"Lesquelles, et ce qu’elles disent de lui" }
   ]}
 ];
 
@@ -6052,27 +6099,72 @@ function rdvCle(c){ return "lumiia_rdvnotes_" + ((c && c._k) || "x"); }
 function rdvBrouillon(c){
   try{ return JSON.parse(localStorage.getItem(rdvCle(c)) || "{}") || {}; }catch(e){ return {}; }
 }
+/* Recapitulatif du dernier compte rendu de rendez-vous, affiche dans le
+   panneau pour ne pas avoir a deplier l'historique. */
+function rdvRecapHtml(c){
+  var r = c && c.rdv_cr;
+  if(!r) return "";
+  var bouts = [];
+  if(r.ts) bouts.push("Rencontré le " + new Date(r.ts).toLocaleDateString("fr-FR"));
+  if(r.ponctuel) bouts.push(r.ponctuel === "oui" ? "à l’heure" : "en retard");
+  if(r.duree) bouts.push(r.duree);
+  if(r.note) bouts.push("note " + r.note + "/5");
+  var h = '<div class="rdvrec">' + esc(bouts.join(" · "));
+  if(r.obs) h += '<div style="margin-top:6px;font-weight:400;color:#cfe6f4">' + nl2br(r.obs) + '</div>';
+  return h + '</div>';
+}
 
-/* ecrire : la fonction du bloc suivi, qui parle a la base et rafraichit
-   l'historique. On la reutilise telle quelle plutot que d'ouvrir un second
-   chemin d'ecriture qui pourrait diverger. */
-function ouvrirNotesRDV(c, ecrire){
-  var brouillon = rdvBrouillon(c);
+/* ecrire  : la fonction du bloc suivi, qui parle a la base et rafraichit
+             l'historique. Reutilisee telle quelle plutot que d'ouvrir un
+             second chemin d'ecriture qui pourrait diverger.
+   apres   : rappel apres enregistrement, pour rafraichir le recapitulatif. */
+function ouvrirNotesRDV(c, ecrire, apres){
+  var d0 = rdvBrouillon(c);
   var nom = ((c.prenom||"") + " " + (c.nom||"")).trim() || "Candidat";
   var h = '<div class="rdvz"><div class="rdvbox">'
     + '<div class="rdvhead"><div class="rt"><b>Prise de notes pendant RDV</b><span>'
     + esc(nom) + '</span></div><button class="rdvx" id="rdv-x">✕</button></div>'
     + '<div class="rdvbody">';
+
   RDV_TRAME.forEach(function(b, ib){
     h += '<div class="rdvblc"><div class="rdvttl" style="background:' + b.c + '">'
       + esc(b.t.toUpperCase()) + '</div>';
-    b.q.forEach(function(q, iq){
+    b.q.forEach(function(o, iq){
       var k = ib + "-" + iq;
-      h += '<div class="rdvq"><p>' + esc(q) + '</p>'
-        + '<textarea data-rdv="' + k + '" rows="2">' + esc(brouillon[k] || "") + '</textarea></div>';
+      h += '<div class="rdvq"><p>' + esc(o.q) + '</p>';
+      if(o.type === "court"){
+        h += '<input class="court" type="text" data-rdv="' + k + '" placeholder="'
+          + esc(o.ph || "") + '" value="' + esc(d0[k] || "") + '">';
+      } else if(o.type === "ouinon"){
+        var v = d0["r:" + k] || "";
+        h += '<div class="oui" data-oui="' + k + '">'
+          + '<button type="button" data-v="oui"' + (v === "oui" ? ' class="on"' : '') + '>OUI</button>'
+          + '<button type="button" data-v="non"' + (v === "non" ? ' class="on"' : '') + '>NON</button>'
+          + '</div>';
+        if(o.obs !== false){
+          if(o.sq) h += '<div class="sq">' + esc(o.sq) + '</div>';
+          h += '<textarea data-rdv="' + k + '" rows="2">' + esc(d0[k] || "") + '</textarea>';
+        }
+      } else {
+        h += '<textarea data-rdv="' + k + '" rows="2">' + esc(d0[k] || "") + '</textarea>';
+      }
+      h += '</div>';
     });
     h += '</div>';
   });
+
+  /* Verdict de fin — ce que l'on pense APRES avoir vu la personne. */
+  h += '<div class="rdvblc"><div class="rdvttl" style="background:#ffffff">OBSERVATION GÉNÉRALE</div>'
+    + '<div class="rdvq"><p>Ce que vous retenez de la rencontre</p>'
+    + '<textarea data-rdv="obs" rows="4">' + esc(d0["obs"] || "") + '</textarea>'
+    + '<p style="margin-top:14px">Note globale après entretien</p>'
+    + '<div class="notes5" id="rdv-note5">';
+  for(var n = 1; n <= 5; n++){
+    h += '<button type="button" data-n="' + n + '"'
+      + (String(d0["note"] || "") === String(n) ? ' class="on"' : '') + '>' + n + '</button>';
+  }
+  h += '</div></div></div>';
+
   h += '</div><div class="rdvmsg hidden" id="rdv-msg"></div>'
     + '<div class="rdvfoot">'
     + '<button class="btn" id="rdv-ok">Ajouter au compte rendu</button>'
@@ -6081,25 +6173,54 @@ function ouvrirNotesRDV(c, ecrire){
 
   var o = el(h);
   document.body.appendChild(o);
-  var champs = o.querySelectorAll("textarea[data-rdv]");
   var msg = o.querySelector("#rdv-msg");
+  var brouillon = {};
+  Object.keys(d0).forEach(function(x){ brouillon[x] = d0[x]; });
 
   function dire(txt, genre){
     msg.className = "rdvmsg" + (genre === "ko" ? " ko" : "");
     msg.textContent = txt;
   }
-  function sauverBrouillon(){
-    var d = {};
-    for(var i=0;i<champs.length;i++){
-      var v = (champs[i].value || "").trim();
-      if(v) d[champs[i].getAttribute("data-rdv")] = champs[i].value;
-    }
-    try{ localStorage.setItem(rdvCle(c), JSON.stringify(d)); }catch(e){}
+  /* Passe a vrai une fois le compte rendu enregistre. Sans ce verrou, le
+     fermer() qui suit l'enregistrement rappelait garder() et REECRIVAIT le
+     brouillon qu'on venait de purger : l'entretien suivant rouvrait la
+     trame pre-remplie avec les reponses du precedent. */
+  var enregistre = false;
+  function garder(){
+    if(enregistre) return;
+    try{ localStorage.setItem(rdvCle(c), JSON.stringify(brouillon)); }catch(e){}
   }
-  for(var i=0;i<champs.length;i++) champs[i].oninput = sauverBrouillon;
+  function poser(cle, val){
+    if(val === "" || val == null) delete brouillon[cle]; else brouillon[cle] = val;
+    garder();
+  }
+
+  var champs = o.querySelectorAll("[data-rdv]");
+  for(var i=0;i<champs.length;i++){
+    champs[i].oninput = function(){ poser(this.getAttribute("data-rdv"), this.value); };
+  }
+  var groupes = o.querySelectorAll(".oui[data-oui]");
+  for(var g=0; g<groupes.length; g++){
+    (function(grp){
+      var bts = grp.querySelectorAll("button");
+      for(var j=0;j<bts.length;j++) bts[j].onclick = function(){
+        var v = this.getAttribute("data-v");
+        var deja = this.className.indexOf("on") >= 0;
+        for(var z=0;z<bts.length;z++) bts[z].className = "";
+        if(!deja){ this.className = "on"; poser("r:" + grp.getAttribute("data-oui"), v); }
+        else poser("r:" + grp.getAttribute("data-oui"), "");
+      };
+    })(groupes[g]);
+  }
+  var notes = o.querySelectorAll("#rdv-note5 button");
+  for(var m=0;m<notes.length;m++) notes[m].onclick = function(){
+    for(var z=0;z<notes.length;z++) notes[z].className = "";
+    this.className = "on";
+    poser("note", this.getAttribute("data-n"));
+  };
 
   function fermer(){
-    sauverBrouillon();
+    garder();
     document.removeEventListener("keydown", auClavier);
     if(o.parentNode) o.parentNode.removeChild(o);
   }
@@ -6109,30 +6230,55 @@ function ouvrirNotesRDV(c, ecrire){
   o.querySelector("#rdv-close").onclick = fermer;
 
   o.querySelector("#rdv-ok").onclick = function(){
-    var bt = this, blocs = [], vides = 0;
+    var bt = this, blocs = [];
     RDV_TRAME.forEach(function(b, ib){
       var lignes = [];
-      b.q.forEach(function(q, iq){
-        var ch = o.querySelector('textarea[data-rdv="' + ib + "-" + iq + '"]');
-        var v = ch ? (ch.value || "").trim() : "";
-        if(v) lignes.push("• " + q + "\n  " + v.replace(/\n/g, "\n  "));
-        else vides++;
+      b.q.forEach(function(qo, iq){
+        var k = ib + "-" + iq;
+        var rep2 = brouillon["r:" + k] || "";
+        var txt2 = (brouillon[k] || "").trim();
+        if(!rep2 && !txt2) return;
+        var l = "• " + qo.q;
+        if(qo.type === "ouinon") l += " : " + (rep2 ? rep2.toUpperCase() : "—");
+        else if(qo.type === "court" && txt2){ lignes.push(l + " : " + txt2); return; }
+        if(txt2) l += "\n  " + txt2.replace(/\n/g, "\n  ");
+        lignes.push(l);
       });
       if(lignes.length) blocs.push(b.t.toUpperCase() + "\n" + lignes.join("\n"));
     });
+    var obs  = (brouillon["obs"] || "").trim();
+    var note = brouillon["note"] || "";
+    if(obs || note){
+      blocs.push("OBSERVATION GÉNÉRALE" + (note ? " — " + note + "/5" : "")
+        + (obs ? "\n" + obs : ""));
+    }
     if(!blocs.length){ dire("Aucune réponse saisie : rien à ajouter.", "ko"); return; }
-    var d = new Date();
-    var txt = "ENTRETIEN 1er TOUR — " + d.toLocaleDateString("fr-FR") + "\n\n" + blocs.join("\n\n");
+
+    var maintenant = Date.now();
+    var txt = "ENTRETIEN 1er TOUR — " + new Date(maintenant).toLocaleDateString("fr-FR")
+      + "\n\n" + blocs.join("\n\n");
     bt.disabled = true;
     dire("Enregistrement\u2026");
     var hist = histTab(c).slice();
-    hist.push({ ts: Date.now(), st: c.suivi_statut || "nouveau", txt: txt });
-    ecrire({ suivi_hist: hist }, null, "Compte rendu ajouté ✓").then(function(ok){
+    hist.push({ ts: maintenant, st: c.suivi_statut || "nouveau", txt: txt });
+    var patch = {
+      suivi_hist: hist,
+      rdv_cr: {
+        ts: maintenant,
+        note: note ? Number(note) : 0,
+        obs: obs,
+        ponctuel: brouillon["r:0-0"] || "",
+        duree: (brouillon["0-1"] || "").trim()
+      }
+    };
+    ecrire(patch, null, "Compte rendu du rendez-vous ajouté ✓").then(function(ok){
       bt.disabled = false;
       if(!ok){ dire("NON ENREGISTRÉ — vos notes restent ici, réessayez.", "ko"); return; }
+      enregistre = true;
       try{ localStorage.removeItem(rdvCle(c)); }catch(e){}
+      if(apres) apres();
       fermer();
-      toast("Notes d’entretien ajoutées au compte rendu");
+      toast("Compte rendu du rendez-vous enregistré");
     });
   };
 }
@@ -6147,14 +6293,24 @@ function blocSuivi(c){
   });
   h += '</div><div class="fgrid" style="margin-top:14px">'
     + '<div class="txrow"><label class="f">Prochaine action le</label><input type="date" id="sv-rel" value="' + esc(c.relance_date||"") + '"></div>'
-    + '<div class="txrow"><label class="f">Rendez-vous — date</label><input type="date" id="sv-rdvd" value="' + esc(c.rdv_date||"") + '"></div>'
-    + '<div class="txrow"><label class="f">Rendez-vous — heure</label><input type="time" id="sv-rdvh" value="' + esc(c.rdv_heure||"") + '"></div>'
+    + '</div>'
+    /* Le rendez-vous a son propre panneau : c'est le seul endroit d'ou
+       part la prise de notes, et le seul ou vivent la date et l'heure.
+       Le bouton est toujours visible, quel que soit le statut : un
+       entretien peut commencer avant qu'on ait pense a changer la puce. */
+    + '<button class="btn rdvbtn" id="sv-rdv">📅 LE RENDEZ-VOUS</button>'
+    + '<div class="rdvpan hidden" id="sv-rdvpan">'
+    +   '<div class="fgrid">'
+    +     '<div class="txrow"><label class="f">Date</label><input type="date" id="sv-rdvd" value="' + esc(c.rdv_date||"") + '"></div>'
+    +     '<div class="txrow"><label class="f">Heure</label><input type="time" id="sv-rdvh" value="' + esc(c.rdv_heure||"") + '"></div>'
+    +   '</div>'
+    +   '<div id="sv-rdvrec">' + rdvRecapHtml(c) + '</div>'
+    +   '<button class="btn sec" id="sv-notes">📝 Prise de notes pendant RDV</button>'
     + '</div>'
     + '<label class="f">Ajouter au compte rendu</label>'
     + '<textarea id="sv-note" rows="3" placeholder="Ce qu\u2019on s\u2019est dit, ce qu\u2019il faut retenir\u2026"></textarea>'
     + '<div class="factions" style="margin-top:12px;border:none;padding-top:0">'
     + '<button class="btn" id="sv-save">Ajouter au compte rendu</button>'
-    + '<button class="btn sec" id="sv-notes">📝 Prise de notes pendant RDV</button>'
     + '<button class="btn sec" id="sv-ws">Envoyer la tâche dans Workspace</button>'
     + '</div>'
     + '<div id="sv-err" class="svmsg hidden"></div>'
@@ -6250,13 +6406,21 @@ function brancherSuivi(c, racine){
     });
   };
 
-  /* PRISE DE NOTES PENDANT RDV — ouvre la trame d'entretien (v7.14).
-     On lui passe « ecrire » : l'ecriture reste sur le meme chemin que le
-     compte rendu manuel, donc un seul comportement a maintenir. */
+  /* PANNEAU « LE RENDEZ-VOUS » (v7.15) — depliant, toujours accessible.
+     La prise de notes ne part que d'ici ; on lui passe « ecrire » pour que
+     l'ecriture reste sur le meme chemin que le compte rendu manuel. */
+  var btRdv = racine.querySelector("#sv-rdv");
+  var panRdv = racine.querySelector("#sv-rdvpan");
+  if(btRdv && panRdv) btRdv.onclick = function(){ panRdv.classList.toggle("hidden"); };
+
+  function rafraichirRecap(){
+    var box = racine.querySelector("#sv-rdvrec");
+    if(box) box.innerHTML = rdvRecapHtml(c);
+  }
   var btn = racine.querySelector("#sv-notes");
   if(btn) btn.onclick = function(){
     if(occupe) return;
-    ouvrirNotesRDV(c, ecrire);
+    ouvrirNotesRDV(c, ecrire, rafraichirRecap);
   };
 
   racine.querySelector("#sv-ws").onclick = function(){
