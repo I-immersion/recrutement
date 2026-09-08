@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.36 -->
+<!-- LUMIIA RECRUTE — v7.37 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -879,7 +879,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.36</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.37</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -894,7 +894,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.36";
+var VERSION = "v7.37";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -7308,6 +7308,7 @@ function tabCreneaux(){
     +   '<button class="btn" id="cr-add">Ouvrir ces créneaux</button>'
     +   '<div class="crmsg" id="cr-msg"></div>'
     + '</div>'
+    + '<div id="cr-essai"></div>'
     + '<div id="cr-liste"><p class="aide">Chargement…</p></div>'
 
     + '<div class="adm-sec" style="margin-top:26px"><h2>Miroir Google Agenda</h2>'
@@ -7323,6 +7324,21 @@ function tabCreneaux(){
     + boutonSauver("cr-save", "ENREGISTRER L’ADRESSE")
     + '</div></div>';
   panneau(h);
+  var zEssai = $("cr-essai");
+  if(zEssai){
+    /* Meme precaution que pour le parcours extras : GitHub Pages sert la page
+       avec max-age=600, donc un lien fixe rouvre pendant dix minutes la version
+       PRECEDENTE de l'app. Le parametre qui change a chaque affichage force une
+       page neuve — indispensable quand on teste juste apres une livraison. */
+    var urlT = location.origin + location.pathname + "?rdv=" + ADM_TEST_KEY
+             + "&n=" + Date.now().toString(36);
+    zEssai.innerHTML = '<div class="essai"><div class="essait">\ud83e\uddea Voir l’écran du candidat</div>'
+      + '<div class="dim">Ce lien ouvre l’écran de réservation sur la <b>fiche de test</b>, '
+      + 'jamais sur un vrai candidat. Si vous réservez un créneau, il sera pris par « Emmanuel Test » '
+      + '\u2014 libérez-le ensuite depuis la liste ci-dessus.</div>'
+      + '<div style="margin-top:10px"><a class="lien" href="' + esc(urlT) + '" target="_blank" rel="noopener">'
+      + esc(urlT) + '</a></div></div>';
+  }
 
   $("cr-add").onclick = function(){
     var d = $("cr-d").value, h0 = $("cr-h").value;
