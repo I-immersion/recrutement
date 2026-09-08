@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.23 -->
+<!-- LUMIIA RECRUTE — v7.24 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -558,6 +558,11 @@ body.adm{background:#0d1117;}
 #admin .compte .fraz{margin-left:8px;padding:5px 11px;border-radius:7px;border:1px solid #3a4552;
   background:transparent;color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.82rem;cursor:pointer;}
 #admin .compte .fraz:hover{color:#e6edf3;border-color:#58a6ff;}
+#admin table.cmp th[data-col]{cursor:grab;user-select:none;}
+#admin table.cmp th[data-col].prise{opacity:.45;}
+#admin table.cmp th[data-col].cible{box-shadow:inset 3px 0 0 #58a6ff;}
+#admin table.cmp th .poign{color:#4c5866;font-size:.8rem;letter-spacing:-.1em;cursor:grab;}
+#admin table.cmp th[data-col]:hover .poign{color:#58a6ff;}
 #admin .recents{margin:0 0 12px;padding:12px 14px;border-radius:10px;background:#12210f;
   border:1px solid #3f6b2a;}
 #admin .recents .rect{color:#b8ff3c;font-family:'Bebas Neue',sans-serif;font-size:1rem;
@@ -802,7 +807,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.23</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.24</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -815,7 +820,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.23";
+var VERSION = "v7.24";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -7279,6 +7284,17 @@ function tabReglages(){
 /* ── TABLEAU COMPARATIF ── */
 /* Trois lectures d'un coup d'oeil, sans ouvrir la fiche : ce qui a ete decide,
    ce qu'on en a pense apres l'avoir vu, et si la personne a ete prevenue. */
+/* L'ordre des colonnes est un confort de lecture, propre a la personne et a
+   son ecran : il vit dans le navigateur, pas dans la base. */
+var COLS_CLE = "lumiia_recrute_colonnes";
+function ordreColonnes(){
+  try{ var v = JSON.parse(localStorage.getItem(COLS_CLE) || "[]"); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function poserOrdreColonnes(l){
+  try{ localStorage.setItem(COLS_CLE, JSON.stringify(l)); }catch(e){}
+}
+
 var DECISIONS = { retenu:1, ecarte:1, retenu2:1, ecarte2:1, sans_suite:1, rdv2:1, indispo:1 };
 function decisionCell(c){
   var st = c.suivi_statut || "";
@@ -7369,57 +7385,114 @@ function admCandidats(){
     });
   }
 
+  /* ── Colonnes deplacables (v7.24) ──────────────────────────────────────
+     Le tableau compte une vingtaine de colonnes et tout le monde ne regarde
+     pas les memes en premier. Chaque colonne est donc decrite une fois — son
+     titre, son tri eventuel, sa cellule — et l'ordre d'affichage se glisse a
+     la souris. L'ordre est garde dans le navigateur, pas dans la base : c'est
+     un confort de lecture personnel, pas une donnee de l'entreprise. */
+  function colonnes(ctx){
+    return [
+      { id:"potentiel", t:"Potentiel", tri:"potentiel", cell:function(c){
+          return '<td class="potc"><span class="pot ' + couleurPot(c._ev.total) + '">' + c._ev.total + '</span></td>'; } },
+      { id:"profil", t:"Profil", cell:function(c){
+          var mini = "", AX = ["metier","terrain","posture","engagement","praticite"];
+          AX.forEach(function(a){
+            var v = Math.min(100, Math.round(c._ev.axes[a] / Math.max(1, maxAxe(a)) * 100));
+            mini += '<span class="ax" title="' + a + '"><i style="height:' + Math.max(6, v) + '%"></i></span>';
+          });
+          return '<td><span class="axes">' + mini + '</span></td>'; } },
+      { id:"statut", t:"Statut", cell:function(c){
+          var complet = (c.statut === "complet");
+          return '<td><span class="pill2 ' + (complet ? "hot" : "wip") + '">'
+            + (complet ? "complète" : ("étape " + (c.etape||1))) + '</span></td>'; } },
+      { id:"suivi", t:"Suivi", cell:function(c){
+          return '<td><span class="pill2 ' + suiviDe(c.suivi_statut).c + '">'
+            + esc(suiviDe(c.suivi_statut).n) + '</span></td>'; } },
+      { id:"decision", t:"Décision", cell:function(c){ return '<td>' + decisionCell(c) + '</td>'; } },
+      { id:"noteapres", t:"Note après RDV", cell:function(c){ return '<td>' + noteApresCell(c) + '</td>'; } },
+      { id:"averti", t:"Candidat averti", cell:function(c){ return '<td>' + avertiCell(c) + '</td>'; } },
+      { id:"messages", t:"Messages envoyés", cell:function(c){ return '<td>' + envoisCell(c) + '</td>'; } },
+      { id:"prochaine", t:"Prochaine action", cell:function(c){
+          return '<td class="mono">' + (c.rdv_date
+            ? '<b>RDV ' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</b>'
+            : (c.relance_date ? esc(jourFR(c.relance_date)) : '<span class="dim">—</span>')) + '</td>'; } },
+      { id:"candidat", t:"Candidat", cell:function(c){
+          return '<td><div class="qui">'
+            + (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">'
+                       : '<span class="vign vide">—</span>')
+            + '<span><b>' + esc(nomComplet(c)) + '</b><br><span class="dim">'
+            + esc(c.anciennete_metier||c.anciennete||"") + '</span>'
+            + (c.cv_url ? '<br><a class="lien" href="' + esc(c.cv_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">📎 CV</a>' : '')
+            + '</span></div></td>'; } },
+      { id:"contact", t:"Contact", cell:function(c){
+          return '<td><span class="mono">' + esc(c.tel||"—") + '</span><br><span class="dim">'
+            + esc(c.email||"") + '</span></td>'; } },
+      { id:"exp", t:"Expérience", tri:"exp", cell:function(c){
+          var e = nb(c.experiences);
+          return '<td><div class="cbar"><i style="width:' + Math.round(e/ctx.nExpT*100) + '%"></i></div>'
+            + '<span class="dim">' + e + ' / ' + ctx.nExpT + '</span></td>'; } },
+      { id:"savoirs", t:"Savoir-faire", tri:"savoirs", cell:function(c){
+          var sv = nb(c.savoirs);
+          return '<td><div class="cbar"><i style="width:' + Math.round(sv/ctx.nSav*100) + '%"></i></div>'
+            + '<span class="dim">' + sv + ' / ' + ctx.nSav + '</span></td>'; } },
+      { id:"poste", t:"Poste", cell:function(c){
+          var pvis = (c.postes_codes||"").split("|").filter(Boolean);
+          return '<td>' + (pvis.length
+            ? pvis.map(function(x){ return '<span class="pill2 hot">' + esc(x) + '</span>'; }).join(" ")
+            : '<span class="dim">—</span>') + '</td>'; } },
+      { id:"situations", t:"Situations", cell:function(c){
+          var sit = (c.situations||"").split("|").filter(function(x){ return x !== ""; });
+          return '<td>' + (sit.length
+            ? sit.map(function(x){ return '<span class="pill2">' + "ABCDEFGH".charAt(Number(x)) + '</span>'; }).join(" ")
+            : '<span class="dim">—</span>') + '</td>'; } },
+      { id:"rappel", t:"Rappel", cell:function(c){
+          var cre = (c.grille||"").split("|").filter(Boolean);
+          var soirs = cre.filter(function(x){ return x.indexOf("Soir") > -1; }).length;
+          return '<td>' + (cre.length
+            ? ('<b>' + cre.length + '</b> créneaux<br><span class="dim">dont ' + soirs + ' soirs</span>')
+            : '<span class="dim">—</span>') + '</td>'; } },
+      { id:"permis", t:"Permis", cell:function(c){
+          return '<td><span class="pill2 ' + (c.permis === "Oui" ? "hot" : (c.permis === "Non" ? "no" : "wip")) + '">'
+            + esc(c.permis||"—") + '</span></td>'; } },
+      { id:"enreg", t:"Enreg.", cell:function(c){
+          var nMed = ["pitch1","pitch2","pitch3","pitch4","motmedia","media"]
+            .filter(function(s2){ return c[s2 + "_url"]; }).length;
+          return '<td>' + (nMed ? '<b>' + nMed + '</b>' : '<span class="dim">—</span>') + '</td>'; } },
+      { id:"offremail", t:"Offre&nbsp;mail", cell:function(c){
+          return '<td>' + (c.offre_mail ? '<span class="pill2 hot">oui</span>' : '<span class="dim">—</span>') + '</td>'; } },
+      { id:"jeu", t:"Jeu", tri:"score", cell:function(c){
+          return '<td><div class="cbar"><i style="width:' + Math.round((c.score||0)/ctx.maxSc*100) + '%"></i></div>'
+            + '<span class="dim">' + (c.score||0) + '</span></td>'; } },
+      { id:"maj", t:"Mise à jour", tri:"ts", cell:function(c){
+          var d = new Date(c.maj || c.ts || 0);
+          return '<td class="dim mono">' + d.toLocaleDateString("fr-FR") + '<br>'
+            + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) + '</td>'; } }
+    ];
+  }
+
   function tableCand(liste){
-    var h = '<table class="cmp"><thead><tr>'
-    + '<th data-tri="potentiel">Potentiel ↕</th><th>Profil</th>'
-    + '<th>Statut</th><th>Suivi</th><th>D\u00e9cision</th><th>Note apr\u00e8s RDV</th><th>Candidat averti</th>'
-    + '<th>Messages envoy\u00e9s</th><th>Prochaine action</th>'
-    + '<th>Candidat</th><th>Contact</th>'
-    + '<th data-tri="exp">Expérience ↕</th><th data-tri="savoirs">Savoir-faire ↕</th>'
-    + '<th>Poste</th><th>Situations</th><th>Rappel</th><th>Permis</th><th>Enreg.</th><th>Offre&nbsp;mail</th>'
-    + '<th data-tri="score">Jeu ↕</th><th data-tri="ts">Mise à jour ↕</th></tr></thead><tbody>';
-    liste.forEach(function(c){
-    var complet = (c.statut === "complet");
-    var e = nb(c.experiences), sv = nb(c.savoirs);
-    var sit = (c.situations||"").split("|").filter(function(x){ return x !== ""; });
-    var cre = (c.grille||"").split("|").filter(Boolean);
-    var pvis = (c.postes_codes||"").split("|").filter(Boolean);
-    var soirs = cre.filter(function(x){ return x.indexOf("Soir") > -1; }).length;
-    var nMed = ["pitch1","pitch2","pitch3","pitch4","motmedia","media"].filter(function(s2){ return c[s2 + "_url"]; }).length;
-    var d = new Date(c.maj || c.ts || 0);
-    var ev = c._ev, AX = ["metier","terrain","posture","engagement","praticite"];
-    var mini = '';
-    AX.forEach(function(a){
-      var v = Math.min(100, Math.round(ev.axes[a] / Math.max(1, maxAxe(a)) * 100));
-      mini += '<span class="ax" title="' + a + '"><i style="height:' + Math.max(6, v) + '%"></i></span>';
+    var ctx = { maxSc: maxSc, nExpT: nExpT, nSav: nSav };
+    var defs = colonnes(ctx), par = {};
+    defs.forEach(function(d){ par[d.id] = d; });
+    /* Un ordre garde peut citer une colonne disparue ou en oublier une nouvelle :
+       on repart toujours de la liste de reference, l'ordre ne fait que la trier. */
+    var ordre = ordreColonnes().filter(function(id){ return par[id]; });
+    defs.forEach(function(d){ if(ordre.indexOf(d.id) === -1) ordre.push(d.id); });
+
+    var h = '<table class="cmp"><thead><tr>';
+    ordre.forEach(function(id){
+      var d = par[id];
+      h += '<th draggable="true" data-col="' + id + '"'
+        + (d.tri ? ' data-tri="' + d.tri + '"' : '') + '>'
+        + '<span class="poign" title="Glisser pour déplacer la colonne">⣿</span> '
+        + d.t + (d.tri ? ' ↕' : '') + '</th>';
     });
-    h += '<tr data-k="' + c._k + '">'
-      + '<td class="potc"><span class="pot ' + couleurPot(ev.total) + '">' + ev.total + '</span></td>'
-      + '<td><span class="axes">' + mini + '</span></td>'
-      + '<td><span class="pill2 ' + (complet ? "hot" : "wip") + '">' + (complet ? "complète" : ("étape " + (c.etape||1))) + '</span></td>'
-      + '<td><span class="pill2 ' + suiviDe(c.suivi_statut).c + '">' + esc(suiviDe(c.suivi_statut).n) + '</span></td>'
-      + '<td>' + decisionCell(c) + '</td>'
-      + '<td>' + noteApresCell(c) + '</td>'
-      + '<td>' + avertiCell(c) + '</td>'
-      + '<td>' + envoisCell(c) + '</td>'
-      + '<td class="mono">' + (c.rdv_date ? '<b>RDV ' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</b>'
-          : (c.relance_date ? esc(jourFR(c.relance_date)) : '<span class="dim">—</span>')) + '</td>'
-      + '<td><div class="qui">'
-      +   (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">' : '<span class="vign vide">—</span>')
-      +   '<span><b>' + esc(nomComplet(c)) + '</b><br><span class="dim">' + esc(c.anciennete_metier||c.anciennete||"") + '</span>'
-      +   (c.cv_url ? '<br><a class="lien" href="' + esc(c.cv_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">📎 CV</a>' : '')
-      +   '</span></div></td>'
-      + '<td><span class="mono">' + esc(c.tel||"—") + '</span><br><span class="dim">' + esc(c.email||"") + '</span></td>'
-      + '<td><div class="cbar"><i style="width:' + Math.round(e/nExpT*100) + '%"></i></div><span class="dim">' + e + ' / ' + nExpT + '</span></td>'
-      + '<td><div class="cbar"><i style="width:' + Math.round(sv/nSav*100) + '%"></i></div><span class="dim">' + sv + ' / ' + nSav + '</span></td>'
-      + '<td>' + (pvis.length ? pvis.map(function(x){ return '<span class="pill2 hot">' + esc(x) + '</span>'; }).join(" ") : '<span class="dim">—</span>') + '</td>'
-      + '<td>' + (sit.length ? sit.map(function(x){ return '<span class="pill2">' + "ABCDEFGH".charAt(Number(x)) + '</span>'; }).join(" ") : '<span class="dim">—</span>') + '</td>'
-      + '<td>' + (cre.length ? ('<b>' + cre.length + '</b> créneaux<br><span class="dim">dont ' + soirs + ' soirs</span>') : '<span class="dim">—</span>') + '</td>'
-      + '<td><span class="pill2 ' + (c.permis === "Oui" ? "hot" : (c.permis === "Non" ? "no" : "wip")) + '">' + esc(c.permis||"—") + '</span></td>'
-      + '<td>' + (nMed ? '<b>' + nMed + '</b>' : '<span class="dim">—</span>') + '</td>'
-      + '<td>' + (c.offre_mail ? '<span class="pill2 hot">oui</span>' : '<span class="dim">—</span>') + '</td>'
-      + '<td><div class="cbar"><i style="width:' + Math.round((c.score||0)/maxSc*100) + '%"></i></div><span class="dim">' + (c.score||0) + '</span></td>'
-      + '<td class="dim mono">' + d.toLocaleDateString("fr-FR") + '<br>' + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) + '</td></tr>';
+    h += '</tr></thead><tbody>';
+    liste.forEach(function(c){
+      h += '<tr data-k="' + c._k + '">';
+      ordre.forEach(function(id){ h += par[id].cell(c); });
+      h += '</tr>';
     });
     return h + '</tbody></table>';
   }
@@ -7461,6 +7534,7 @@ function admCandidats(){
     + (cachesFiltre ? ' \u00b7 <b class="rouge">' + cachesFiltre + '</b> masquée' + (cachesFiltre > 1 ? 's' : '') + ' par le filtre' : '')
     + (cachesRech ? ' \u00b7 <b class="rouge">' + cachesRech + '</b> masquée' + (cachesRech > 1 ? 's' : '') + ' par la recherche' : '')
     + ((cachesFiltre || cachesRech) ? ' <button class="fraz" id="a-raz2">Tout afficher</button>' : '')
+    + (ordreColonnes().length ? ' <button class="fraz" id="a-colraz">Remettre les colonnes dans l’ordre d’origine</button>' : '')
     + '</div>';
 
   var h = bandeau + compte + (actifs.length ? tableCand(actifs)
@@ -7492,6 +7566,41 @@ function admCandidats(){
   for(var r=0;r<rcs.length;r++) rcs[r].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
   var ths = $("a-cand").querySelectorAll("th[data-tri]");
   for(var j=0;j<ths.length;j++) ths[j].onclick = function(){ ADM_TRI = this.getAttribute("data-tri"); admCandidats(); };
+
+  /* GLISSER-DEPOSER DES COLONNES. On ne deplace pas le DOM : on reordonne la
+     liste des identifiants et on redessine. Une seule source de verite, et le
+     tableau des archives suit le meme ordre sans effort. */
+  var tetes = $("a-cand").querySelectorAll("th[data-col]");
+  var attrape = null;
+  for(var t2=0;t2<tetes.length;t2++){
+    tetes[t2].ondragstart = function(ev){
+      attrape = this.getAttribute("data-col");
+      this.classList.add("prise");
+      ev.dataTransfer.effectAllowed = "move";
+      try{ ev.dataTransfer.setData("text/plain", attrape); }catch(e){}
+    };
+    tetes[t2].ondragend = function(){
+      this.classList.remove("prise");
+      var l = $("a-cand").querySelectorAll("th[data-col]");
+      for(var z=0;z<l.length;z++) l[z].classList.remove("cible");
+    };
+    tetes[t2].ondragover = function(ev){ ev.preventDefault(); this.classList.add("cible"); };
+    tetes[t2].ondragleave = function(){ this.classList.remove("cible"); };
+    tetes[t2].ondrop = function(ev){
+      ev.preventDefault();
+      var vise = this.getAttribute("data-col");
+      if(!attrape || attrape === vise) return;
+      var ordre = [];
+      var l = $("a-cand").querySelectorAll("th[data-col]");
+      for(var z=0;z<l.length;z++) ordre.push(l[z].getAttribute("data-col"));
+      ordre.splice(ordre.indexOf(attrape), 1);
+      ordre.splice(ordre.indexOf(vise), 0, attrape);
+      poserOrdreColonnes(ordre);
+      attrape = null;
+      admCandidats();
+    };
+  }
+  if($("a-colraz")) $("a-colraz").onclick = function(){ poserOrdreColonnes([]); admCandidats(); };
   brancherPhotosZoom($("a-cand"));
 }
 
