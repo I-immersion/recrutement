@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.28 -->
+<!-- LUMIIA RECRUTE — v7.30 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -558,6 +558,25 @@ body.adm{background:#0d1117;}
 #admin .compte .fraz{margin-left:8px;padding:5px 11px;border-radius:7px;border:1px solid #3a4552;
   background:transparent;color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.82rem;cursor:pointer;}
 #admin .compte .fraz:hover{color:#e6edf3;border-color:#58a6ff;}
+/* Boîte aux lettres (v7.29) */
+.balc{padding:16px;border:1px solid #2a323d;border-radius:11px;background:#12171e;margin-bottom:14px;}
+.balt{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.08em;color:#b8ff3c;}
+.bald{margin-top:8px;color:#c3ccd6;font-size:.92rem;line-height:1.6;}
+.balch{margin-top:14px;}
+.balcl{color:#7d8b9c;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:900;margin-bottom:7px;}
+.balch .chips{display:flex;flex-wrap:wrap;gap:7px;}
+.balch .chip{padding:8px 14px;border-radius:99px;border:1px solid #3a4552;background:#1a212a;
+  color:#9aa7b6;font-size:.86rem;font-weight:700;cursor:pointer;}
+.balch .chip.on{background:#173a52;border-color:#58a6ff;color:#cfe6f4;}
+.balact{margin-top:14px;padding:11px 13px;border-radius:8px;background:#0f141b;border:1px solid #262f3b;}
+.balli{color:#9fd0e8;font-size:.86rem;line-height:1.7;}
+.balli.ko{color:#ff9c9c;}
+.balb{display:flex;gap:10px;margin-top:14px;}
+.balb .btn{margin-top:0;}
+.balfaits{margin-top:18px;border:1px solid #262f3b;border-radius:9px;padding:12px 14px;background:#0f141b;}
+.balfaits summary{cursor:pointer;color:#8b98a8;font-weight:700;font-size:.88rem;}
+.balf{margin-top:8px;color:#c3ccd6;font-size:.88rem;}
+
 /* Créneaux (v7.27) */
 .crenew{padding:14px;border:1px solid #2a323d;border-radius:10px;background:#12171e;margin-bottom:18px;}
 .crenew input{background:#0f141b;border:1px solid #313b48;color:#e6edf3;border-radius:7px;
@@ -824,7 +843,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.28</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.30</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -837,7 +856,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.28";
+var VERSION = "v7.30";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4828,6 +4847,7 @@ var ADM_TABS = [
   { k:"extras",     n:"Extras" },
   { k:"suivi",      n:"Suivi & RDV" },
   { k:"creneaux",   n:"Créneaux" },
+  { k:"inbox",      n:"Boîte aux lettres" },
   { k:"messages",   n:"Messages" },
   { k:"stats",      n:"Statistiques" },
   { k:"potentiel",  n:"Potentiel" },
@@ -4929,7 +4949,7 @@ function admRender(){
 }
 
 function admTab(){
-  var f = { candidats:tabCandidats, revue:tabRevue, avis:tabAvis, extras:tabExtras, suivi:tabSuivi, creneaux:tabCreneaux, stats:tabStats, potentiel:tabPotentiel,
+  var f = { candidats:tabCandidats, revue:tabRevue, avis:tabAvis, extras:tabExtras, suivi:tabSuivi, creneaux:tabCreneaux, inbox:tabInbox, stats:tabStats, potentiel:tabPotentiel,
             messages:tabMessages,
             textes:tabTextes, quiz:tabQuiz, situations:tabSituations,
             pitchs:tabPitchs, offre:tabOffre, listes:tabListes, reglages:tabReglages }[ADM_TAB];
@@ -6837,6 +6857,176 @@ function envoyerWorkspace(item){
 }
 
 /* ══════════════════════════════════════════════════════════════
+   BOITE AUX LETTRES (v7.29)
+   ──────────────────────────────────────────────────────────────
+   Meme principe que le roadmap_inbox du Workspace : ce que Claude ne
+   peut pas ecrire lui-meme — la base /recrutement est fermee en lecture
+   comme en ecriture depuis l'exterieur — il le DEPOSE ici, et Emmanuel
+   l'integre d'un clic depuis l'app, sans toucher au code ni redeployer.
+
+   Un depot = un article :
+     { titre, texte, ts, statut,
+       choix:   [ { id, label, type:"un"|"plusieurs", options:[{v,label}] } ],
+       actions: [ { chemin, valeur, fusion, libelle, si:"choixId=valeur" } ] }
+
+   Les choix se font AVANT l'integration : une action portant « si » n'est
+   appliquee que si la selection correspond. C'est ce qui permet de
+   proposer trois journees de creneaux et de n'en retenir qu'une.
+
+   GARDE-FOU : seuls trois debuts de chemin sont acceptes — config,
+   creneaux, candidats. Un article depose ne peut donc pas toucher aux
+   reglages Firebase, ni effacer la base. Ce qui est refuse est affiche
+   en rouge plutot que silencieusement ignore.
+   ══════════════════════════════════════════════════════════════ */
+var BAL_PATH = "recrutement_inbox";
+var BAL_CACHE = {};
+var BAL_OK = { config:1, creneaux:1, candidats:1 };
+var BAL_SEL = {};      /* choix en cours, par article */
+
+function balRef(){ return db.ref(BAL_PATH); }
+function balCheminOk(p){
+  var t = String(p || "").replace(/^\/+/, "").split("/");
+  return !!BAL_OK[t[0]] && t.length >= 1 && String(p).indexOf("..") === -1;
+}
+
+function tabInbox(){
+  panneau('<div class="adm-sec"><h2>Boîte aux lettres</h2>'
+    + '<p class="aide">Ce que Claude prépare et que vous intégrez d’un clic : créneaux, réglages, '
+    + 'corrections de fiches. Rien n’est écrit tant que vous n’avez pas cliqué. '
+    + 'Vous pouvez tout ignorer.</p><div id="bal-l"><p class="aide">Chargement…</p></div></div>');
+  balRef().on("value", function(s){
+    BAL_CACHE = s.val() || {};
+    if($("bal-l")) balDessiner();
+  });
+}
+
+function balDessiner(){
+  var l = [];
+  for(var k in BAL_CACHE){ var o = BAL_CACHE[k] || {}; o._k = k; l.push(o); }
+  l.sort(function(a,b){ return (b.ts||0) - (a.ts||0); });
+  var attente = l.filter(function(o){ return o.statut !== "applique" && o.statut !== "ignore"; });
+  var faits   = l.filter(function(o){ return o.statut === "applique" || o.statut === "ignore"; });
+
+  var h = "";
+  if(!attente.length) h += '<p class="aide">Rien en attente.</p>';
+  attente.forEach(function(o){
+    h += '<div class="balc" data-i="' + o._k + '">'
+      + '<div class="balt">' + esc(o.titre || "Sans titre") + '</div>'
+      + '<div class="bald">' + nl2br(o.texte || "") + '</div>';
+    (o.choix || []).forEach(function(ch){
+      var val = (BAL_SEL[o._k] || {})[ch.id];
+      if(val === undefined) val = (ch.type === "plusieurs") ? [] : (ch.options && ch.options[0] ? ch.options[0].v : "");
+      h += '<div class="balch"><div class="balcl">' + esc(ch.label || ch.id) + '</div><div class="chips">';
+      (ch.options || []).forEach(function(op){
+        var on = (ch.type === "plusieurs") ? (val.indexOf(op.v) > -1) : (val === op.v);
+        h += '<div class="chip' + (on ? " on" : "") + '" data-ch="' + esc(ch.id) + '" data-v="' + esc(op.v) + '"'
+          + ' data-t="' + (ch.type === "plusieurs" ? "plusieurs" : "un") + '">' + esc(op.label || op.v) + '</div>';
+      });
+      h += '</div></div>';
+    });
+    var actions = balActions(o);
+    h += '<div class="balact">';
+    actions.forEach(function(a){
+      var ok = balCheminOk(a.chemin);
+      h += '<div class="balli' + (ok ? "" : " ko") + '">'
+        + (ok ? "→ " : "⛔ ") + esc(a.libelle || a.chemin)
+        + '<span class="mono dim"> · ' + esc(a.chemin) + '</span>'
+        + (ok ? "" : ' <b>chemin refusé</b>') + '</div>';
+    });
+    if(!actions.length) h += '<div class="balli dim">Rien à écrire avec cette sélection.</div>';
+    h += '</div>'
+      + '<div class="balb">'
+      +   '<button class="btn" data-go="' + o._k + '">Intégrer</button>'
+      +   '<button class="btn sec" data-ig="' + o._k + '">Ignorer</button>'
+      + '</div><div class="crmsg" id="bal-m-' + o._k + '"></div></div>';
+  });
+
+  if(faits.length){
+    h += '<details class="balfaits"><summary>Déjà traités · ' + faits.length + '</summary>';
+    faits.forEach(function(o){
+      h += '<div class="balf"><b>' + esc(o.titre || "—") + '</b> <span class="dim">'
+        + (o.statut === "applique" ? "intégré" : "ignoré")
+        + (o.fait_le ? " le " + new Date(o.fait_le).toLocaleDateString("fr-FR") : "") + '</span></div>';
+    });
+    h += '</details>';
+  }
+  $("bal-l").innerHTML = h;
+
+  var chips = $("bal-l").querySelectorAll(".chip[data-ch]");
+  for(var i=0;i<chips.length;i++) chips[i].onclick = function(){
+    var carte = this.closest(".balc"), id = carte.getAttribute("data-i");
+    var ch = this.getAttribute("data-ch"), v = this.getAttribute("data-v");
+    BAL_SEL[id] = BAL_SEL[id] || {};
+    if(this.getAttribute("data-t") === "plusieurs"){
+      var cur = BAL_SEL[id][ch];
+      if(!cur){ cur = balDefaut(id, ch); }
+      var p = cur.indexOf(v);
+      if(p > -1) cur.splice(p, 1); else cur.push(v);
+      BAL_SEL[id][ch] = cur;
+    } else {
+      BAL_SEL[id][ch] = v;
+    }
+    balDessiner();
+  };
+  var gos = $("bal-l").querySelectorAll("[data-go]");
+  for(var g=0;g<gos.length;g++) gos[g].onclick = function(){ balIntegrer(this.getAttribute("data-go")); };
+  var igs = $("bal-l").querySelectorAll("[data-ig]");
+  for(var j=0;j<igs.length;j++) igs[j].onclick = function(){
+    balRef().child(this.getAttribute("data-ig")).update({ statut:"ignore", fait_le: Date.now() });
+  };
+}
+
+function balDefaut(id, chId){
+  var o = BAL_CACHE[id] || {};
+  var ch = (o.choix || []).filter(function(x){ return x.id === chId; })[0];
+  if(!ch) return [];
+  return (ch.type === "plusieurs") ? [] : (ch.options && ch.options[0] ? ch.options[0].v : "");
+}
+
+/* Les actions retenues compte tenu des choix : « si » vaut « id=valeur ». */
+function balActions(o){
+  var sel = BAL_SEL[o._k] || {};
+  return (o.actions || []).filter(function(a){
+    if(!a.si) return true;
+    var p = String(a.si).split("=");
+    var v = sel[p[0]];
+    if(v === undefined) v = balDefaut(o._k, p[0]);
+    return (v instanceof Array) ? v.indexOf(p[1]) > -1 : v === p[1];
+  });
+}
+
+function balMsg(id, t, genre){
+  var e = $("bal-m-" + id); if(!e) return;
+  e.className = "crmsg" + (genre === "ko" ? " ko" : "");
+  e.textContent = t;
+}
+
+function balIntegrer(id){
+  var o = BAL_CACHE[id]; if(!o) return;
+  o._k = id;
+  var actions = balActions(o).filter(function(a){ return balCheminOk(a.chemin); });
+  if(!actions.length){ balMsg(id, "Rien à intégrer avec cette sélection.", "ko"); return; }
+  balMsg(id, "Intégration…");
+  var faits = 0, rate = null;
+  /* En serie plutot qu'en parallele : si la troisieme ecriture echoue, on
+     veut savoir laquelle, pas se demander laquelle des cinq a saute. */
+  function suivant(){
+    if(rate){ balMsg(id, "Échec sur « " + rate.libelle + " » : " + rate.err, "ko"); return; }
+    if(faits >= actions.length){
+      balRef().child(id).update({ statut:"applique", fait_le: Date.now() });
+      toast("Intégré ✓");
+      return;
+    }
+    var a = actions[faits++];
+    var r = db.ref(FB_PATH + "/" + String(a.chemin).replace(/^\/+/, ""));
+    var p = a.fusion ? r.update(a.valeur) : r.set(a.valeur);
+    p.then(function(){ balMsg(id, "Intégration… " + faits + " / " + actions.length); suivant(); })
+     .catch(function(e){ rate = { libelle: a.libelle || a.chemin, err: e.message }; suivant(); });
+  }
+  suivant();
+}
+
+/* ══════════════════════════════════════════════════════════════
    CRENEAUX DE RENDEZ-VOUS (v7.27)
    ──────────────────────────────────────────────────────────────
    Le besoin tient en une phrase : le candidat choisit un creneau libre.
@@ -7767,7 +7957,12 @@ function admCandidats(){
   if(separer){
     actifs = [];
     arr.forEach(function(c){
-      (ARCH.indexOf(statutEffectif(c)) > -1 ? archives : actifs).push(c);
+      /* On n'archive que les dossiers fermes SANS rencontre. Quelqu'un qu'on a
+         recu puis ecarte reste dans la liste : on l'a vu, on peut vouloir le
+         recomparer, le rappeler pour un extra, revenir sur la decision. Le
+         replier reviendrait a effacer le travail de l'entretien. */
+      var clos = ARCH.indexOf(statutEffectif(c)) > -1;
+      ((clos && !aEteVu(c)) ? archives : actifs).push(c);
     });
   }
 
@@ -7886,7 +8081,7 @@ function admCandidats(){
 
   var compte = '<div class="compte"><b>' + totalBase + '</b> candidature' + (totalBase > 1 ? 's' : '')
     + ' en base \u00b7 <b>' + actifs.length + '</b> dans la liste'
-    + (archives.length ? ' \u00b7 <b>' + archives.length + '</b> en archives, plus bas' : '')
+    + (archives.length ? ' \u00b7 <b>' + archives.length + '</b> en archives (écartés sans rencontre), plus bas' : '')
     + (cachesFiltre ? ' \u00b7 <b class="rouge">' + cachesFiltre + '</b> masquée' + (cachesFiltre > 1 ? 's' : '') + ' par le filtre' : '')
     + (cachesRech ? ' \u00b7 <b class="rouge">' + cachesRech + '</b> masquée' + (cachesRech > 1 ? 's' : '') + ' par la recherche' : '')
     + ((cachesFiltre || cachesRech) ? ' <button class="fraz" id="a-raz2">Tout afficher</button>' : '')
@@ -7904,8 +8099,8 @@ function admCandidats(){
     var ouvert = ADM_ARCH || !!ADM_Q;
     h += '<div class="archbloc' + (ouvert ? " ouvert" : "") + '">'
       + '<button class="archbtn" id="a-arch">' + (ouvert ? "\u25be" : "\u25b8") + ' Archives \u00b7 '
-      +   archives.length + ' dossier' + (archives.length > 1 ? 's' : '') + ' \u00e9cart\u00e9'
-      +   (archives.length > 1 ? 's' : '') + ' ou sans suite'
+      +   archives.length + ' dossier' + (archives.length > 1 ? 's' : '')
+      +   ' \u00e9cart\u00e9' + (archives.length > 1 ? 's' : '') + ' sur dossier, sans rencontre'
       +   (ADM_Q ? ' <span class="dim">(ouvert : recherche en cours)</span>' : '')
       + '</button>'
       + (ouvert ? '<div class="archin">' + tableCand(archives) + '</div>' : '')
