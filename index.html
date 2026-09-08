@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.34 -->
+<!-- LUMIIA RECRUTE — v7.35 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -558,6 +558,8 @@ body.adm{background:#0d1117;}
 #admin .compte .fraz{margin-left:8px;padding:5px 11px;border-radius:7px;border:1px solid #3a4552;
   background:transparent;color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.82rem;cursor:pointer;}
 #admin .compte .fraz:hover{color:#e6edf3;border-color:#58a6ff;}
+.fiche .apercu .lienbtn.lime{background:#b8ff3c;color:#0d1a04;}
+
 /* Voyant de connexion (v7.33) */
 .voyant{display:inline-flex;align-items:center;gap:7px;margin-left:14px;padding:5px 12px;
   border-radius:999px;border:1px solid #3a4552;background:#12171e;cursor:pointer;
@@ -872,7 +874,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.34</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.35</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -887,7 +889,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.34";
+var VERSION = "v7.35";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4507,8 +4509,9 @@ function tabMessages(){
     + '<p class="aide">Les messages que vous pouvez envoyer depuis la fiche d\u2019un candidat. '
     + 'Le titre est ce que vous verrez dans la liste ; l\u2019objet et le texte sont ce que le candidat re\u00e7oit.<br>'
     + 'Dans le texte, <b>{prenom}</b>, <b>{nom}</b> et <b>{lien}</b> sont remplac\u00e9s \u00e0 l\u2019envoi '
-    + '\u2014 et <b>{lien_extra}</b> ouvre le parcours court des extras, sur sa propre ligne '
-    + 'il devient un bouton '
+    + '\u2014 <b>{lien_extra}</b> ouvre le parcours court des extras '
+    + '\u2014 <b>{lien_rdv}</b> ouvre le choix du cr\u00e9neau d\u2019entretien. '
+    + 'Sur sa propre ligne, chacun de ces liens devient un bouton '
     + '\u2014 <b>{prenom} {nom}</b> ensemble donne la forme la plus formelle, celle utilis\u00e9e par d\u00e9faut '
     + '(<b>{lien}</b> = lien vers sa candidature, pour la reprendre ou la relire).<br>'
     + 'Un message doit \u00eatre enregistr\u00e9 ici pour pouvoir \u00eatre envoy\u00e9 : le serveur refuse d\u2019expédier '
@@ -4728,6 +4731,7 @@ function brancherEnvoi(c, racine){
        premiere, l'ordre inverse laisserait un « _extra } » orphelin. Meme
        piege que cote serveur. */
     s = s.split("{lien_extra}").join('<span class="lienbtn cyan">LES EXTRAS, \u00c7A M\u2019INT\u00c9RESSE</span>');
+    s = s.split("{lien_rdv}").join('<span class="lienbtn lime">CHOISIR MON CR\u00c9NEAU</span>');
     s = s.split("{lien}").join('<span class="lienbtn">REPRENDRE MA CANDIDATURE</span>');
     return s;
   }
