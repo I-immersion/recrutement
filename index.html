@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.22 -->
+<!-- LUMIIA RECRUTE — v7.23 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -599,6 +599,7 @@ body.adm{background:#0d1117;}
 .rdvform .rdvq textarea{margin-top:6px;min-height:64px;background:#0f141b;border:1px solid #313b48;
   color:#e6edf3;border-radius:8px;font-size:.98rem;line-height:1.45;resize:vertical;}
 .rdvform .rdvq textarea:focus{outline:none;border-color:#4dd9e8;}
+.rdvform .rdvq textarea.libre{min-height:170px;}
 .rdvform .rdvq .oui{display:flex;gap:8px;margin-top:7px;}
 .rdvform .rdvq .oui button{flex:0 0 auto;padding:8px 19px;border-radius:999px;border:1px solid #3a4552;
   background:#0f141b;color:#8b98a8;font-family:'Nunito';font-weight:900;font-size:.88rem;cursor:pointer;}
@@ -801,7 +802,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.22</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.23</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -814,7 +815,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.22";
+var VERSION = "v7.23";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6208,7 +6209,9 @@ var RDV_TRAME = [
   { t:"Le lieu", c:"#a855f7", q:[
     { q:"Vous connaissez LUMIIA ? Vous êtes déjà venu ?" },
     { q:"Avec ce que vous en savez, vous imaginez quoi comme journée type ici ?" },
-    { q:"Le poste, c’est aussi préparer le snacking sucré et salé tous les jours, et nettoyer derrière. Comment vous le sentez ?" }
+    { q:"Le poste, c’est aussi préparer le snacking sucré et salé tous les jours, et nettoyer derrière. Comment vous le sentez ?" },
+    { q:"Selon les soirées on porte la tenue de l’équipe, et parfois un costume. Ça vous va ?",
+      type:"ouinon", sq:"Ce qu’il accepte, ce qui le gêne" }
   ]},
   { t:"Parcours", c:"#4dd9e8", q:[
     { q:"Racontez-moi le job où vous vous êtes le plus amusé." },
@@ -6218,7 +6221,9 @@ var RDV_TRAME = [
     { q:"Expérience en bar", type:"ouinon", sq:"Où, combien de temps, quoi exactement" },
     { q:"Expérience en animation ou en accueil", type:"ouinon", sq:"Où, combien de temps, quoi exactement" },
     { q:"Déjà eu un différend avec des collègues ou la direction dans un poste précédent ?",
-      type:"ouinon", sq:"Comment avez-vous géré la situation ?" }
+      type:"ouinon", sq:"Comment avez-vous géré la situation ?" },
+    { q:"À l’aise avec les outils de bricolage ?", type:"ouinon",
+      sq:"Ce qu’il sait faire : perceuse, visseuse, montage, petites réparations" }
   ]},
   { t:"Autonomie", c:"#b8ff3c", q:[
     { q:"Vous est-il déjà arrivé de tenir un poste seul, sans personne pour vous dire quoi faire ? Racontez." },
@@ -6226,6 +6231,7 @@ var RDV_TRAME = [
     { q:"Seul sur un poste toute une après-midi : plutôt à l’aise, ou pas votre truc ?" }
   ]},
   { t:"Disponibilités", c:"#ff6b6b", q:[
+    { q:"Vous vivez où ?", type:"court", ph:"commune" },
     { q:"Vendredi et samedi soir jusqu’à 2h, sur la durée ?", type:"ouinon",
       sq:"Sur la durée ou en dépannage, à partir de quand" },
     { q:"Mercredi, samedi et dimanche après-midi ?", type:"ouinon",
@@ -6243,6 +6249,12 @@ var RDV_TRAME = [
   ]},
   { t:"Ses questions", c:"#d946ef", q:[
     { q:"A posé des questions ?", type:"ouinon", sq:"Lesquelles, et ce qu’elles disent de lui" }
+  ]},
+  /* Un entretien ne tient jamais entierement dans les cases prevues. Ce bloc
+     existe pour tout ce qui se dit a cote : une remarque, un doute, une phrase
+     qui reste. Il s'enregistre comme le reste, dans la fiche. */
+  { t:"Notes libres", c:"#94a3b8", q:[
+    { q:"Tout ce qui ne rentre dans aucune case", type:"libre" }
   ]}
 ];
 
@@ -6376,6 +6388,8 @@ function rdvFormHtml(c, ns){
           if(o.sq) h += '<div class="sq">' + esc(o.sq) + '</div>';
           h += '<textarea data-rdv="' + k + '" rows="2">' + esc(d0[k] || "") + '</textarea>';
         }
+      } else if(o.type === "libre"){
+        h += '<textarea class="libre" data-rdv="' + k + '" rows="8">' + esc(d0[k] || "") + '</textarea>';
       } else {
         h += '<textarea data-rdv="' + k + '" rows="2">' + esc(d0[k] || "") + '</textarea>';
       }
@@ -6495,6 +6509,9 @@ var RDV2_TRAME = [
     { q:"Les points laissés en suspens au premier entretien" },
     { q:"Ce qui a été dit sur les conditions : contrat, horaires, rémunération" },
     { q:"Ce qu’il ou elle a demandé cette fois" }
+  ]},
+  { t:"Notes libres", c:"#94a3b8", q:[
+    { q:"Tout ce qui ne rentre dans aucune case", type:"libre" }
   ]}
 ];
 
