@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.35 -->
+<!-- LUMIIA RECRUTE — v7.36 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -559,6 +559,11 @@ body.adm{background:#0d1117;}
   background:transparent;color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.82rem;cursor:pointer;}
 #admin .compte .fraz:hover{color:#e6edf3;border-color:#58a6ff;}
 .fiche .apercu .lienbtn.lime{background:#b8ff3c;color:#0d1a04;}
+#admin .mvars{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:9px;}
+#admin .mvars .mvl{color:#7d8b9c;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:900;}
+#admin .mvars .mv{padding:6px 12px;border-radius:99px;border:1px solid #3a4552;background:#1a212a;
+  color:#9aa7b6;font-family:'Nunito';font-size:.8rem;font-weight:700;cursor:pointer;}
+#admin .mvars .mv:hover{border-color:#58a6ff;color:#e6edf3;}
 
 /* Voyant de connexion (v7.33) */
 .voyant{display:inline-flex;align-items:center;gap:7px;margin-left:14px;padding:5px 12px;
@@ -874,7 +879,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.35</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.36</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -889,7 +894,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.35";
+var VERSION = "v7.36";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4530,12 +4535,24 @@ function tabMessages(){
       + '<input type="text" class="m-objet" value="' + esc(o.m.objet || "") + '">'
       + '<label class="f" style="margin-top:10px">Texte</label>'
       + '<textarea class="m-corps" rows="10">' + esc(o.m.corps || "") + '</textarea>'
+      /* Les variables se tapaient a la main, sans que rien a l'ecran ne dise
+         lesquelles existent ni comment les ecrire. Une faute de frappe dans
+         « {lien_rdv} » ne se voit qu'a la reception du mail par le candidat. */
+      + '<div class="mvars">'
+      +   '<span class="mvl">Insérer :</span>'
+      +   '<button class="mv" data-v="{prenom}">{prenom}</button>'
+      +   '<button class="mv" data-v="{nom}">{nom}</button>'
+      +   '<button class="mv" data-v="{lien}">{lien} — reprendre sa candidature</button>'
+      +   '<button class="mv" data-v="{lien_extra}">{lien_extra} — les extras</button>'
+      +   '<button class="mv" data-v="{lien_rdv}">{lien_rdv} — choisir son créneau</button>'
+      + '</div>'
       + '<div style="margin-top:10px"><button class="btn sec m-del" data-mk="' + esc(o.k) + '">Supprimer ce message</button></div>'
       + '</div>';
   });
 
   var nSeul = 0;
   L.forEach(function(o){ if(RE_PRENOM_SEUL.test(o.m.corps || "")) nSeul++; });
+
 
   h += '<div class="adm-save" style="gap:10px">'
     + (nSeul ? '<button class="btn sec" id="msg-nom">PR\u00c9NOM + NOM PARTOUT ('
@@ -4589,6 +4606,28 @@ function tabMessages(){
     enregistrer(o, "Pr\u00e9nom + nom appliqu\u00e9 \u2713");
     setTimeout(tabMessages, 350);
   };
+  /* Insertion a l'endroit du curseur, et le texte insere reste selectionne
+     nulle part : on rend la main dans le champ, juste apres la variable, pour
+     pouvoir continuer a ecrire sans reprendre la souris. */
+  var mvs = document.querySelectorAll(".mvars .mv");
+  for(var v=0;v<mvs.length;v++) mvs[v].onclick = function(){
+    var carte = this.closest(".qed");
+    var ta = carte && carte.querySelector(".m-corps");
+    if(!ta) return;
+    var t = this.getAttribute("data-v");
+    var d = ta.selectionStart, f = ta.selectionEnd;
+    if(d === undefined || d === null){ ta.value += t; ta.focus(); return; }
+    /* Un lien seul sur sa ligne devient un bouton dans le mail : quand on
+       insere au milieu d'un texte, on l'isole pour que ce soit le cas. */
+    var lien = t.indexOf("{lien") === 0;
+    var av = ta.value.slice(0, d), ap = ta.value.slice(f);
+    var pre = (lien && av && !/\n\s*$/.test(av)) ? "\n\n" : "";
+    var post = (lien && ap && !/^\s*\n/.test(ap)) ? "\n\n" : "";
+    ta.value = av + pre + t + post + ap;
+    var pos = (av + pre + t).length;
+    ta.focus(); ta.setSelectionRange(pos, pos);
+  };
+
   var dels = document.querySelectorAll(".m-del");
   for(var i=0;i<dels.length;i++) dels[i].onclick = function(){
     var k = this.getAttribute("data-mk");
