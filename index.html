@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.27 -->
+<!-- LUMIIA RECRUTE — v7.28 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -824,7 +824,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.27</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.28</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -837,7 +837,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.27";
+var VERSION = "v7.28";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -5191,7 +5191,7 @@ function tabRevue(){
     } else {
       corps = '<div class="revrep">' + nl2br(rep) + '</div>';
     }
-    var sv = suiviDe(c.suivi_statut);
+    var sv = suiviDe(statutEffectif(c));
     var autres = '';
     if(voitLesAutres()){
       var e2 = evalTous(c, q.cle), bouts = [];
@@ -5444,7 +5444,7 @@ function tabAvis(){
     + '<th>Suivi</th></tr></thead><tbody>';
 
   arr.forEach(function(c){
-    var a = c._av, sv = suiviDe(c.suivi_statut);
+    var a = c._av, sv = suiviDe(statutEffectif(c));
     h += '<tr data-av="' + esc(c._k) + '"' + (AVIS_SEL === c._k ? ' class="avsel"' : '') + '>'
       + '<td><span class="avimp' + (a.imp === null ? " vide" : "") + '">'
       +   (a.imp === null ? "\u2014" : a.imp) + '</span>'
@@ -6053,7 +6053,7 @@ function meule(c){
   var p = [c.prenom, c.nom, c.tel, c.email, c.anciennete, c.anciennete_metier, c.permis, c.transport,
            c.postes_vises, c.postes_codes, c.cv_nom,
            c.experiences, c.savoirs, c.pourquoi, c.portrait, c.mot, c.grille, c.statut,
-           suiviDe(c.suivi_statut).n, c.relance_date, c.rdv_date];
+           suiviDe(statutEffectif(c)).n, c.relance_date, c.rdv_date];
   (c.quiz || []).forEach(function(q){ if(q){ p.push(q.q); p.push(q.r); } });
   (CFG.situations || []).forEach(function(s2, i){
     var v = (c.situations||"").split("|")[i];
@@ -6083,7 +6083,7 @@ var SUIVI = [
   { k:"mail_envoye", n:"Envoyé mail",             c:"" },
   { k:"rdv",         n:"RDV fixé",                c:"hot" },
   { k:"indispo",     n:"Candidat plus disponible",c:"no" },
-  { k:"rdv2",        n:"Demande 2ème rendez-vous",c:"hot" },
+  { k:"rdv2",        n:"2ème rendez-vous à décider",c:"wip" },
   { k:"retenu",      n:"Retenu",                  c:"hot" },
   { k:"ecarte",      n:"Écarté",                  c:"no" },
   { k:"retenu2",     n:"Retenu après 2ème RDV",   c:"hot" },
@@ -6097,13 +6097,61 @@ var SUIVI = [
    le rendez-vous, on tranche. Demander un second rendez-vous n'est pas une
    decision, c'est un report — d'ou l'etape 6, qui ne s'ouvre que dans ce cas
    et redemande la meme decision une fois la personne revue. */
+/* TROIS DECISIONS, TROIS CHAMPS. Jusqu'a la v7.27 tout passait par
+   suivi_statut : cliquer a l'etape 6 effacait donc ce qui avait ete decide a
+   l'etape 5, et l'etape 7 effacait l'etape 6. Or ces trois choses ne se
+   remplacent pas, elles s'ajoutent — « on aimerait la revoir » (5) est une
+   intention qu'on garde pendant qu'on voit les autres, « retenu apres le 2e
+   rendez-vous » (6) est une decision, et « averti par mail » (7) est un fait.
+     etapes 1-4  -> suivi_statut  (l'avancement du dossier)
+     etape 5     -> decision1
+     etape 6     -> decision2
+     etape 7     -> averti
+   Les fiches d'avant portent tout dans suivi_statut : etatDe() les relit. */
+var D1_KS = { retenu:1, rdv2:1, ecarte:1 };
+var D2_KS = { retenu2:1, ecarte2:1 };
+var AV_KS = { averti_non:1, averti_mail:1, averti_tel:1 };
+var BASE_KS = { nouveau:1, a_contacter:1, contacte_tel:1, mail_envoye:1, rdv:1, indispo:1 };
+
+function etatDe(c){
+  c = c || {};
+  var st = c.suivi_statut || "nouveau";
+  var d1 = c.decision1 || "", d2 = c.decision2 || "", av = c.averti || "";
+  /* Reprise des fiches d'avant la v7.28. « Ecarte » reste ambigu — il vaut
+     etape 2 ou etape 5 — donc on ne le promeut PAS en decision1 : le tri sur
+     dossier est le cas de loin le plus frequent, et une decision inventee
+     serait pire qu'une decision absente. */
+  if(!d1 && st !== "ecarte" && D1_KS[st]) d1 = st;
+  if(!d2 && D2_KS[st]){ d2 = st; if(!d1) d1 = "rdv2"; }
+  if(!av && AV_KS[st]) av = st;
+  var base = BASE_KS[st] ? st : ((d1 || d2 || av) ? "rdv" : st);
+  return { base:base, d1:d1, d2:d2, av:av };
+}
+/* Le point le plus avance du dossier : ce qu'on affiche quand une seule
+   information tient dans la place disponible. */
+function statutEffectif(c){
+  var e = etatDe(c);
+  return e.av || e.d2 || e.d1 || e.base;
+}
+function etatContient(c, k){
+  var e = etatDe(c);
+  return e.base === k || e.d1 === k || e.d2 === k || e.av === k;
+}
+/* Quel champ porte ce statut : c'est lui qu'on ecrit au clic. */
+function champDe(k){
+  if(D1_KS[k]) return "decision1";
+  if(D2_KS[k]) return "decision2";
+  if(AV_KS[k]) return "averti";
+  return "suivi_statut";
+}
+
 var SUIVI_ETAPES = [
   { n:1, t:"Réception",           ks:["nouveau"] },
   { n:2, t:"Tri sur dossier",     ks:["a_contacter","ecarte"] },
   { n:3, t:"Prise de contact",    ks:["contacte_tel","mail_envoye"] },
   { n:4, t:"Rendez-vous",         ks:["rdv","indispo"] },
   { n:5, t:"Décision interne",    ks:["retenu","rdv2","ecarte","indispo"] },
-  { n:6, t:"Second rendez-vous",  ks:["retenu2","ecarte2"], si:"rdv2" },
+  { n:6, t:"Après le 2ème rendez-vous", ks:["retenu2","ecarte2"], si:"rdv2" },
   { n:7, t:"Candidat averti",     ks:["averti_non","averti_mail","averti_tel"] }
 ];
 /* Statuts d'avant la v7.16. Ils ne sont plus proposables, mais restent lisibles :
@@ -6550,13 +6598,20 @@ var RDV2_TRAME = [
 ];
 
 function blocSuivi(c){
-  var st = (c.suivi_statut || "nouveau");
-  var ancien = suiviAncien(st);
+  var E = etatDe(c);
+  var st = E.base;
+  var ancien = suiviAncien(c.suivi_statut || "nouveau");
+  /* Valeur retenue par etape : chacune a son champ, aucune n'efface l'autre. */
+  function choixDe(e){
+    if(e.n === 5) return E.d1;
+    if(e.n === 6) return E.d2;
+    if(e.n === 7) return E.av;
+    return st;
+  }
   /* La zone rendez-vous n'apparait qu'a partir de l'etape 4 — mais elle ne
      disparait plus ensuite : une fois l'entretien passe, on doit pouvoir
      relire ses notes depuis n'importe quelle etape suivante. */
-  var voirRdv = !ancien && (["rdv","rdv2","retenu","retenu2","ecarte2","sans_suite",
-                             "averti_non","averti_mail","averti_tel"].indexOf(st) > -1
+  var voirRdv = !ancien && (st === "rdv" || !!E.d1 || !!E.d2 || !!E.av
                             || !!c.rdv_date || !!c.rdv_cr);
   var h = '<div class="suivi">'
     + '<label class="f">Parcours <span class="dim" style="font-weight:700;text-transform:none">— enregistré dès que vous cliquez</span></label>';
@@ -6570,18 +6625,19 @@ function blocSuivi(c){
        choisi — ou si on l'a deja depassee. Afficher « Second rendez-vous »
        a tout le monde suggererait qu'il en faut un. */
     if(e.si){
-      var passe = st === e.si || e.ks.indexOf(st) > -1 || !!c.second_rdv
+      var passe = E.d1 === e.si || !!E.d2 || !!c.second_rdv
                   || !!c[RDV_NS.r2.cr] || !!c.rdv2_date || !!c[RDV_NS.r2.notes];
       /* Le drapeau second_rdv est pose au clic et ne s'enleve plus : sans lui,
          l'etape disparaissait des qu'on avancait vers « Candidat averti », et
          avec elle l'acces au compte rendu du second entretien. */
       if(!passe) return;
     }
-    var actif = !ancien && e.ks.indexOf(st) > -1;
+    var choisi = choixDe(e);
+    var actif = !ancien && !!choisi && e.ks.indexOf(choisi) > -1;
     h += '<div class="etp' + (actif ? " on" : "") + '"><div class="etpn">' + e.n + '</div><div class="etpc">'
       + '<div class="etpt">' + esc(e.t) + '</div><div class="chips">';
     e.ks.forEach(function(k){
-      h += '<div class="chip' + (k === st ? " on" : "") + '" data-sv="' + k + '">' + esc(suiviDe(k).n) + '</div>';
+      h += '<div class="chip' + (k === choisi ? " on" : "") + '" data-sv="' + k + '">' + esc(suiviDe(k).n) + '</div>';
     });
     h += '</div>';
     /* L'observation appartient a l'etape : elle ne s'affiche que tant qu'on y est,
@@ -6592,7 +6648,7 @@ function blocSuivi(c){
          cle par statut pour ne rien perdre de ce qui a ete saisi en v7.16. */
       var cleObs = "obs_e" + e.n;
       var valObs = c[cleObs];
-      if(valObs === undefined || valObs === "") valObs = c["obs_" + st] || "";
+      if(valObs === undefined || valObs === "") valObs = c["obs_" + choisi] || "";
       h += '<div class="obsz"><label class="f">Observation — ' + esc(e.t) + '</label>'
         + '<textarea id="sv-obs" data-obs="' + cleObs + '" rows="2" placeholder="Ce qu\u2019il faut retenir de cette étape\u2026">'
         + esc(valObs) + '</textarea></div>';
@@ -6702,19 +6758,21 @@ function brancherSuivi(c, racine){
     if(occupe) return;
     var k = this.getAttribute("data-sv");
     if(!k) return;
-    var avant = c.suivi_statut || "nouveau";
-    if(k === avant) return;
-    peindre(k);
+    var champ = champDe(k);
+    var avant = (champ === "suivi_statut") ? (c.suivi_statut || "nouveau") : (c[champ] || "");
+    /* Recliquer la puce active efface la decision — sauf pour l'avancement du
+       dossier, qui doit toujours valoir quelque chose. */
+    var vise = (k === avant && champ !== "suivi_statut") ? "" : k;
+    if(vise === avant) return;
     message("Enregistrement\u2026", "ok");
     var hist = histTab(c).slice();
-    hist.push({ ts: Date.now(), st: k, txt: "" });
-    var patchSt = { suivi_statut: k, suivi_hist: hist };
-    if(k === "rdv2") patchSt.second_rdv = true;
-    ecrire(patchSt,
-           function(){ peindre(avant); },
-           "Statut enregistré ✓").then(function(ok){
+    hist.push({ ts: Date.now(), st: vise || avant, txt: vise ? "" : "décision effacée" });
+    var patchSt = { suivi_hist: hist };
+    patchSt[champ] = vise;
+    if(vise === "rdv2") patchSt.second_rdv = true;
+    ecrire(patchSt, null, "Enregistré ✓").then(function(ok){
       if(!ok) return;
-      toast("Statut : " + suiviDe(k).n);
+      toast(vise ? suiviDe(vise).n : "Décision effacée");
       redessinerSuivi(c, racine);
     });
   };
@@ -7060,7 +7118,7 @@ function tabSuivi(){
   var auj = aujourdhui();
 
   function ligne(c, dateAff, heure){
-    var ev = evalCandidat(c), st = suiviDe(c.suivi_statut);
+    var ev = evalCandidat(c), st = suiviDe(statutEffectif(c));
     var nom = ((c.prenom||"") + " " + (c.nom||"")).trim() || "—";
     var _h = histTab(c), dernier = _h.length ? (_h[_h.length-1].txt || "") : "";
     return '<tr data-k="' + c._k + '">'
@@ -7080,7 +7138,7 @@ function tabSuivi(){
   var retard = "", aFaire = "", rdv = "", nR = 0, nF = 0, nV = 0;
   arr.slice().sort(function(a,b){ return (a.relance_date||"9") < (b.relance_date||"9") ? -1 : 1; }).forEach(function(c){
     if(!c.relance_date) return;
-    if(["retenu","retenu2","ecarte","ecarte2","sans_suite","indispo"].indexOf(c.suivi_statut) > -1) return;
+    if(["retenu","retenu2","ecarte","ecarte2","sans_suite","indispo"].indexOf(statutEffectif(c)) > -1) return;
     if(c.relance_date < auj){ retard += ligne(c, c.relance_date); nR++; }
     else { aFaire += ligne(c, c.relance_date); nF++; }
   });
@@ -7609,14 +7667,17 @@ function aEteVu(c){
   if(!c) return false;
   if(c.rdv_cr || c.rdv2_cr) return true;
   if(c.rdv_notes && Object.keys(c.rdv_notes).length) return true;
-  return !!VU_STATUTS[c.suivi_statut || ""];
+  return !!VU_STATUTS[statutEffectif(c)];
 }
 
 var DECISIONS = { retenu:1, ecarte:1, retenu2:1, ecarte2:1, sans_suite:1, rdv2:1, indispo:1 };
 function decisionCell(c){
-  var st = c.suivi_statut || "";
-  if(!DECISIONS[st]) return '<span class="dim">\u2014</span>';
-  return '<span class="pill2 ' + suiviDe(st).c + '">' + esc(suiviDe(st).n) + '</span>';
+  var e = etatDe(c), h = "";
+  if(e.d1) h += '<span class="pill2 ' + suiviDe(e.d1).c + '">' + esc(suiviDe(e.d1).n) + '</span>';
+  /* Les deux décisions coexistent : « on aimerait la revoir » reste lisible a
+     cote de ce qu'on a decide apres l'avoir revue. */
+  if(e.d2) h += (h ? '<br>' : '') + '<span class="pill2 ' + suiviDe(e.d2).c + '">' + esc(suiviDe(e.d2).n) + '</span>';
+  return h || '<span class="dim">\u2014</span>';
 }
 function noteApresCell(c){
   var m = impressionMoy(c, "impression2");
@@ -7627,7 +7688,7 @@ function noteApresCell(c){
 /* Rouge tant que la personne n'a pas ete prevenue : une decision prise et non
    dite, c'est quelqu'un qui attend sans le savoir. */
 function avertiCell(c){
-  var st = c.suivi_statut || "";
+  var st = etatDe(c).av;
   if(st === "averti_mail" || st === "averti_tel"){
     return '<span class="pill2 hot">' + esc(suiviDe(st).n) + '</span>'
       + (c.averti_date ? '<br><span class="dim mono">' + esc(jourFR(c.averti_date)) + '</span>' : '');
@@ -7647,7 +7708,7 @@ function admCandidats(){
   var totalBase = arr.length;
   if(ADM_FILTRE.indexOf("sv:") === 0){
     var sv = ADM_FILTRE.slice(3);
-    arr = arr.filter(function(c){ return (c.suivi_statut || "nouveau") === sv; });
+    arr = arr.filter(function(c){ return etatContient(c, sv); });
   } else if(ADM_FILTRE !== "tous"){
     arr = arr.filter(function(c){ return (c.statut||"") === ADM_FILTRE; });
   }
@@ -7706,7 +7767,7 @@ function admCandidats(){
   if(separer){
     actifs = [];
     arr.forEach(function(c){
-      (ARCH.indexOf(c.suivi_statut || "nouveau") > -1 ? archives : actifs).push(c);
+      (ARCH.indexOf(statutEffectif(c)) > -1 ? archives : actifs).push(c);
     });
   }
 
@@ -7732,8 +7793,9 @@ function admCandidats(){
           return '<td><span class="pill2 ' + (complet ? "hot" : "wip") + '">'
             + (complet ? "complète" : ("étape " + (c.etape||1))) + '</span></td>'; } },
       { id:"suivi", t:"Suivi", cell:function(c){
-          return '<td><span class="pill2 ' + suiviDe(c.suivi_statut).c + '">'
-            + esc(suiviDe(c.suivi_statut).n) + '</span></td>'; } },
+          var b = etatDe(c).base;
+          return '<td><span class="pill2 ' + suiviDe(b).c + '">'
+            + esc(suiviDe(b).n) + '</span></td>'; } },
       { id:"decision", t:"Décision", cell:function(c){ return '<td>' + decisionCell(c) + '</td>'; } },
       { id:"noteapres", t:"Note après RDV", cell:function(c){ return '<td>' + noteApresCell(c) + '</td>'; } },
       { id:"averti", t:"Candidat averti", cell:function(c){ return '<td>' + avertiCell(c) + '</td>'; } },
@@ -8156,7 +8218,7 @@ function admCsv(){
     var c = LAST_CAND[k];
     rows.push([
       new Date(c.maj||c.ts||0).toLocaleString("fr-FR"), c.statut||"", c.etape||"", c.prenom||"", c.nom||"", c.tel||"", c.email||"",
-      suiviDe(c.suivi_statut).n, (c.rdv_date||"") + (c.rdv_heure ? " " + c.rdv_heure : ""), c.relance_date||"",
+      suiviDe(statutEffectif(c)).n, (c.rdv_date||"") + (c.rdv_heure ? " " + c.rdv_heure : ""), c.relance_date||"",
       c.anciennete||"", c.anciennete_metier||"", (c.experiences||"").replace(/\|/g,", "), (c.savoirs||"").replace(/\|/g,", "),
       (c.situations||"").replace(/\|/g,", "), (c.grille||"").replace(/\|/g,", "),
       (c.postes_vises||"").replace(/\|/g," + "), c.permis||"", c.transport||"",
