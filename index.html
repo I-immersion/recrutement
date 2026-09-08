@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.30 -->
+<!-- LUMIIA RECRUTE — v7.31 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -843,7 +843,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.30</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.31</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -856,7 +856,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.30";
+var VERSION = "v7.31";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6897,6 +6897,11 @@ function tabInbox(){
   balRef().on("value", function(s){
     BAL_CACHE = s.val() || {};
     if($("bal-l")) balDessiner();
+  }, function(e){
+    var m = (e && e.message || "").indexOf("PERMISSION") > -1
+      ? "La règle Firebase « recrutement_inbox » n’est pas publiée — le détail est dans la conversation."
+      : "Lecture impossible : " + e.message;
+    if($("bal-l")) $("bal-l").innerHTML = '<div class="crvide">' + esc(m) + '</div>';
   });
 }
 
@@ -7151,7 +7156,7 @@ function tabCreneaux(){
     creMsg("Enregistrement…");
     creRef().update(lot)
       .then(function(){ creMsg(n + " créneau" + (n > 1 ? "x" : "") + " ouvert" + (n > 1 ? "s" : "") + " ✓"); })
-      .catch(function(e){ creMsg("Échec : " + e.message, "ko"); });
+      .catch(function(e){ creMsg(creRegleKO(e) || ("Échec : " + e.message), "ko"); });
   };
   $("cr-save").onclick = function(){
     var patch = { agenda: { url: ($("cr-url").value || "").trim(), cle: ($("cr-cle").value || "").trim() } };
@@ -7160,10 +7165,23 @@ function tabCreneaux(){
       .catch(function(e){ toast("Échec : " + e.message); });
   };
 
+  /* Sans gestionnaire d'erreur, une lecture refusee laissait « Chargement… »
+     a l'ecran indefiniment : l'ecran mentait sur ce qui se passait. */
   creRef().on("value", function(s){
     CRE_CACHE = s.val() || {};
     if($("cr-liste")) creDessinerAdmin();
+  }, function(e){
+    if($("cr-liste")) $("cr-liste").innerHTML = '<div class="crvide">'
+      + esc(creRegleKO(e) || ("Lecture impossible : " + e.message)) + '</div>';
   });
+}
+/* PERMISSION_DENIED ne veut rien dire pour qui n'a pas ecrit les regles.
+   On traduit : le seul cas possible ici est une regle non publiee. */
+function creRegleKO(e){
+  var m = (e && e.message) || "";
+  if(m.indexOf("PERMISSION_DENIED") === -1 && m.indexOf("permission_denied") === -1) return "";
+  return "La règle Firebase n’est pas publiée. Ajoutez « creneaux » dans les règles "
+       + "de la base, sous « recrutement » — le détail est dans la conversation.";
 }
 function creMsg(t, genre){
   var e = $("cr-msg"); if(!e) return;
@@ -7269,7 +7287,11 @@ function creEcranCandidat(id, fiche){
     };
   }
 
-  creRef().on("value", function(s){ CRE_CACHE = s.val() || {}; dessine(); });
+  creRef().on("value", function(s){ CRE_CACHE = s.val() || {}; dessine(); }, function(){
+    view('<div class="card center"><div style="font-size:2.6rem">\ud83d\ude15</div>'
+      + '<div class="mut" style="margin-top:12px">Les créneaux ne sont pas accessibles pour le moment.<br>'
+      + 'Nous vous recontactons très vite pour convenir d’un horaire.</div></div>');
+  });
 }
 var CRE_CHANGE = false;
 
