@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.18 -->
+<!-- LUMIIA RECRUTE — v7.20 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -538,6 +538,20 @@ body.adm{background:#0d1117;}
 .fiche .pdet summary{cursor:pointer;color:#58a6ff;font-size:.86rem;font-weight:900;}
 .fiche .pgrp{margin-top:12px;color:#58a6ff;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:900;}
 
+/* Ligne de comptage (v7.20) — chaque dossier doit etre justifie */
+#admin .compte{margin:0 0 12px;padding:10px 14px;border-radius:9px;background:#12212e;
+  border:1px solid #294055;color:#9fd0e8;font-weight:700;font-size:.88rem;line-height:1.6;}
+#admin .compte b{color:#e6edf3;}
+#admin .compte b.rouge{color:#ff9c9c;}
+#admin .compte.ko{background:#2a1618;border-color:#7a3030;color:#ffc9c9;}
+#admin .compte .fraz{margin-left:8px;padding:5px 11px;border-radius:7px;border:1px solid #3a4552;
+  background:transparent;color:#8b98a8;font-family:'Nunito';font-weight:700;font-size:.82rem;cursor:pointer;}
+#admin .compte .fraz:hover{color:#e6edf3;border-color:#58a6ff;}
+#admin .archbloc{margin-top:18px;border:1px solid #7a3030;border-radius:10px;background:#1c1315;}
+#admin .archbloc .archbtn{width:100%;text-align:left;padding:13px 16px;background:transparent;
+  border:none;color:#ffb4b4;font-family:'Nunito';font-weight:900;font-size:.95rem;cursor:pointer;}
+#admin .archbloc.ouvert .archbtn{border-bottom:1px solid #7a3030;}
+
 /* Barre de filtres (v7.18) — volontairement differente des puces de statut */
 #admin .filtres{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
 #admin .filtres .flab{display:flex;flex-direction:column;gap:5px;color:#7d8b9c;font-size:.7rem;
@@ -560,7 +574,7 @@ body.adm{background:#0d1117;}
 .rdvform .rdvttl{padding:7px 11px;border-radius:7px;font-family:'Bebas Neue',sans-serif;
   font-size:1rem;letter-spacing:.12em;color:#08130a;}
 .rdvform .rdvq{margin-top:11px;}
-.rdvform .rdvq p{color:#e6edf3;font-weight:900;font-size:.92rem;line-height:1.4;}
+.rdvform .rdvq p{color:#e6edf3;font-weight:500;font-size:.95rem;line-height:1.45;}
 .rdvform .rdvq textarea{margin-top:6px;min-height:64px;background:#0f141b;border:1px solid #313b48;
   color:#e6edf3;border-radius:8px;font-size:.98rem;line-height:1.45;resize:vertical;}
 .rdvform .rdvq textarea:focus{outline:none;border-color:#4dd9e8;}
@@ -576,7 +590,11 @@ body.adm{background:#0d1117;}
 .rdvform .notes5 button{flex:1;padding:11px 0;border-radius:9px;border:1px solid #3a4552;background:#0f141b;
   color:#8b98a8;font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.06em;cursor:pointer;}
 .rdvform .notes5 button.on{background:#a855f7;border-color:#a855f7;color:#fff;}
-.rdvform .rdvmsg{margin-top:10px;font-weight:700;font-size:.86rem;color:#8ee0ac;}
+.rdvform .rdvmsg{margin-top:12px;font-weight:700;font-size:.82rem;color:#8ee0ac;min-height:17px;}
+.rdvform .rdvrecup{margin-top:14px;padding:11px 13px;border-radius:8px;background:#2a2413;
+  border:1px solid #6d5a22;color:#f0dfa6;font-size:.86rem;line-height:1.55;}
+.rdvform .rdvrecup b{display:block;margin-bottom:5px;color:#ffd86b;}
+.rdvform .rdvrecup pre{white-space:pre-wrap;font-family:inherit;margin-top:6px;color:#e6dcc0;}
 .rdvform .rdvmsg.ko{color:#ff9c9c;}
 
 /* Accordeons de la fiche (v7.17) — il y a trop d'information pour tout
@@ -591,7 +609,13 @@ body.adm{background:#0d1117;}
 .fiche details.fbox > .fbody{margin-top:12px;}
 .fiche details.fbox:not([open]){padding-bottom:14px;}
 
-/* Accordeon « LE RENDEZ-VOUS », dans le bloc de suivi */
+/* Le deuxieme rendez-vous porte une autre couleur que le premier : dans une
+   fiche qui en contient deux, il faut pouvoir dire lequel on lit sans lire. */
+.fiche .suivi details.rdvacc.deux{border-color:#1f6f5c;background:rgba(45,212,164,.08);}
+.fiche .suivi details.rdvacc.deux > summary{color:#7fe3c6;}
+.fiche .suivi details.rdvacc.deux > summary::before{color:#2dd4a4;}
+
+/* Accordeon « LE PREMIER RENDEZ-VOUS », dans le bloc de suivi */
 .fiche .suivi details.rdvacc{margin-top:12px;padding:12px 14px 14px;border:1px solid #5b3a9e;
   border-radius:10px;background:rgba(168,85,247,.08);}
 .fiche .suivi details.rdvacc > summary{cursor:pointer;list-style:none;display:flex;align-items:center;
@@ -756,7 +780,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.18</span></h1>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.20</span></h1>
   <div id="adm-gate" class="card">
     <div class="mut">Code d'accès</div>
     <input id="adm-code" type="tel" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
@@ -769,7 +793,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.18";
+var VERSION = "v7.20";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4955,8 +4979,8 @@ function impressionDe(c, id, champ){ return impressionTous(c, champ)[id] || {}; 
 
 /* Moyenne des impressions, une personne = une voix (il n'y en a qu'une chacun,
    la question de la ponderation ne se pose donc pas ici). */
-function impressionMoy(c){
-  var e = impressionTous(c), t = 0, n = 0, vals = [];
+function impressionMoy(c, champ){
+  var e = impressionTous(c, champ), t = 0, n = 0, vals = [];
   for(var id in e){ if(e[id] && e[id].n){ t += e[id].n; n++; vals.push(e[id].n); } }
   return n ? { moy: Math.round(t / n * 10) / 10, n: n, vals: vals } : null;
 }
@@ -6117,10 +6141,17 @@ function histTab(c){
    L'affichage ne change qu'apres accord de la base ; en cas d'echec il
    revient a son etat d'avant et le message reste a l'ecran.
    ══════════════════════════════════════════════════════════════ */
+/* Le journal ne raconte plus l'entretien : les reponses vivent dans la fiche,
+   et les recopier ici donnait deux versions d'une meme chose, dont une
+   illisible. Les vieilles entrees restent en base — on cesse de les afficher. */
+function histEntretien(e){
+  return !!(e && e.txt && e.txt.indexOf("ENTRETIEN 1er TOUR") === 0);
+}
 function histHtml(c){
-  var hist = histTab(c).slice().reverse();
+  var hist = histTab(c).slice().reverse().filter(function(e){ return !histEntretien(e); });
   if(!hist.length) return "";
-  var h = '<div class="pgrp" style="margin-top:18px">Historique</div>';
+  var h0 = '<div class="pgrp" style="margin-top:18px">Journal</div>';
+  var h = h0;
   hist.forEach(function(e){
     var d = new Date(e.ts || 0);
     h += '<div class="qa"><div class="qq">' + d.toLocaleDateString("fr-FR") + " à "
@@ -6197,8 +6228,8 @@ var RDV_TRAME = [
    second partagent le meme moteur, seuls changent la trame et les champs ou
    les reponses atterrissent. */
 var RDV_NS = {
-  r1: { id:"r1", trame:"RDV_TRAME",  notes:"rdv_notes",  cr:"rdv_cr",  titre:"LE RENDEZ-VOUS" },
-  r2: { id:"r2", trame:"RDV2_TRAME", notes:"rdv2_notes", cr:"rdv2_cr", titre:"LE 2\u1d49 RENDEZ-VOUS" }
+  r1: { id:"r1", trame:"RDV_TRAME",  notes:"rdv_notes",  cr:"rdv_cr",  titre:"LE PREMIER RENDEZ-VOUS" },
+  r2: { id:"r2", trame:"RDV2_TRAME", notes:"rdv2_notes", cr:"rdv2_cr", titre:"LE DEUXIÈME RENDEZ-VOUS" }
 };
 function rdvTrame(ns){ return ns.trame === "RDV2_TRAME" ? RDV2_TRAME : RDV_TRAME; }
 function rdvCle(c, ns){ return "lumiia_rdvnotes_" + (ns ? ns.id + "_" : "") + ((c && c._k) || "x"); }
@@ -6232,10 +6263,78 @@ function rdvRecapHtml(c, ns){
   return h + '</div>';
 }
 
+/* Les entretiens menes avant la v7.18 ont ete recopies en bloc de texte dans
+   le compte rendu, et rien n'a ete garde champ par champ. On relit ce texte :
+   chaque question retrouvee par son libelle exact reprend sa place dans le
+   formulaire. Le reste — questions reformulees depuis, blocs disparus — est
+   rendu tel quel, en clair, plutot que perdu en silence. */
+function rdvRecuperer(c){
+  var out = { valeurs:{}, reste:"", trouve:false };
+  var h = histTab(c);
+  var txt = "";
+  for(var i = h.length - 1; i >= 0; i--){
+    if(h[i] && h[i].txt && h[i].txt.indexOf("ENTRETIEN 1er TOUR") === 0){ txt = h[i].txt; break; }
+  }
+  if(!txt) return out;
+  out.trouve = true;
+  /* Index libelle -> cle, construit depuis la trame courante. */
+  var index = {};
+  RDV_TRAME.forEach(function(b, ib){
+    b.q.forEach(function(qo, iq){ index[qo.q] = { k: ib + "-" + iq, type: qo.type || "txt" }; });
+  });
+  var titres = {};
+  RDV_TRAME.forEach(function(b){ titres[b.t.toUpperCase()] = 1; });
+  titres["OBSERVATION G\u00c9N\u00c9RALE"] = 0;   /* celui-la, on veut le voir : il part vers l'impression */
+  var lignes = txt.split("\n"), courant = null, tampon = [], restes = [];
+  function vider(){
+    if(courant && tampon.length){
+      var v = tampon.join("\n").trim();
+      if(v) out.valeurs[courant.k] = v;
+    }
+    courant = null; tampon = [];
+  }
+  lignes.forEach(function(l){
+    if(l.indexOf("\u2022 ") === 0){
+      vider();
+      var corps = l.slice(2);
+      var q = corps, suite = "";
+      var sep = corps.lastIndexOf(" : ");
+      if(sep > -1){ q = corps.slice(0, sep); suite = corps.slice(sep + 3).trim(); }
+      var it = index[q] || index[corps];
+      if(!it){ restes.push(l); return; }
+      courant = it;
+      if(it.type === "ouinon"){
+        if(suite === "OUI" || suite === "NON") out.valeurs["r:" + it.k] = suite.toLowerCase();
+      } else if(suite){
+        tampon.push(suite);
+      }
+      return;
+    }
+    if(courant && l.indexOf("  ") === 0){ tampon.push(l.slice(2)); return; }
+    vider();
+    if(!l.trim()) return;
+    if(l.indexOf("ENTRETIEN 1er TOUR") === 0) return;
+    if(titres[l.trim()]) return;          /* en-tete de bloc : pas du contenu */
+    restes.push(l);
+  });
+  vider();
+  out.reste = restes.join("\n").trim();
+  return out;
+}
+
 function rdvFormHtml(c, ns){
   ns = ns || RDV_NS.r1;
-  var d0 = rdvValeurs(c, ns);
-  var h = '<div class="rdvform" data-ns="' + ns.id + '">';
+  var d0 = rdvValeurs(c, ns), recup = null;
+  if(ns.id === "r1" && !Object.keys(d0).length){
+    recup = rdvRecuperer(c);
+    if(recup.trouve) Object.keys(recup.valeurs).forEach(function(k){ d0[k] = recup.valeurs[k]; });
+  }
+  var h = '<div class="rdvform" data-ns="' + ns.id + '"'
+    + (recup && recup.trouve && Object.keys(recup.valeurs).length ? ' data-recup="1"' : '') + '>';
+  if(recup && recup.reste){
+    h += '<div class="rdvrecup"><b>Repris du compte rendu, sans question correspondante</b>'
+      + '<pre>' + esc(recup.reste) + '</pre></div>';
+  }
   rdvTrame(ns).forEach(function(b, ib){
     h += '<div class="rdvblc"><div class="rdvttl" style="background:' + b.c + '">'
       + esc(b.t.toUpperCase()) + '</div>';
@@ -6262,19 +6361,10 @@ function rdvFormHtml(c, ns){
     });
     h += '</div>';
   });
-  h += '<div class="rdvblc"><div class="rdvttl" style="background:#ffffff">OBSERVATION GÉNÉRALE</div>'
-    + '<div class="rdvq"><p>Ce que vous retenez de la rencontre</p>'
-    + '<textarea data-rdv="obs" rows="4">' + esc(d0["obs"] || "") + '</textarea>'
-    + '<p style="margin-top:14px">Note globale après entretien</p>'
-    + '<div class="notes5 rdv-note5">';
-  for(var n = 1; n <= 5; n++){
-    h += '<button type="button" data-n="' + n + '"'
-      + (String(d0["note"] || "") === String(n) ? ' class="on"' : '') + '>' + n + '</button>';
-  }
-  h += '</div></div></div>'
-    + '<div class="rdvmsg rdv-msg"></div>'
-    + '<button class="btn rdv-ok">Enregistrer cet entretien</button>'
-    + '</div>';
+  /* Le verdict de fin n'est plus ici : il a rejoint « Impression generale —
+     APRES rendez-vous », en haut de la fiche, avec ses etoiles. Le meme
+     jugement a deux endroits, c'est deux endroits a tenir a jour. */
+  h += '<div class="rdvmsg rdv-msg"></div></div>';
   return h;
 }
 
@@ -6289,35 +6379,65 @@ function brancherRdvForm(c, racine, ecrire, apres){
 
 function brancherUnRdv(c, zone, ecrire, apres){
   var ns = RDV_NS[zone.getAttribute("data-ns")] || RDV_NS.r1;
-  var trame = rdvTrame(ns);
   var msg = zone.querySelector(".rdv-msg");
   var brouillon = rdvValeurs(c, ns);
+  var tmr = null;
 
   function dire(txt, genre){
     msg.className = "rdvmsg rdv-msg" + (genre === "ko" ? " ko" : "");
     msg.textContent = txt || "";
   }
-  /* Le localStorage ne porte que le NON ENCORE ENREGISTRE. Des que la base a
-     pris, on le vide : sinon un vieux brouillon recouvrirait, a la reouverture,
-     ce qui vient d'etre sauve. */
+  function propre(){
+    var o = {};
+    Object.keys(brouillon).forEach(function(k){
+      var v = brouillon[k];
+      if(typeof v === "string") v = v.trim();
+      if(v !== "" && v != null) o[k] = v;
+    });
+    return o;
+  }
+  /* Le localStorage ne porte que ce qui n'est PAS encore en base : il sert de
+     filet entre deux frappes, pas de memoire concurrente. */
   function garder(){
-    var diff = {}, base = (c[ns.notes] || {});
-    Object.keys(brouillon).forEach(function(k){ if(brouillon[k] !== base[k]) diff[k] = brouillon[k]; });
-    Object.keys(base).forEach(function(k){ if(brouillon[k] === undefined) diff[k] = ""; });
-    try{
-      if(Object.keys(diff).length) localStorage.setItem(rdvCle(c, ns), JSON.stringify(brouillon));
-      else localStorage.removeItem(rdvCle(c, ns));
-    }catch(e){}
+    try{ localStorage.setItem(rdvCle(c, ns), JSON.stringify(brouillon)); }catch(e){}
+  }
+
+  /* Plus de bouton : on ecrit en tapant. Une temporisation courte evite une
+     ecriture par caractere, assez courte pour qu'une fermeture d'onglet en
+     plein entretien ne coute rien. */
+  function enregistrer(){
+    var p = propre(), patch = {};
+    patch[ns.notes] = Object.keys(p).length ? p : null;
+    patch[ns.cr] = {
+      ts: Date.now(),
+      ponctuel: p["r:0-0"] || "",
+      duree: p["0-1"] || ""
+    };
+    dire("Enregistrement\u2026");
+    majCandidat(c._k, patch).then(function(){
+      c[ns.notes] = patch[ns.notes] || {};
+      c[ns.cr] = patch[ns.cr];
+      try{ localStorage.removeItem(rdvCle(c, ns)); }catch(e){}
+      dire("Enregistré ✓");
+      if(apres) apres();
+    }).catch(function(e){
+      dire("NON ENREGISTRÉ — " + (e && e.message ? e.message : "réessayez") + " (vos réponses restent à l’écran)", "ko");
+    });
   }
   function poser(cle, val){
     if(val === "" || val == null) delete brouillon[cle]; else brouillon[cle] = val;
     garder();
-    dire("Modifications non enregistrées", "ko");
+    dire("Modification en cours\u2026");
+    clearTimeout(tmr);
+    tmr = setTimeout(enregistrer, 700);
   }
 
   var champs = zone.querySelectorAll("[data-rdv]");
   for(var i=0;i<champs.length;i++){
     champs[i].oninput = function(){ poser(this.getAttribute("data-rdv"), this.value); };
+    /* Quitter un champ ecrit tout de suite : on ne compte pas sur la
+       temporisation quand la personne passe visiblement a autre chose. */
+    champs[i].onblur = function(){ if(tmr){ clearTimeout(tmr); tmr = null; enregistrer(); } };
   }
   var groupes = zone.querySelectorAll(".oui[data-oui]");
   for(var g=0; g<groupes.length; g++){
@@ -6332,43 +6452,14 @@ function brancherUnRdv(c, zone, ecrire, apres){
       };
     })(groupes[g]);
   }
-  var notes = zone.querySelectorAll(".rdv-note5 button");
-  for(var m=0;m<notes.length;m++) notes[m].onclick = function(){
-    for(var y=0;y<notes.length;y++) notes[y].className = "";
-    this.className = "on";
-    poser("note", this.getAttribute("data-n"));
-  };
 
-  zone.querySelector(".rdv-ok").onclick = function(){
-    var bt = this;
-    var propre = {};
-    Object.keys(brouillon).forEach(function(k){
-      var v = brouillon[k];
-      if(typeof v === "string") v = v.trim();
-      if(v !== "" && v != null) propre[k] = v;
-    });
-    if(!Object.keys(propre).length){ dire("Rien de saisi : rien à enregistrer.", "ko"); return; }
-    bt.disabled = true;
-    dire("Enregistrement\u2026");
-    var patch = {};
-    patch[ns.notes] = propre;
-    patch[ns.cr] = {
-      ts: Date.now(),
-      note: propre["note"] ? Number(propre["note"]) : 0,
-      obs: propre["obs"] || "",
-      ponctuel: propre["r:0-0"] || "",
-      duree: propre["0-1"] || ""
-    };
-    ecrire(patch, null, "Entretien enregistré ✓").then(function(ok){
-      bt.disabled = false;
-      if(!ok){ dire("NON ENREGISTRÉ — vos réponses restent à l’écran, réessayez.", "ko"); return; }
-      brouillon = propre;
-      try{ localStorage.removeItem(rdvCle(c, ns)); }catch(e){}
-      dire("Entretien enregistré ✓");
-      if(apres) apres();
-      toast("Entretien enregistré");
-    });
-  };
+  /* Un entretien repris d'un ancien compte rendu est affiche rempli : on
+     l'enregistre tout de suite, sinon la fiche montrerait des reponses que la
+     base n'a pas, et la reprise recommencerait a chaque ouverture. */
+  if(zone.getAttribute("data-recup") === "1"){
+    zone.removeAttribute("data-recup");
+    enregistrer();
+  }
 }
 
 /* Trame du second rendez-vous — a ecrire. Pour l'instant, de quoi noter
@@ -6440,7 +6531,7 @@ function blocSuivi(c){
         + '<input type="date" id="sv-avdate" value="' + esc(c.averti_date||"") + '"></div></div>';
     }
     if(e.n === 6){
-      h += '<details class="rdvacc" id="sv-rdv2acc"><summary>\ud83d\udcc5 LE 2\u1d49 RENDEZ-VOUS</summary>'
+      h += '<details class="rdvacc deux" id="sv-rdv2acc"><summary>\ud83d\udcc5 LE DEUXIÈME RENDEZ-VOUS</summary>'
         +   '<div class="fgrid">'
         +     '<div class="txrow"><label class="f">Date</label><input type="date" id="sv-rdv2d" value="' + esc(c.rdv2_date||"") + '"></div>'
         +     '<div class="txrow"><label class="f">Heure</label><input type="time" id="sv-rdv2h" value="' + esc(c.rdv2_heure||"") + '"></div>'
@@ -6453,7 +6544,7 @@ function blocSuivi(c){
       /* Un accordeon comme les autres : on l'ouvre, la trame est la. Plus de
          bouton intermediaire — un bouton qui ouvre un panneau qui contient un
          bouton, c'est un clic de trop en plein entretien. */
-      h += '<details class="rdvacc" id="sv-rdvacc"><summary>\ud83d\udcc5 LE RENDEZ-VOUS</summary>'
+      h += '<details class="rdvacc" id="sv-rdvacc"><summary>\ud83d\udcc5 LE PREMIER RENDEZ-VOUS</summary>'
         +   '<div class="fgrid">'
         +     '<div class="txrow"><label class="f">Date</label><input type="date" id="sv-rdvd" value="' + esc(c.rdv_date||"") + '"></div>'
         +     '<div class="txrow"><label class="f">Heure</label><input type="time" id="sv-rdvh" value="' + esc(c.rdv_heure||"") + '"></div>'
@@ -6465,11 +6556,13 @@ function blocSuivi(c){
     h += '</div></div>';
   });
   h += '</div>'
-    + '<label class="f">Ajouter au compte rendu</label>'
-    + '<textarea id="sv-note" rows="3" placeholder="Ce qu\u2019on s\u2019est dit, ce qu\u2019il faut retenir\u2026"></textarea>'
+    /* Le journal garde ce qui n'est PAS l'entretien : un appel qui n'aboutit
+       pas, un mail de relance, un decalage demande. Sans lui, ces echanges-la
+       n'auraient nulle part ou aller. */
+    + '<label class="f">Journal des échanges</label>'
+    + '<textarea id="sv-note" rows="3" placeholder="Un appel, un mail, un imprévu\u2026 (l\u2019entretien, lui, se note dans sa fiche)"></textarea>'
     + '<div class="factions" style="margin-top:12px;border:none;padding-top:0">'
-    + '<button class="btn" id="sv-save">Ajouter au compte rendu</button>'
-    + '<button class="btn sec" id="sv-ws">Envoyer la tâche dans Workspace</button>'
+    + '<button class="btn" id="sv-save">Ajouter au journal</button>'
     + '</div>'
     + '<div id="sv-err" class="svmsg hidden"></div>'
     + '<div id="sv-hist">' + histHtml(c) + '</div>';
@@ -6603,26 +6696,6 @@ function brancherSuivi(c, racine){
   }
   brancherRdvForm(c, racine, ecrire, rafraichirRecap);
 
-  racine.querySelector("#sv-ws").onclick = function(){
-    var champD = racine.querySelector("#sv-rdvd");
-    var d = champD ? champD.value : "";
-    if(!d){ toast("Passez d’abord le candidat en « RDV fixé » et mettez une date"); return; }
-    var rdv = true;
-    var champH = racine.querySelector("#sv-rdvh");
-    var nom = ((c.prenom||"") + " " + (c.nom||"")).trim() || "candidat";
-    envoyerWorkspace({
-      kind: "task",
-      label: (rdv ? "Rendez-vous recrutement — " : "Rappeler ") + nom,
-      content: "Candidature LUMIIA · potentiel " + evalCandidat(c).total + "/100"
-        + (c.tel ? "\nTél : " + c.tel : "") + (c.email ? "\nEmail : " + c.email : "")
-        + "\nSuivi : " + suiviDe(choisi).n
-        + (function(){ var h = histTab(c); return h.length ? "\nDernier échange : " + (h[h.length-1].txt || "—") : ""; })(),
-      link: window.location.origin + window.location.pathname + "?admin",
-      due: d,
-      dueTime: (champH && champH.value) || null,
-      prio: "normal"
-    });
-  };
 }
 
 function envoyerWorkspace(item){
@@ -7165,16 +7238,48 @@ function tabReglages(){
 }
 
 /* ── TABLEAU COMPARATIF ── */
+/* Trois lectures d'un coup d'oeil, sans ouvrir la fiche : ce qui a ete decide,
+   ce qu'on en a pense apres l'avoir vu, et si la personne a ete prevenue. */
+var DECISIONS = { retenu:1, ecarte:1, retenu2:1, ecarte2:1, sans_suite:1, rdv2:1 };
+function decisionCell(c){
+  var st = c.suivi_statut || "";
+  if(!DECISIONS[st]) return '<span class="dim">\u2014</span>';
+  return '<span class="pill2 ' + suiviDe(st).c + '">' + esc(suiviDe(st).n) + '</span>';
+}
+function noteApresCell(c){
+  var m = impressionMoy(c, "impression2");
+  if(!m) return '<span class="dim">\u2014</span>';
+  return '<b>' + m.moy + '</b> <span class="dim">/ 5</span>'
+    + (m.n > 1 ? '<br><span class="dim">' + m.n + ' avis</span>' : '');
+}
+/* Rouge tant que la personne n'a pas ete prevenue : une decision prise et non
+   dite, c'est quelqu'un qui attend sans le savoir. */
+function avertiCell(c){
+  var st = c.suivi_statut || "";
+  if(st === "averti_mail" || st === "averti_tel"){
+    return '<span class="pill2 hot">' + esc(suiviDe(st).n) + '</span>'
+      + (c.averti_date ? '<br><span class="dim mono">' + esc(jourFR(c.averti_date)) + '</span>' : '');
+  }
+  if(st === "averti_non") return '<span class="pill2 no">Pas encore averti</span>';
+  return '<span class="dim">\u2014</span>';
+}
+
 function admCandidats(){
   if(!$("a-cand")) return;
   var arr = [];
   for(var k in LAST_CAND){ var o = LAST_CAND[k]; o._k = k; arr.push(o); }
+  /* « Il manque des candidats » doit pouvoir se verifier d'un coup d'oeil.
+     On retient le total AVANT tout filtrage, et on rend compte plus bas de
+     chaque dossier : affiche, en archives, ou retire par un filtre. Un
+     dossier qui disparait sans explication est le pire defaut possible ici. */
+  var totalBase = arr.length;
   if(ADM_FILTRE.indexOf("sv:") === 0){
     var sv = ADM_FILTRE.slice(3);
     arr = arr.filter(function(c){ return (c.suivi_statut || "nouveau") === sv; });
   } else if(ADM_FILTRE !== "tous"){
     arr = arr.filter(function(c){ return (c.statut||"") === ADM_FILTRE; });
   }
+  var apresFiltre = arr.length;
   var mots = aplat(ADM_Q).split(/\s+/).filter(Boolean);
   if(mots.length){
     arr = arr.filter(function(c){
@@ -7183,6 +7288,8 @@ function admCandidats(){
       return true;
     });
   }
+  var cachesFiltre = totalBase - apresFiltre;
+  var cachesRech = apresFiltre - arr.length;
   arr.forEach(function(c){ c._ev = evalCandidat(c); });
   arr.sort(function(a,b){
     if(ADM_TRI === "potentiel") return b._ev.total - a._ev.total;
@@ -7191,7 +7298,16 @@ function admCandidats(){
     if(ADM_TRI === "exp") return nb(b.experiences) - nb(a.experiences);
     return (b.maj||b.ts||0) - (a.maj||a.ts||0);
   });
-  if(!arr.length){ $("a-cand").innerHTML = '<p class="aide">Aucune candidature ne correspond' + (ADM_Q ? ' à « ' + esc(ADM_Q) + ' »' : ' à ce filtre') + '.</p>'; return; }
+  if(!arr.length){
+    $("a-cand").innerHTML = '<div class="compte ko"><b>' + totalBase + '</b> candidature'
+      + (totalBase > 1 ? 's' : '') + ' en base, <b>aucune</b> affichée — '
+      + (cachesFiltre ? cachesFiltre + ' retirée' + (cachesFiltre > 1 ? 's' : '') + ' par le filtre' : '')
+      + (cachesFiltre && cachesRech ? ', ' : '')
+      + (cachesRech ? cachesRech + ' par la recherche « ' + esc(ADM_Q) + ' »' : '')
+      + ' <button class="fraz" id="a-raz2">Tout afficher</button></div>';
+    if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_Q = ""; admTab(); };
+    return;
+  }
 
   var maxSc = 1; arr.forEach(function(c){ maxSc = Math.max(maxSc, c.score||0); });
   var nSav = (CFG.savoirs||[]).length || 12;
@@ -7205,7 +7321,7 @@ function admCandidats(){
      quand une recherche est en cours — chercher quelqu'un et ne pas le trouver
      parce qu'il etait dans un bloc replie, c'est un piege. */
   var ARCH = ["ecarte","ecarte2","sans_suite"];
-  var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:sans_suite");
+  var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite");
   var actifs = arr, archives = [];
   if(separer){
     actifs = [];
@@ -7217,7 +7333,8 @@ function admCandidats(){
   function tableCand(liste){
     var h = '<table class="cmp"><thead><tr>'
     + '<th data-tri="potentiel">Potentiel ↕</th><th>Profil</th>'
-    + '<th>Statut</th><th>Suivi</th><th>Messages envoy\u00e9s</th><th>Prochaine action</th>'
+    + '<th>Statut</th><th>Suivi</th><th>D\u00e9cision</th><th>Note apr\u00e8s RDV</th><th>Candidat averti</th>'
+    + '<th>Messages envoy\u00e9s</th><th>Prochaine action</th>'
     + '<th>Candidat</th><th>Contact</th>'
     + '<th data-tri="exp">Expérience ↕</th><th data-tri="savoirs">Savoir-faire ↕</th>'
     + '<th>Poste</th><th>Situations</th><th>Rappel</th><th>Permis</th><th>Enreg.</th><th>Offre&nbsp;mail</th>'
@@ -7242,6 +7359,9 @@ function admCandidats(){
       + '<td><span class="axes">' + mini + '</span></td>'
       + '<td><span class="pill2 ' + (complet ? "hot" : "wip") + '">' + (complet ? "complète" : ("étape " + (c.etape||1))) + '</span></td>'
       + '<td><span class="pill2 ' + suiviDe(c.suivi_statut).c + '">' + esc(suiviDe(c.suivi_statut).n) + '</span></td>'
+      + '<td>' + decisionCell(c) + '</td>'
+      + '<td>' + noteApresCell(c) + '</td>'
+      + '<td>' + avertiCell(c) + '</td>'
       + '<td>' + envoisCell(c) + '</td>'
       + '<td class="mono">' + (c.rdv_date ? '<b>RDV ' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</b>'
           : (c.relance_date ? esc(jourFR(c.relance_date)) : '<span class="dim">—</span>')) + '</td>'
@@ -7265,8 +7385,16 @@ function admCandidats(){
     return h + '</tbody></table>';
   }
 
-  var h = (actifs.length ? tableCand(actifs)
-    : '<p class="aide">Aucune candidature active' + (archives.length ? ' \u2014 tout est en archives.' : '.') + '</p>')
+  var compte = '<div class="compte"><b>' + totalBase + '</b> candidature' + (totalBase > 1 ? 's' : '')
+    + ' en base \u00b7 <b>' + actifs.length + '</b> dans la liste'
+    + (archives.length ? ' \u00b7 <b>' + archives.length + '</b> en archives, plus bas' : '')
+    + (cachesFiltre ? ' \u00b7 <b class="rouge">' + cachesFiltre + '</b> masquée' + (cachesFiltre > 1 ? 's' : '') + ' par le filtre' : '')
+    + (cachesRech ? ' \u00b7 <b class="rouge">' + cachesRech + '</b> masquée' + (cachesRech > 1 ? 's' : '') + ' par la recherche' : '')
+    + ((cachesFiltre || cachesRech) ? ' <button class="fraz" id="a-raz2">Tout afficher</button>' : '')
+    + '</div>';
+
+  var h = compte + (actifs.length ? tableCand(actifs)
+    : '<p class="aide">Aucune candidature active' + (archives.length ? ' \u2014 tout est en archives, dépliez le bloc ci-dessous.' : '.') + '</p>')
     + '<p class="aide">Tri\u00e9 par potentiel d\u00e9croissant. Les cinq barres donnent le profil : '
     + 'm\u00e9tier, terrain, posture, engagement, praticit\u00e9. Le potentiel n\u2019\u00e9limine personne, il range la pile \u2014 '
     + 'les poids se r\u00e8glent dans l\u2019onglet Potentiel. Cliquez une ligne pour ouvrir la fiche compl\u00e8te. '
@@ -7274,7 +7402,7 @@ function admCandidats(){
 
   if(archives.length){
     var ouvert = ADM_ARCH || !!ADM_Q;
-    h += '<div class="archbloc">'
+    h += '<div class="archbloc' + (ouvert ? " ouvert" : "") + '">'
       + '<button class="archbtn" id="a-arch">' + (ouvert ? "\u25be" : "\u25b8") + ' Archives \u00b7 '
       +   archives.length + ' dossier' + (archives.length > 1 ? 's' : '') + ' \u00e9cart\u00e9'
       +   (archives.length > 1 ? 's' : '') + ' ou sans suite'
@@ -7289,6 +7417,7 @@ function admCandidats(){
   var trs = $("a-cand").querySelectorAll("tr[data-k]");
   for(var i=0;i<trs.length;i++) trs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
   if($("a-arch")) $("a-arch").onclick = function(){ ADM_ARCH = !ADM_ARCH; admCandidats(); };
+  if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_Q = ""; admTab(); };
   var ths = $("a-cand").querySelectorAll("th[data-tri]");
   for(var j=0;j<ths.length;j++) ths[j].onclick = function(){ ADM_TRI = this.getAttribute("data-tri"); admCandidats(); };
   brancherPhotosZoom($("a-cand"));
@@ -7465,6 +7594,9 @@ function admFiche(c){
     + '<div class="fcoord">'
     + (c.tel ? '<a class="lien" href="tel:' + esc2(c.tel) + '">' + esc2(c.tel) + '</a>' : '<span class="dim">pas de téléphone</span>')
     + (c.email ? ' &nbsp;·&nbsp; <a class="lien" href="mailto:' + esc2(c.email) + '">' + esc2(c.email) + '</a>' : '')
+    /* Le CV etait au fond de la fiche, dans « Profil ». C'est le document
+       qu'on ouvre en premier : il est desormais a cote du nom. */
+    + (c.cv_url ? ' &nbsp;·&nbsp; <a class="lien cvlien" href="' + esc2(c.cv_url) + '" target="_blank" rel="noopener">\ud83d\udcce CV</a>' : '')
     + '</div></div>'
     + '<button class="btn sec fclose" id="fi-x">Fermer</button></div>'
 
