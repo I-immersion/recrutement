@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.38 -->
+<!-- LUMIIA RECRUTE — v7.39 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -308,6 +308,13 @@ body.adm{background:#0d1117;}
 #admin .archin{margin-top:12px;opacity:.82;}
 #admin .pill2.no{background:rgba(248,81,73,.13);border-color:#8b3a35;color:#ff8b81;}
 #admin .pill2.wip{background:rgba(210,153,34,.13);border-color:#8a6a1f;color:#e3b341;}
+/* EXTRAS (v7.39) : le jaune est la couleur du bloc Extras de la trame d'entretien. */
+#admin .pill2.xt,.fiche .pill2.xt{background:rgba(255,215,0,.13);border-color:#8a7a1f;color:#ffd700;white-space:nowrap;}
+#admin tr.rxt td:first-child{box-shadow:inset 4px 0 0 #ffd700;}
+#admin .xtok{margin:14px 0 20px;padding:14px 16px;border:1px solid #6b5f1a;border-radius:10px;background:rgba(255,215,0,.05);}
+#admin .xtok .essait{color:#ffd700;}
+#admin .stat.xtstat{cursor:pointer;border-color:#6b5f1a;}
+#admin .stat.xtstat .sv{color:#ffd700;}
 
 #admin input,#admin textarea{background:#0f141b;border:1px solid #313b48;color:#e6edf3;border-radius:7px;
   font-family:'Nunito';font-size:.94rem;padding:9px 11px;margin-top:5px;}
@@ -879,7 +886,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.38</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.39</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -894,7 +901,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.38";
+var VERSION = "v7.39";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4943,7 +4950,7 @@ var ADM_TABS = [
   { k:"listes",     n:"Listes déroulantes" },
   { k:"reglages",   n:"Réglages" }
 ];
-var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "potentiel", ADM_Q = "", ADM_VU = "";
+var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "potentiel", ADM_Q = "", ADM_VU = "", ADM_XT = "";
 /* Archives repliees par defaut : voir admCandidats. */
 var ADM_ARCH = false;
 /* Faux jusqu'a la premiere arrivee des candidatures. Voir admLoad. */
@@ -5934,6 +5941,65 @@ function extrasListe(){
    signalee comme un essai, jamais melangee aux vraies reponses. */
 var XT_ESSAI = null;
 
+/* OK EN ENTRETIEN (v7.39). L'onglet ne montrait que ceux qui avaient deja
+   rempli le parcours du mail. Or la liste utile en premier est l'autre : ceux
+   qui ont dit OUI en face de nous et a qui il faut encore ecrire. */
+var XT_VUE = "amailer", XT_OK_LISTE = [];
+function blocOkEntretien(){
+  var L = [];
+  for(var k in LAST_CAND){
+    var c = LAST_CAND[k]; if(!c) continue; c._k = k;
+    var x = extraInfo(c);
+    if(x.ent === "oui") L.push({ c:c, x:x });
+  }
+  var nA = L.filter(function(o){ return o.x.aMailer; }).length;
+  var V = L.filter(function(o){
+    if(XT_VUE === "amailer")   return o.x.aMailer;
+    if(XT_VUE === "contactes") return !o.x.aMailer;
+    return true;
+  });
+  XT_OK_LISTE = V.map(function(o){ return o.c; });
+  function opt(v, t){ return '<option value="' + v + '"' + (XT_VUE === v ? " selected" : "") + '>' + t + '</option>'; }
+  var h = '<div class="xtok"><div class="essait">\u2b50 OK pour les extras \u2014 dit en entretien</div>'
+    + '<div class="dim">Les personnes qui ont r\u00e9pondu OUI \u00e0 \u00ab\u00a0Int\u00e9ress\u00e9 par des extras\u00a0?\u00a0\u00bb '
+    + 'pendant le premier rendez-vous. Pour leur \u00e9crire \u00e0 part : un message de la biblioth\u00e8que qui contient '
+    + '<b>{lien_extra}</b>, envoy\u00e9 depuis leur fiche. D\u00e8s qu\u2019il est parti, la personne passe dans \u00ab\u00a0d\u00e9j\u00e0 contact\u00e9s\u00a0\u00bb.</div>';
+  if(!L.length) return h + '<div class="dim" style="margin-top:10px">Personne pour le moment.</div></div>';
+  h += '<div class="filtres" style="margin-top:12px">'
+    + '<label class="flab">Afficher<select id="xt-vue">'
+    +   opt("amailer", "\u00c0 qui \u00e9crire (" + nA + ")")
+    +   opt("contactes", "D\u00e9j\u00e0 contact\u00e9s (" + (L.length - nA) + ")")
+    +   opt("tous", "Tous (" + L.length + ")")
+    + '</select></label>'
+    + ((estAdmin() && V.length) ? '<button class="fraz" id="xt-copie">\u2709 Copier les adresses mail</button>' : '')
+    + '</div>';
+  if(!V.length) return h + '<div class="dim" style="margin-top:10px">Personne dans cette vue.</div></div>';
+  h += '<div class="adm-scroll"><table class="cmp"><thead><tr><th>Candidat</th><th>Contact</th>'
+    + '<th>P\u00e9riodes, rythme (entretien)</th><th>Mail extras</th><th>Parcours</th><th></th></tr></thead><tbody>';
+  V.forEach(function(o){
+    var c = o.c, x = o.x;
+    h += '<tr class="rxt">'
+      + '<td><b>' + esc(nomComplet(c)) + '</b></td>'
+      + '<td><span class="mono">' + esc(c.tel || "\u2014") + '</span><br><span class="dim">' + esc(c.email || "pas d\u2019adresse") + '</span></td>'
+      + '<td>' + (x.obs ? esc(String(x.obs).slice(0, 140)) : '<span class="dim">\u2014</span>') + '</td>'
+      + '<td>' + (x.mail ? '<span class="pill2 msg">\u2709 ' + new Date(x.mail).toLocaleDateString("fr-FR") + '</span>'
+                         : '<span class="pill2 no">pas encore</span>') + '</td>'
+      + '<td>' + (x.parc === null ? '<span class="dim">\u2014</span>'
+                 : '<span class="pill2 ' + (x.parc === "oui" ? "hot" : "wip") + '">'
+                   + (x.parc === "oui" ? "statut en place" : (x.parc === "non" ? "sans statut" : "commenc\u00e9")) + '</span>') + '</td>'
+      + '<td><button class="btn sec mini" data-fok="' + esc(c._k) + '">Fiche</button></td>'
+      + '</tr>';
+  });
+  return h + '</tbody></table></div></div>';
+}
+function brancherOkEntretien(){
+  var s = $("xt-vue");
+  if(s) s.onchange = function(){ XT_VUE = this.value; tabExtras(); };
+  if($("xt-copie")) $("xt-copie").onclick = function(){ copierAdresses(XT_OK_LISTE); };
+  var fs = document.querySelectorAll("#adm-tab [data-fok]");
+  for(var i=0;i<fs.length;i++) fs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-fok")]); };
+}
+
 function tabExtras(){
   if(db && XT_ESSAI === null){
     XT_ESSAI = false;
@@ -5950,19 +6016,21 @@ function tabExtras(){
     + 'ponctuelle, et \u00e7a suppose un statut d\u00e9j\u00e0 en place. Leur dossier complet reste dans '
     + 'l\u2019onglet Candidats.</p>';
 
+  h += blocOkEntretien();
   h += blocEssaiExtra();
 
   if(!L.length){
     panneau(h + '<p class="aide">Personne pour le moment. Envoyez le message qui contient le bouton '
       + '\u00ab\u00a0extras\u00a0\u00bb et ils appara\u00eetront ici.</p></div>');
     brancherEssaiExtra();
+    brancherOkEntretien();
     return;
   }
 
   var avec = 0;
   L.forEach(function(c){ if(c.extra.statut === "oui") avec++; });
   h += '<div class="adm-bar" style="margin-top:6px"><span class="dim">'
-    + L.length + ' r\u00e9ponse' + (L.length > 1 ? "s" : "") + ' \u00b7 ' + avec + ' avec un statut'
+    + '<b>Parcours du mail</b> \u00b7 ' + L.length + ' r\u00e9ponse' + (L.length > 1 ? "s" : "") + ' \u00b7 ' + avec + ' avec un statut'
     + (avec > 1 ? "" : "") + '</span></div>';
 
   L.forEach(function(c){
@@ -6029,6 +6097,7 @@ function tabExtras(){
   panneau(h + '</div>');
   brancherPhotosZoom($("adm-tab"));
   brancherEssaiExtra();
+  brancherOkEntretien();
   var fs = document.querySelectorAll("#adm-tab [data-fiche]");
   for(var i=0;i<fs.length;i++) fs[i].onclick = function(){
     admFiche(LAST_CAND[this.getAttribute("data-fiche")]);
@@ -6121,7 +6190,10 @@ function tabCandidats(){
     +     '<option value="oui"' + (ADM_VU==="oui"?" selected":"") + '>Déjà rencontrés</option>'
     +     '<option value="non"' + (ADM_VU==="non"?" selected":"") + '>Pas encore rencontrés</option>'
     +   '</select></label>'
-    + ((ADM_FILTRE !== "tous" || ADM_VU) ? '<button class="fraz" id="f-raz">Tout afficher</button>' : '');
+    + '<label class="flab">Extras<select id="f-xt">'
+    +   XT_FILTRES.map(function(o){ return '<option value="' + o.k + '"' + (ADM_XT === o.k ? " selected" : "") + '>' + esc(o.n) + '</option>'; }).join("")
+    + '</select></label>'
+    + ((ADM_FILTRE !== "tous" || ADM_VU || ADM_XT) ? '<button class="fraz" id="f-raz">Tout afficher</button>' : '');
   /* L'export reste a l'admin : un fichier de 26 telephones et adresses qui sort
      de l'outil, ca ne se decide pas d'un clic par quelqu'un qui vient donner un
      avis. Lire dans l'app, oui ; emporter la liste, non. */
@@ -6137,7 +6209,10 @@ function tabCandidats(){
   /* Filtre independant des deux autres : « pas encore rencontres » se croise
      avec une etape ou une recherche sans les annuler. */
   if(fVu) fVu.onchange = function(){ ADM_VU = this.value; admTab(); };
-  if($("f-raz")) $("f-raz").onclick = function(){ ADM_FILTRE = "tous"; ADM_VU = ""; admTab(); };
+  var fXt = $("f-xt");
+  /* Independant lui aussi : « OK extras » se croise avec une etape ou la rencontre. */
+  if(fXt) fXt.onchange = function(){ ADM_XT = this.value; admTab(); };
+  if($("f-raz")) $("f-raz").onclick = function(){ ADM_FILTRE = "tous"; ADM_VU = ""; ADM_XT = ""; admTab(); };
   var q = $("a-q");
   q.oninput = function(){ ADM_Q = this.value; admCandidats(); };
   if($("a-csv")) $("a-csv").onclick = admCsv;
@@ -6157,7 +6232,8 @@ function meule(c){
   var p = [c.prenom, c.nom, c.tel, c.email, c.anciennete, c.anciennete_metier, c.permis, c.transport,
            c.postes_vises, c.postes_codes, c.cv_nom,
            c.experiences, c.savoirs, c.pourquoi, c.portrait, c.mot, c.grille, c.statut,
-           suiviDe(statutEffectif(c)).n, c.relance_date, c.rdv_date];
+           suiviDe(statutEffectif(c)).n, c.relance_date, c.rdv_date,
+           (extraInfo(c).ok ? "extras ok" : "")];
   (c.quiz || []).forEach(function(q){ if(q){ p.push(q.q); p.push(q.r); } });
   (CFG.situations || []).forEach(function(s2, i){
     var v = (c.situations||"").split("|")[i];
@@ -7596,12 +7672,16 @@ function tabSuivi(){
   neufs.sort(function(a,b){ return b._ev.total - a._ev.total; });
   var nh = "";
   neufs.slice(0, 15).forEach(function(c){ nh += ligne(c, ""); });
+  var nXo = 0, nXa = 0;
+  arr.forEach(function(c){ var x = extraInfo(c); if(x.ok) nXo++; if(x.aMailer) nXa++; });
 
   var h = '<div class="adm-sec"><h2>Où en est le recrutement</h2><div class="stats">'
     + '<div class="stat"><div class="sv">' + nR + '</div><div class="sl">rappels en retard</div></div>'
     + '<div class="stat"><div class="sv">' + nF + '</div><div class="sl">rappels à venir</div></div>'
     + '<div class="stat"><div class="sv">' + nV + '</div><div class="sl">rendez-vous programmés</div></div>'
     + '<div class="stat"><div class="sv">' + neufs.length + '</div><div class="sl">jamais ouverts</div></div>'
+    + '<div class="stat xtstat" id="st-xt" title="Voir la liste dans l\u2019onglet Candidats"><div class="sv">' + nXa + ' / ' + nXo
+    +   '</div><div class="sl">OK extras \u00e0 qui \u00e9crire / au total</div></div>'
     + '</div></div>'
     + table("En retard", "Ces rappels étaient prévus avant aujourd’hui.", retard, "Rien en retard.")
     + table("Rappels à venir", "Par date de prochaine action.", aFaire, "Aucun rappel programmé.")
@@ -7611,6 +7691,7 @@ function tabSuivi(){
   panneau(h);
   var trs = document.querySelectorAll("#adm-tab tr[data-k]");
   for(var i=0;i<trs.length;i++) trs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
+  if($("st-xt")) $("st-xt").onclick = function(){ ADM_XT = "amailer"; ADM_FILTRE = "tous"; ADM_VU = ""; ADM_Q = ""; ADM_TAB = "candidats"; admRender(); };
 }
 
 /* ══════════ ONGLET STATISTIQUES ══════════ */
@@ -8113,6 +8194,87 @@ function aEteVu(c){
   return !!VU_STATUTS[statutEffectif(c)];
 }
 
+/* ══════════════════════════════════════════════════════════════
+   EXTRAS — QUI EST PARTANT ? (v7.39)
+   Deux sources, lues ensemble mais jamais fusionnees dans la base :
+   - la question « Interesse par des extras ? » de la trame du 1er entretien
+     (rdv_notes, cle r:<bloc>-<question>), posee en face de la personne ;
+   - le parcours extras rempli depuis le bouton du mail (candidats/<id>/extra).
+   Le « mail extras » est reconnu a son CONTENU : un message de la
+   bibliotheque qui porte {lien_extra}. Jamais a son titre, qui peut changer.
+   ══════════════════════════════════════════════════════════════ */
+function cleQExtra(){
+  for(var i=0;i<RDV_TRAME.length;i++){
+    var b = RDV_TRAME[i];
+    if(!/^extras?$/i.test(String(b.t || "").trim())) continue;
+    for(var j=0;j<b.q.length;j++) if(b.q[j].type === "ouinon") return i + "-" + j;
+  }
+  return "";
+}
+function extraInfo(c){
+  var o = { ent:"", obs:"", parc:null, mail:0, ok:false, aMailer:false };
+  if(!c) return o;
+  var k = cleQExtra(), n = c.rdv_notes || {};
+  if(k){ o.ent = n["r:" + k] || ""; o.obs = n[k] || ""; }
+  if(c.extra) o.parc = c.extra.statut || "?";
+  var e = c.envois || {};
+  for(var m in e){
+    if(!e[m]) continue;
+    var msg = (CFG.messages || {})[m];
+    if(msg && String(msg.corps || "").indexOf("{lien_extra}") > -1) o.mail = Math.max(o.mail, e[m]);
+  }
+  o.ok = (o.ent === "oui") || o.parc !== null;
+  o.aMailer = (o.ent === "oui") && !o.mail && o.parc === null;
+  return o;
+}
+var XT_FILTRES = [
+  { k:"",        n:"Tout le monde" },
+  { k:"ok",      n:"OK pour les extras" },
+  { k:"amailer", n:"OK \u2014 mail extras \u00e0 envoyer" },
+  { k:"mailes",  n:"OK \u2014 d\u00e9j\u00e0 contact\u00e9s" },
+  { k:"non",     n:"Pas int\u00e9ress\u00e9s" },
+  { k:"np",      n:"Pas encore renseign\u00e9" }
+];
+function extraFiltre(c, f){
+  var x = extraInfo(c);
+  if(f === "ok")      return x.ok;
+  if(f === "amailer") return x.aMailer;
+  if(f === "mailes")  return x.ok && !x.aMailer;
+  if(f === "non")     return x.ent === "non" && x.parc === null;
+  if(f === "np")      return !x.ent && x.parc === null;
+  return true;
+}
+function extraCell(c){
+  var x = extraInfo(c), h = "";
+  if(x.ent === "oui") h += '<span class="pill2 xt">OK extras</span>';
+  else if(x.ent === "non") h += '<span class="pill2 no">Pas pour les extras</span>';
+  if(x.parc !== null){
+    h += (h ? '<br>' : '') + '<span class="pill2 ' + (x.parc === "oui" ? "hot" : "wip") + '">'
+      + (x.parc === "oui" ? "Parcours \u00b7 statut en place" : (x.parc === "non" ? "Parcours \u00b7 sans statut" : "Parcours commenc\u00e9"))
+      + '</span>';
+  }
+  if(x.mail) h += '<br><span class="dim mono">\u2709 lien extras ' + new Date(x.mail).toLocaleDateString("fr-FR") + '</span>';
+  else if(x.aMailer) h += '<br><span class="dim">mail extras \u00e0 envoyer</span>';
+  return h || '<span class="dim">\u2014</span>';
+}
+/* Pour un mail groupe en copie cachee, hors de l'outil. Reserve a l'admin,
+   comme l'export : une liste d'adresses qui sort, ca se decide. */
+function copierAdresses(liste){
+  var vus = {}, L = [];
+  (liste || []).forEach(function(c){
+    var m = String((c && c.email) || "").trim();
+    if(m && !vus[m.toLowerCase()]){ vus[m.toLowerCase()] = 1; L.push(m); }
+  });
+  if(!L.length){ toast("Aucune adresse mail dans cette liste"); return; }
+  var txt = L.join(", ");
+  var ok = function(){ toast(L.length + " adresse" + (L.length > 1 ? "s" : "") + " copi\u00e9e" + (L.length > 1 ? "s" : "") + " \u2713"); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok).catch(function(){ window.prompt("Copiez les adresses :", txt); });
+  } else {
+    window.prompt("Copiez les adresses :", txt);
+  }
+}
+
 function decisionCell(c){
   var e = etatDe(c), h = "";
   if(e.d1) h += '<span class="pill2 ' + suiviDe(e.d1).c + '">' + esc(suiviDe(e.d1).n) + '</span>';
@@ -8158,6 +8320,9 @@ function admCandidats(){
     var veutVu = (ADM_VU === "oui");
     arr = arr.filter(function(c){ return aEteVu(c) === veutVu; });
   }
+  if(ADM_XT){
+    arr = arr.filter(function(c){ return extraFiltre(c, ADM_XT); });
+  }
   var apresFiltre = arr.length;
   var mots = aplat(ADM_Q).split(/\s+/).filter(Boolean);
   if(mots.length){
@@ -8184,7 +8349,7 @@ function admCandidats(){
       + (cachesFiltre && cachesRech ? ', ' : '')
       + (cachesRech ? cachesRech + ' par la recherche « ' + esc(ADM_Q) + ' »' : '')
       + ' <button class="fraz" id="a-raz2">Tout afficher</button></div>';
-    if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_VU = ""; ADM_Q = ""; admTab(); };
+    if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_VU = ""; ADM_XT = ""; ADM_Q = ""; admTab(); };
     return;
   }
 
@@ -8204,7 +8369,7 @@ function admCandidats(){
      ceux qu'on a vus puis ecartes — c'est-a-dire une bonne partie de la
      reponse a la question posee. */
   var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte_dossier"
-                  || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_VU);
+                  || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_VU || ADM_XT);
   var actifs = arr, archives = [];
   if(separer){
     actifs = [];
@@ -8259,6 +8424,7 @@ function admCandidats(){
             + esc(c.anciennete_metier||c.anciennete||"") + '</span>'
             + (c.cv_url ? '<br><a class="lien" href="' + esc(c.cv_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">📎 CV</a>' : '')
             + '</span></div></td>'; } },
+      { id:"extras", t:"Extras", apres:"candidat", cell:function(c){ return '<td>' + extraCell(c) + '</td>'; } },
       { id:"contact", t:"Contact", cell:function(c){
           return '<td><span class="mono">' + esc(c.tel||"—") + '</span><br><span class="dim">'
             + esc(c.email||"") + '</span></td>'; } },
@@ -8317,7 +8483,15 @@ function admCandidats(){
     ordreColonnes().forEach(function(id){
       if(par[id] && !vus[id]){ vus[id] = 1; ordre.push(id); }
     });
-    defs.forEach(function(d){ if(!vus[d.id]) ordre.push(d.id); });
+    /* Une colonne ajoutee depuis que l'ordre a ete personnalise tombait en
+       bout de tableau, hors de vue. Elle se pose desormais a cote de la
+       colonne qu'elle declare suivre (apres:), si celle-ci est affichee. */
+    defs.forEach(function(d){
+      if(vus[d.id]) return;
+      var p = d.apres ? ordre.indexOf(d.apres) : -1;
+      if(p > -1) ordre.splice(p + 1, 0, d.id); else ordre.push(d.id);
+      vus[d.id] = 1;
+    });
 
     var h = '<table class="cmp"><thead><tr>';
     ordre.forEach(function(id){
@@ -8329,7 +8503,7 @@ function admCandidats(){
     });
     h += '</tr></thead><tbody>';
     liste.forEach(function(c){
-      h += '<tr data-k="' + c._k + '">';
+      h += '<tr data-k="' + c._k + '"' + (extraInfo(c).ok ? ' class="rxt"' : '') + '>';
       ordre.forEach(function(id){ h += par[id].cell(c); });
       h += '</tr>';
     });
@@ -8343,7 +8517,10 @@ function admCandidats(){
     + (cachesRech ? ' \u00b7 <b class="rouge">' + cachesRech + '</b> masquée' + (cachesRech > 1 ? 's' : '') + ' par la recherche' : '')
     + ((cachesFiltre || cachesRech) ? ' <button class="fraz" id="a-raz2">Tout afficher</button>' : '')
     + (ordreColonnes().length ? ' <button class="fraz" id="a-colraz">Remettre les colonnes dans l’ordre d’origine</button>' : '')
-    + '</div>';
+    + ((ADM_XT && estAdmin()) ? ' <button class="fraz" id="a-xtmail">\u2709 Copier les adresses mail de cette liste</button>' : '')
+    + '</div>'
+    + (ADM_XT === "amailer" ? '<p class="aide">Pour leur \u00e9crire \u00e0 part : ouvrez la fiche et envoyez un message de la biblioth\u00e8que '
+        + 'qui contient <b>{lien_extra}</b>. D\u00e8s qu\u2019il est parti, la personne quitte d\u2019elle-m\u00eame cette liste.</p>' : '');
 
   var h = compte + (actifs.length ? tableCand(actifs)
     : '<p class="aide">Aucune candidature active' + (archives.length ? ' \u2014 tout est en archives, dépliez le bloc ci-dessous.' : '.') + '</p>')
@@ -8369,7 +8546,7 @@ function admCandidats(){
   var trs = $("a-cand").querySelectorAll("tr[data-k]");
   for(var i=0;i<trs.length;i++) trs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
   if($("a-arch")) $("a-arch").onclick = function(){ ADM_ARCH = !ADM_ARCH; admCandidats(); };
-  if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_VU = ""; ADM_Q = ""; admTab(); };
+  if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_VU = ""; ADM_XT = ""; ADM_Q = ""; admTab(); };
   var ths = $("a-cand").querySelectorAll("th[data-tri]");
   for(var j=0;j<ths.length;j++) ths[j].onclick = function(){ ADM_TRI = this.getAttribute("data-tri"); admCandidats(); };
 
@@ -8410,6 +8587,7 @@ function admCandidats(){
     };
   }
   if($("a-colraz")) $("a-colraz").onclick = function(){ poserOrdreColonnes([]); admCandidats(); };
+  if($("a-xtmail")) $("a-xtmail").onclick = function(){ copierAdresses(arr); };
   brancherPhotosZoom($("a-cand"));
 }
 
@@ -8580,7 +8758,8 @@ function admFiche(c){
   f.querySelector(".inner").innerHTML =
       '<div class="fhead">'
     + (c.photo ? '<img class="fphoto" src="' + c.photo + '" data-nom="' + esc2(nomComplet(c)) + '" alt="">' : '<div class="fphoto vide">—</div>')
-    + '<div class="fid"><h3>' + esc2(nomComplet(c)) + '</h3>'
+    + '<div class="fid"><h3>' + esc2(nomComplet(c))
+    +   (extraInfo(c).ok ? ' <span class="pill2 xt" style="vertical-align:middle">OK extras</span>' : '') + '</h3>'
     + '<div class="fcoord">'
     + (c.tel ? '<a class="lien" href="tel:' + esc2(c.tel) + '">' + esc2(c.tel) + '</a>' : '<span class="dim">pas de téléphone</span>')
     + (c.email ? ' &nbsp;·&nbsp; <a class="lien" href="mailto:' + esc2(c.email) + '">' + esc2(c.email) + '</a>' : '')
@@ -8668,7 +8847,7 @@ function admFiche(c){
 
 function admCsv(){
   var rows = [["date","statut","etape","prenom","nom","tel","email","suivi","rdv","relance","anciennete","anciennete_metier","experiences","savoirs",
-               "situations","creneaux_rappel","poste_vise","permis","transport","cv","note_revue","offre_par_mail","pitch1","pitch2","pitch3","pitch4","mot_media","score","pourquoi","portrait","mot","quiz"]];
+               "situations","creneaux_rappel","poste_vise","permis","transport","cv","note_revue","offre_par_mail","pitch1","pitch2","pitch3","pitch4","mot_media","score","pourquoi","portrait","mot","quiz","extras_entretien","extras_parcours","mail_extras"]];
   for(var k in LAST_CAND){
     var c = LAST_CAND[k];
     rows.push([
@@ -8681,7 +8860,10 @@ function admCsv(){
       c.offre_mail ? "oui" : "non",
       c.pitch1_url||"", c.pitch2_url||"", c.pitch3_url||"", c.pitch4_url||"", c.motmedia_url||c.media_url||"", c.score||0,
       (c.pourquoi||"").replace(/\n/g," "), (c.portrait||"").replace(/\n/g," "), (c.mot||"").replace(/\n/g," "),
-      (c.quiz||[]).map(function(q){ return (q && q.r) ? (q.q + " → " + q.r) : ""; }).filter(Boolean).join(" // ").replace(/\n/g," ")
+      (c.quiz||[]).map(function(q){ return (q && q.r) ? (q.q + " → " + q.r) : ""; }).filter(Boolean).join(" // ").replace(/\n/g," "),
+      (function(){ var x = extraInfo(c); return x.ent; })(),
+      (function(){ var x = extraInfo(c); return x.parc === null ? "" : x.parc; })(),
+      (function(){ var x = extraInfo(c); return x.mail ? new Date(x.mail).toLocaleDateString("fr-FR") : ""; })()
     ]);
   }
   var csv = rows.map(function(r){
