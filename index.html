@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.50 -->
+<!-- LUMIIA RECRUTE — v7.51 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -814,6 +814,11 @@ body.adm{background:#0d1117;}
 .fiche .envbloc .envhd{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;color:#9fe4ee;white-space:nowrap;}
 .fiche .envbloc details.envh .apercu{margin:0 10px 10px;}
 .fiche .envbloc .apercu:empty{display:none;}
+.fiche .envedit{margin-top:10px;padding:12px 14px;border:1px solid #8a6a1f;border-radius:8px;background:rgba(210,153,34,.06);}
+.fiche .envedit.hidden{display:none;}
+.fiche .envedit .envedw{margin-bottom:10px;padding:8px 10px;border-left:4px solid #d29922;background:rgba(210,153,34,.10);
+  border-radius:6px;color:#f0d79a;font-size:.84rem;line-height:1.5;}
+.fiche .envedit input,.fiche .envedit textarea{width:100%;box-sizing:border-box;}
 .fiche .xtind{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 10px;padding:8px 10px;
   border:1px dashed #6b5f1a;border-radius:8px;background:rgba(255,215,0,.04);}
 .fiche .xtind .xtil{font-size:.7rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#c9b54a;}
@@ -987,7 +992,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.50</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.51</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1002,7 +1007,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.50";
+var VERSION = "v7.51";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4783,8 +4788,14 @@ function blocEnvoi(c){
                : ' &nbsp;\u00b7&nbsp; <span style="color:#ff9c9c">aucune adresse sur cette fiche</span>')
     + '</div>'
     + '<div id="env-apercu" class="apercu"></div>'
+    /* v7.51 — MODIFIER LE MESSAGE depuis la fiche. On modifie le MODELE de la
+       bibliotheque (config/messages/<cle>), pas une copie pour cette personne :
+       le guichet d'envoi ne part que d'un texte qu'il connait (securite), et le
+       besoin — mettre a jour des dates — vaut pour tous les prochains envois. */
+    + '<div id="env-edit" class="envedit hidden"></div>'
     + '<div class="factions" style="margin-top:12px;border:none;padding-top:0;gap:10px">'
     + '<button class="btn" id="env-go" disabled>Envoyer</button>'
+    + '<button class="btn sec" id="env-modif" disabled>\u270f\ufe0f Modifier ce message</button>'
     + '<button class="btn sec" id="env-test" disabled>Envoyer un test interne</button>'
     + '</div>'
     + '<div class="dim" style="margin-top:8px">Le test part sur <b>' + esc(ADM_TEST_EMAIL) + '</b>, '
@@ -4949,6 +4960,8 @@ function brancherEnvoi(c, racine){
     var m = (CFG.messages || {})[sel.value];
     bt.disabled = !m || !c.email;
     var btT0 = racine.querySelector("#env-test"); if(btT0) btT0.disabled = !m;
+    var btM0 = racine.querySelector("#env-modif"); if(btM0) btM0.disabled = !m;
+    fermerEdition();
     if(!m){ zoneAp.innerHTML = ""; return; }
     zoneAp.innerHTML = '<div class="ap-objet">Objet : ' + remplacer(m.objet) + '</div>'
       + '<div class="ap-corps">' + remplacer(m.corps).replace(/\n/g, "<br>") + '</div>'
@@ -4956,6 +4969,51 @@ function brancherEnvoi(c, racine){
       + '. Le bouton est fabriqu\u00e9 par le serveur au moment de l\u2019envoi, avec l\u2019adresse '
       + 'personnelle du destinataire.</div>';
   }
+
+  /* ── EDITION DU MODELE (v7.51) ── */
+  var zoneEd = racine.querySelector("#env-edit"), btM = racine.querySelector("#env-modif");
+  function fermerEdition(){
+    if(!zoneEd) return;
+    zoneEd.className = "envedit hidden"; zoneEd.innerHTML = "";
+    if(zoneAp) zoneAp.style.display = "";
+    if(btM) btM.textContent = "\u270f\ufe0f Modifier ce message";
+  }
+  function ouvrirEdition(){
+    var cle = sel.value, m = (CFG.messages || {})[cle];
+    if(!m || !zoneEd) return;
+    zoneEd.className = "envedit";
+    zoneEd.innerHTML = '<div class="envedw">\u26a0\ufe0f Vous modifiez le mod\u00e8le <b>\u00ab\u00a0' + esc(m.titre || cle) + '\u00a0\u00bb</b> de la biblioth\u00e8que. '
+      + 'Le changement vaut pour <b>tous les prochains envois</b> de ce message, \u00e0 tous les candidats. '
+      + 'Les messages d\u00e9j\u00e0 partis ne changent pas : leur texte reste dans \u00ab\u00a0D\u00e9j\u00e0 envoy\u00e9\u00a0\u00bb.</div>'
+      + '<label class="f">Objet</label><input id="env-ed-objet" type="text" value="' + esc(m.objet || "") + '">'
+      + '<label class="f" style="margin-top:10px">Texte</label><textarea id="env-ed-corps" rows="12">' + esc(m.corps || "") + '</textarea>'
+      + '<div class="dim" style="margin-top:6px">Variables remplac\u00e9es \u00e0 l\u2019envoi : {prenom} {nom} {lien} {lien_extra} {lien_rdv}. '
+      + 'Chaque {lien\u2026} seul sur sa ligne devient un bouton.</div>'
+      + '<div class="factions" style="margin-top:12px;border:none;padding-top:0;gap:10px">'
+      + '<button class="btn" id="env-ed-ok">Enregistrer le mod\u00e8le</button>'
+      + '<button class="btn sec" id="env-ed-annul">Annuler</button></div>';
+    if(zoneAp) zoneAp.style.display = "none";
+    if(btM) btM.textContent = "\u270f\ufe0f Modification en cours\u2026";
+    var ta = zoneEd.querySelector("#env-ed-corps"); if(ta){ ta.focus(); }
+    zoneEd.querySelector("#env-ed-annul").onclick = fermerEdition;
+    zoneEd.querySelector("#env-ed-ok").onclick = function(){
+      var ok = this, objet = zoneEd.querySelector("#env-ed-objet").value, corps = zoneEd.querySelector("#env-ed-corps").value;
+      if(!corps.trim()){ message("Le texte est vide : rien n\u2019est enregistr\u00e9.", "ko"); return; }
+      if(!db){ message("Base indisponible.", "ko"); return; }
+      ok.disabled = true;
+      var patch = { objet: objet, corps: corps, maj: Date.now() };
+      db.ref(FB_PATH + "/config/messages/" + cle).update(patch).then(function(){
+        CFG.messages[cle] = Object.assign({}, CFG.messages[cle] || {}, patch);
+        fermerEdition(); rendreApercu();
+        message("Mod\u00e8le enregistr\u00e9 \u2713 \u2014 l\u2019aper\u00e7u montre le nouveau texte, vous pouvez envoyer.", "ok", true);
+        toast("Mod\u00e8le enregistr\u00e9 \u2713");
+      }).catch(function(e){
+        ok.disabled = false; voyantEchec(e);
+        message("NON ENREGISTR\u00c9 \u2014 " + ((e && e.message) || e), "ko");
+      });
+    };
+  }
+  if(btM) btM.onclick = function(){ if(zoneEd && zoneEd.className.indexOf("hidden") === -1) fermerEdition(); else ouvrirEdition(); };
 
   sel.onchange = rendreApercu;
   rendreApercu();
@@ -5032,7 +5090,12 @@ function brancherEnvoi(c, racine){
     });
   }
 
-  bt.onclick = function(){ envoyer(false); };
+  bt.onclick = function(){
+    if(zoneEd && zoneEd.className.indexOf("hidden") === -1){
+      message("Enregistrez ou annulez d\u2019abord la modification du message.", "ko"); return;
+    }
+    envoyer(false);
+  };
 
   /* ── ENVOI DE TEST ──────────────────────────────────────────────
      Chemin volontairement identique a l'envoi reel : meme guichet, meme
