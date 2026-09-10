@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.44 -->
+<!-- LUMIIA RECRUTE — v7.45 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -724,6 +724,32 @@ body.adm{background:#0d1117;}
 .fiche .suivi details.rdvacc .nenv{margin-left:10px;font-family:'Nunito';font-size:.72rem;font-weight:800;
   letter-spacing:0;color:#9fe4ee;background:rgba(77,217,232,.12);border:1px solid #2c6b76;border-radius:99px;padding:1px 9px;}
 .fiche .envbloc{margin-top:12px;}
+/* frise de progression */
+.fiche .fprog{display:flex;margin:4px 0 18px;padding:16px 8px 12px;border:1px solid #2a323d;border-radius:12px;background:#11161d;}
+.fiche .fpst{position:relative;flex:1;text-align:center;cursor:pointer;min-width:0;padding:0 3px;}
+.fiche .fpst::before{content:"";position:absolute;top:15px;right:50%;width:100%;height:4px;background:#2a323d;z-index:0;}
+.fiche .fpst:first-child::before{display:none;}
+.fiche .fpst.fait::before,.fiche .fpst.saute::before,.fiche .fpst.cur::before{background:#4d9dff;}
+.fiche .fpst.na::before{background:repeating-linear-gradient(90deg,#3a4552 0 6px,transparent 6px 11px);}
+.fiche .fpd{position:relative;z-index:1;width:34px;height:34px;margin:0 auto;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:900;font-size:.9rem;border:3px solid #3a4552;background:#11161d;color:#6b7787;}
+.fiche .fpst.fait .fpd{background:var(--pc);border-color:var(--pc);color:#0b0f14;}
+.fiche .fpst.saute .fpd{width:18px;height:18px;margin-top:8px;margin-bottom:8px;font-size:0;border-color:#4d9dff;}
+.fiche .fpst.na .fpd{width:18px;height:18px;margin-top:8px;margin-bottom:8px;font-size:0;border-style:dashed;}
+.fiche .fpst.cur .fpd{box-shadow:0 0 0 5px rgba(77,157,255,.25),0 0 18px rgba(77,157,255,.55);}
+.fiche .fpst.avenir .fpd{opacity:.7;}
+.fiche .fpt{margin-top:7px;font-size:.7rem;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#8b98a8;}
+.fiche .fpst.fait .fpt,.fiche .fpst.cur .fpt{color:#e6edf3;}
+.fiche .fpv{margin-top:3px;font-size:.74rem;line-height:1.3;color:#9aa7b6;overflow-wrap:anywhere;}
+.fiche .fpst.fait .fpv{color:var(--pc);font-weight:700;}
+.fiche .fpv .fpdt{font-family:ui-monospace,Menlo,monospace;color:#9aa7b6;font-weight:400;}
+.fiche .fpst:hover .fpd{transform:scale(1.08);}
+.fiche .etp.flash{outline:2px solid #4d9dff;outline-offset:4px;border-radius:10px;transition:outline-color .6s;}
+/* journal replie */
+.fiche .suivi details.rdvacc.jour{border-color:#3a4552;background:rgba(148,163,184,.05);}
+.fiche .suivi details.rdvacc.jour > summary{color:#c3ccd6;}
+.fiche .suivi details.rdvacc.jour > summary::before{color:#94a3b8;}
+.fiche .suivi details.rdvacc.jour textarea{margin-top:12px;}
 .fiche .envbloc .pgrp.envnouv{margin-top:20px;padding-top:14px;border-top:1px solid #2c3a44;}
 .fiche .envbloc details.envh{margin-top:8px;border:1px solid #2c6b76;border-radius:8px;background:rgba(77,217,232,.05);}
 .fiche .envbloc details.envh > summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:12px;
@@ -908,7 +934,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.44</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.45</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -923,7 +949,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.44";
+var VERSION = "v7.45";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6516,6 +6542,75 @@ function majCandidat(id, patch){
    OBJET des qu'il en manque un. Le meme champ revient donc sous deux formes
    selon l'historique de la fiche ; sans cette normalisation, un .forEach sur
    la seconde forme casse l'affichage de toute la fiche. */
+/* ══════════════════════════════════════════════════════════════
+   FRISE DE PROGRESSION — v7.45
+   Les 7 etapes en points relies, en tete de fiche : ou en est-on avec
+   cette personne, d'un coup d'oeil. Couleur = issue de l'etape (vert
+   retenu/avance, rouge ecarte, orange en attente, bleu neutre).
+   Les etapes 1 a 4 partagent un seul champ (suivi_statut) : une etape
+   passee n'y laisse plus rien. On la retrouve dans le journal, ou chaque
+   clic de puce est trace (suivi_hist[].st).
+   ══════════════════════════════════════════════════════════════ */
+var PROG_TITRES = { 1:"R\u00e9ception", 2:"Tri", 3:"Contact", 4:"Rendez-vous", 5:"D\u00e9cision", 6:"2\u1d49 RDV", 7:"Averti" };
+function etapeDeCle(k){
+  for(var i=0;i<SUIVI_ETAPES.length;i++) if(SUIVI_ETAPES[i].ks.indexOf(k) > -1) return SUIVI_ETAPES[i].n;
+  return 0;
+}
+function progValeurs(c){
+  var E = etatDe(c), v = {}, nb = etapeDeCle(E.base) || 1;
+  if(nb > 1 && nb <= 4) v[nb] = E.base;
+  /* etapes 1-4 deja franchies : dernier choix trace dans le journal */
+  histTab(c).forEach(function(e){
+    var n = e && e.st ? etapeDeCle(e.st) : 0;
+    if(n > 1 && n < nb && n <= 4) v[n] = e.st;
+  });
+  if(E.d1) v[5] = E.d1;
+  if(E.d2) v[6] = E.d2;
+  if(E.av) v[7] = E.av;
+  var cur = 1;
+  for(var n=1;n<=7;n++) if(v[n]) cur = n;
+  if(nb > cur) cur = nb;
+  return { v:v, cur:cur, six: (E.d1 === "rdv2" || !!E.d2 || !!c.second_rdv) };
+}
+function progHtml(c){
+  var P = progValeurs(c), h = '<div class="fprog" id="fprog">';
+  var COUL = { hot:"#3fb950", no:"#f85149", wip:"#d29922" };
+  for(var n=1;n<=7;n++){
+    var k = P.v[n], cls = "fpst", coul = "", sous = "";
+    if(n === 6 && !P.six){ cls += " na"; sous = "si 2\u1d49 RDV"; }
+    else if(n === 1){ cls += " fait"; coul = "#4d9dff"; sous = "re\u00e7ue"; }
+    else if(k){ cls += " fait"; coul = COUL[suiviDe(k).c] || "#4d9dff"; sous = suiviDe(k).n; }
+    else if(n < P.cur){ cls += " saute"; sous = "\u2014"; }
+    else { cls += " avenir"; }
+    if(n === P.cur) cls += " cur";
+    if(n === 4 && c.rdv_date) sous += '<br><span class="fpdt">' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</span>';
+    if(n === 7 && c.averti_date) sous += '<br><span class="fpdt">' + esc(jourFR(c.averti_date)) + '</span>';
+    h += '<div class="' + cls + '" data-etp="' + n + '"' + (coul ? ' style="--pc:' + coul + '"' : '')
+      + ' title="Aller \u00e0 l\u2019\u00e9tape ' + n + '">'
+      + '<div class="fpd">' + n + '</div>'
+      + '<div class="fpt">' + PROG_TITRES[n] + '</div>'
+      + '<div class="fpv">' + (n === 4 || n === 7 ? sous : esc(sous)) + '</div></div>';
+  }
+  return h + '</div>';
+}
+/* Un clic sur un point amene a l'etape correspondante du parcours. */
+function brancherProg(racine){
+  var pts = racine.querySelectorAll("#fprog .fpst");
+  for(var i=0;i<pts.length;i++) pts[i].onclick = function(){
+    var n = this.getAttribute("data-etp");
+    var etps = racine.querySelectorAll(".suivi .etp"), cible = null;
+    for(var j=0;j<etps.length;j++){ var t = etps[j].querySelector(".etpn"); if(t && t.textContent.trim() === n) cible = etps[j]; }
+    if(!cible) return;
+    var boiteP = cible.closest("details"); if(boiteP) boiteP.open = true;
+    cible.scrollIntoView({ behavior:"smooth", block:"center" });
+    cible.classList.add("flash"); setTimeout(function(){ cible.classList.remove("flash"); }, 1200);
+  };
+}
+function rafraichirProg(c, racine){
+  var v = racine.querySelector("#fprog");
+  if(v && v.parentNode){ v.parentNode.replaceChild(el(progHtml(c)), v); brancherProg(racine); }
+}
+
 function histTab(c){
   var h = (c && c.suivi_hist) || [];
   if(Array.isArray(h)) return h.filter(Boolean);
@@ -7005,13 +7100,18 @@ function blocSuivi(c){
     /* Le journal garde ce qui n'est PAS l'entretien : un appel qui n'aboutit
        pas, un mail de relance, un decalage demande. Sans lui, ces echanges-la
        n'auraient nulle part ou aller. */
-    + '<label class="f">Journal des échanges</label>'
-    + '<textarea id="sv-note" rows="3" placeholder="Un appel, un mail, un imprévu\u2026 (l\u2019entretien, lui, se note dans sa fiche)"></textarea>'
-    + '<div class="factions" style="margin-top:12px;border:none;padding-top:0">'
-    + '<button class="btn" id="sv-save">Ajouter au journal</button>'
-    + '</div>'
+    /* v7.45 : le journal se replie, et n'a plus de bouton — une note s'y
+       ajoute des qu'on quitte le champ, comme tout le reste de la fiche. Le
+       message d'etat reste HORS de l'accordeon : il sert aussi aux puces. */
     + '<div id="sv-err" class="svmsg hidden"></div>'
-    + '<div id="sv-hist">' + histHtml(c) + '</div>';
+    + '<details class="rdvacc jour" id="sv-jouracc"><summary>\ud83d\udcd3 JOURNAL DES \u00c9CHANGES'
+    +   (function(){ var n = histTab(c).filter(function(e){ return !histEntretien(e); }).length;
+          return n ? ' <span class="nenv">' + n + ' entr\u00e9e' + (n > 1 ? "s" : "") + '</span>' : ''; })()
+    + '</summary>'
+    + '<textarea id="sv-note" rows="3" placeholder="Un appel, un mail, un impr\u00e9vu\u2026 (l\u2019entretien, lui, se note dans sa fiche)"></textarea>'
+    + '<div class="dim" style="margin-top:6px">S\u2019ajoute au journal d\u00e8s que vous quittez le champ. Chaque changement d\u2019\u00e9tape y est not\u00e9 tout seul.</div>'
+    + '<div id="sv-hist">' + histHtml(c) + '</div>'
+    + '</details>';
   return h + '</div>';
 }
 
@@ -7024,6 +7124,7 @@ function redessinerSuivi(c, racine){
   vieux.parentNode.replaceChild(el(blocSuivi(c)), vieux);
   brancherSuivi(c, racine);
   brancherEnvoi(c, racine);
+  rafraichirProg(c, racine);
 }
 
 /* ── branchements du bloc suivi (appelé après insertion dans le DOM) ── */
@@ -7033,7 +7134,7 @@ function brancherSuivi(c, racine){
      admFiche AVANT le branchement du bouton Fermer et de la touche Echap :
      la fiche s'ouvrait et ne se refermait plus. Meme faute que d'oublier de
      debrancher le cablage quand on retire l'appareil. */
-  if(!racine.querySelector("#sv-save")) return;
+  if(!racine.querySelector("#sv-note")) return;
   var zone = racine.querySelector("#sv-err");
   var ch   = racine.querySelectorAll("#sv-st .chip");
   var occupe = false;
@@ -7070,7 +7171,7 @@ function brancherSuivi(c, racine){
   /* STATUT — le clic enregistre, puis le bloc est reconstruit : l'etape
      atteinte n'ouvre pas les memes champs que la precedente. */
   for(var i=0;i<ch.length;i++) ch[i].onclick = function(){
-    if(occupe) return;
+    if(occupe){ var moi = this; setTimeout(function(){ if(moi.isConnected) moi.click(); }, 250); return; }
     var k = this.getAttribute("data-sv");
     if(!k) return;
     var champ = champDe(k);
@@ -7118,21 +7219,29 @@ function brancherSuivi(c, racine){
     };
   });
 
-  /* COMPTE RENDU — la seule chose qui garde un bouton. */
-  var bt = racine.querySelector("#sv-save");
-  bt.onclick = function(){
-    if(occupe) return;
-    var champ = racine.querySelector("#sv-note");
-    var txt = (champ.value || "").trim();
-    if(!txt){ message("Le compte rendu est vide : rien à ajouter.", "ko"); return; }
-    bt.disabled = true;
+  /* JOURNAL — plus de bouton (v7.45). La note part quand on quitte le champ,
+     ou a Cmd/Ctrl + Entree. Un brouillon est garde dans le navigateur pendant
+     la frappe : une fermeture brutale de l'onglet ne perd rien. */
+  var champJ = racine.querySelector("#sv-note");
+  var cleJ = "lumiia_journal_" + (c._k || "x");
+  try{ var brJ = localStorage.getItem(cleJ); if(brJ){ champJ.value = brJ; var accJ = racine.querySelector("#sv-jouracc"); if(accJ) accJ.open = true; } }catch(e){}
+  function ajouterJournal(){
+    var txt = (champJ.value || "").trim();
+    if(!txt) return;
+    if(occupe){ setTimeout(ajouterJournal, 250); return; }
     var hist = histTab(c).slice();
     hist.push({ ts: Date.now(), st: c.suivi_statut || "nouveau", txt: txt });
-    ecrire({ suivi_hist: hist }, null, "Compte rendu ajouté ✓").then(function(ok){
-      bt.disabled = false;
-      if(ok) champ.value = "";
+    champJ.value = "";
+    ecrire({ suivi_hist: hist }, function(){ champJ.value = txt; }, "Ajouté au journal ✓").then(function(ok){
+      if(ok){ try{ localStorage.removeItem(cleJ); }catch(e){} }
+      var s = racine.querySelector("#sv-jouracc .nenv"), n = histTab(c).filter(function(e){ return !histEntretien(e); }).length;
+      if(s) s.textContent = n + " entr\u00e9e" + (n > 1 ? "s" : "");
+      else { var sm = racine.querySelector("#sv-jouracc summary"); if(sm && n) sm.insertAdjacentHTML("beforeend", ' <span class="nenv">' + n + ' entr\u00e9e' + (n > 1 ? "s" : "") + '</span>'); }
     });
-  };
+  }
+  champJ.oninput = function(){ try{ if(champJ.value.trim()) localStorage.setItem(cleJ, champJ.value); else localStorage.removeItem(cleJ); }catch(e){} };
+  champJ.onblur = ajouterJournal;
+  champJ.onkeydown = function(ev){ if(ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)){ ev.preventDefault(); ajouterJournal(); } };
 
   /* PANNEAU « LE RENDEZ-VOUS » (v7.15) — depliant, toujours accessible.
      La prise de notes ne part que d'ici ; on lui passe « ecrire » pour que
@@ -8959,6 +9068,7 @@ function admFiche(c){
     + (c.cv_url ? ' &nbsp;·&nbsp; <a class="lien cvlien" href="' + esc2(c.cv_url) + '" target="_blank" rel="noopener">\ud83d\udcce CV</a>' : '')
     + '</div></div>'
     + '<button class="btn sec fclose" id="fi-x">Fermer</button></div>'
+    + (estAdmin() ? progHtml(c) : '')
 
     /* Un jure lit le dossier en entier — c'est ce qu'on lui demande de juger —
        mais n'y trouve aucun levier : ni statut, ni rendez-vous, ni message.
@@ -8966,8 +9076,10 @@ function admFiche(c){
        /recrutement/candidats doit rester ouverte pour que les candidats
        eux-memes puissent deposer et completer leur dossier. C'est donc une
        retenue d'interface, et elle est assumee comme telle. */
-    + boite("Impression g\u00e9n\u00e9rale — AVANT rendez-vous", blocImpression(c, "impression"), "act", true)
-    + boite("Impression g\u00e9n\u00e9rale — APR\u00c8S rendez-vous", blocImpression(c, "impression2"), "act", !!c.rdv_cr)
+    /* v7.45 : une fois la personne rencontree, le jugement sur dossier se
+       replie et celui d'apres rencontre s'ouvre. */
+    + boite("Impression g\u00e9n\u00e9rale — AVANT rendez-vous", blocImpression(c, "impression"), "act", !aEteVu(c))
+    + boite("Impression g\u00e9n\u00e9rale — APR\u00c8S rendez-vous", blocImpression(c, "impression2"), "act", aEteVu(c))
     + (estAdmin() ? boite("Parcours de suivi", blocSuivi(c), "", true) : "")
     + boite("Potentiel", ph)
     + '<div class="fgrid">'
@@ -8995,6 +9107,7 @@ function admFiche(c){
   brancherPhotosZoom(f);
   brancherSuivi(c, f);
   brancherEnvoi(c, f);
+  brancherProg(f);
   brancherImpression(f);
   function ferme(){
     couperMedias(f); f.remove();
