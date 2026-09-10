@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.53 -->
+<!-- LUMIIA RECRUTE — v7.54 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -212,6 +212,35 @@ body.adm{background:#0d1117;}
 #admin .adm-tabs.tgc .adm-tab{font-size:.78rem;padding:7px 12px;background:#15121d;border-color:#2e2445;color:#9b8ec2;}
 #admin .adm-tabs.tgc .adm-tab:hover{background:#1d1829;color:#d8c8f5;}
 #admin .adm-tabs.tgc .adm-tab.on{background:#1f1830;color:#f0e6ff;box-shadow:0 -2px 0 #a855f7 inset;}
+/* v7.54 — accueil */
+#admin .home .hproc{display:flex;flex-wrap:wrap;align-items:stretch;row-gap:10px;padding-bottom:6px;}
+#admin .home .harr{align-self:center;color:#3a4552;font-size:1.1rem;padding:0 2px;flex:0 0 auto;}
+#admin .home .hstep{flex:1 1 0;min-width:112px;border:1px solid #2a323d;border-radius:12px;padding:12px;background:#11161d;cursor:pointer;
+  display:flex;flex-direction:column;gap:6px;transition:border-color .15s,transform .15s;}
+#admin .home .hstep:hover{border-color:#58a6ff;transform:translateY(-2px);}
+#admin .home .hstep .hn{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;
+  background:#1a212a;border:2px solid #3a4552;color:#8b98a8;}
+#admin .home .hstep .ht{font-weight:900;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;color:#c3ccd6;}
+#admin .home .hstep .hc{font-size:.82rem;color:#6b7787;}
+#admin .home .hstep .hc b{font-size:1.6rem;color:#6b7787;margin-right:3px;}
+#admin .home .hstep.actif{border-color:#2c5a8a;background:linear-gradient(180deg,rgba(77,157,255,.10),#11161d);}
+#admin .home .hstep.actif .hn{background:#4d9dff;border-color:#4d9dff;color:#04121f;}
+#admin .home .hstep.actif .hc,#admin .home .hstep.actif .hc b{color:#79b8ff;}
+#admin .home .hstep.fin.actif{border-color:#2f7a3d;background:linear-gradient(180deg,rgba(63,185,80,.10),#11161d);}
+#admin .home .hstep.fin.actif .hn{background:#3fb950;border-color:#3fb950;}
+#admin .home .hstep.fin.actif .hc,#admin .home .hstep.fin.actif .hc b{color:#7ee787;}
+#admin .home .hstep .hf{font-size:.78rem;line-height:1.4;color:#9aa7b6;}
+#admin .home .hstep .ho{font-size:.72rem;line-height:1.35;color:#7d8b9c;margin-top:auto;padding-top:6px;border-top:1px dashed #2a323d;}
+#admin .hcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;}
+#admin .hrdv{padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent;}
+#admin .hrdv:hover{border-color:#2a323d;background:#161b22;}
+#admin .hout{display:flex;gap:12px;align-items:flex-start;padding:9px 10px;border-radius:8px;cursor:pointer;}
+#admin .hout:hover{background:#161b22;}
+#admin .hout .hi{font-size:1.25rem;line-height:1.2;}
+#admin .hregles summary{cursor:pointer;font-weight:900;color:#c3ccd6;}
+#admin .hregles ol{margin:12px 0 0 18px;color:#9aa7b6;line-height:1.6;font-size:.88rem;}
+#admin .hband{margin:8px 0 12px;padding:10px 13px;border:1px solid #2c5a8a;border-left:4px solid #4d9dff;border-radius:8px;
+  background:rgba(77,157,255,.07);color:#c9dcf2;font-size:.86rem;line-height:1.5;}
 #admin .cfgband{margin:12px 0 0;padding:9px 13px;border:1px solid #4a2f80;border-left:4px solid #a855f7;border-radius:8px;
   background:rgba(168,85,247,.07);color:#cbb8ee;font-size:.84rem;}
 
@@ -992,7 +1021,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.53</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.54</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1007,7 +1036,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.53";
+var VERSION = "v7.54";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4502,6 +4531,7 @@ function admLoad(){
       if(!CAND_RECUS){ CAND_RECUS = true; admTab(); }
       else if(ADM_TAB === "candidats") admCandidats();
       else if(ADM_TAB === "suivi") tabSuivi();
+      else if(ADM_TAB === "accueil") tabAccueil();   /* aucun champ de saisie : sans risque */
     });
   });
 }
@@ -5199,30 +5229,36 @@ function brancherEnvoi(c, racine){
 /* ══════════════════════════════════════
    BACK-OFFICE — onglets
    ══════════════════════════════════════ */
-var ADM_TAB = "candidats";
+var ADM_TAB = "accueil";
 /* v7.50 — DEUX FAMILLES D'ONGLETS.
    g:"u" = UTILISATION : ce qu'on fait au quotidien avec les candidatures.
    g:"c" = CONTENUS & REGLAGES : ce qui modifie l'app elle-meme — ce que les
    candidats voient, recoivent, et la facon dont on les note. Les deux sont
    separes a l'ecran pour ne jamais modifier un contenu en croyant consulter. */
+/* v7.54 — dans l'ORDRE DU PROCESS. Recrutement : on accueille, on lit, on
+   juge, on fixe les RDV, on les suit, puis les extras et le bilan.
+   Contenus : dans l'ordre ou le candidat les rencontre, puis les messages,
+   la notation, les reglages. La Boite aux lettres (livraisons de Claude)
+   quitte le quotidien : c'est un outil technique. */
 var ADM_TABS = [
+  { k:"accueil",    n:"\ud83c\udfe0 Accueil",   g:"u" },
   { k:"candidats",  n:"Candidats",           g:"u" },
-  { k:"suivi",      n:"Suivi & RDV",         g:"u" },
-  { k:"creneaux",   n:"Créneaux",            g:"u" },
   { k:"revue",      n:"Revue des réponses",  g:"u" },
   { k:"avis",       n:"Avis de l’équipe",    g:"u" },
+  { k:"creneaux",   n:"Créneaux",            g:"u" },
+  { k:"suivi",      n:"Suivi & RDV",         g:"u" },
   { k:"extras",     n:"Extras",              g:"u" },
-  { k:"inbox",      n:"Boîte aux lettres",   g:"u" },
   { k:"stats",      n:"Statistiques",        g:"u" },
-  { k:"messages",   n:"Messages",            g:"c" },
   { k:"offre",      n:"Offre & postes",      g:"c" },
-  { k:"textes",     n:"Textes de l’app",     g:"c" },
   { k:"quiz",       n:"Quiz",                g:"c" },
   { k:"situations", n:"Mises en situation",  g:"c" },
   { k:"pitchs",     n:"Pitchs",              g:"c" },
+  { k:"textes",     n:"Textes de l’app",     g:"c" },
   { k:"listes",     n:"Listes déroulantes",  g:"c" },
+  { k:"messages",   n:"Messages",            g:"c" },
   { k:"potentiel",  n:"Potentiel",           g:"c" },
-  { k:"reglages",   n:"Réglages",            g:"c" }
+  { k:"reglages",   n:"Réglages",            g:"c" },
+  { k:"inbox",      n:"Boîte aux lettres",   g:"c" }
 ];
 var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "avancement", ADM_SENS = 1, ADM_Q = "", ADM_VU = "", ADM_XT = "";
 /* Archives repliees par defaut : voir admCandidats. */
@@ -5325,7 +5361,7 @@ function admRender(){
 }
 
 function admTab(){
-  var f = { candidats:tabCandidats, revue:tabRevue, avis:tabAvis, extras:tabExtras, suivi:tabSuivi, creneaux:tabCreneaux, inbox:tabInbox, stats:tabStats, potentiel:tabPotentiel,
+  var f = { accueil:tabAccueil, candidats:tabCandidats, revue:tabRevue, avis:tabAvis, extras:tabExtras, suivi:tabSuivi, creneaux:tabCreneaux, inbox:tabInbox, stats:tabStats, potentiel:tabPotentiel,
             messages:tabMessages,
             textes:tabTextes, quiz:tabQuiz, situations:tabSituations,
             pitchs:tabPitchs, offre:tabOffre, listes:tabListes, reglages:tabReglages }[ADM_TAB];
@@ -6478,6 +6514,12 @@ function tabCandidats(){
     });
     h += '</optgroup>';
   });
+  h += '<optgroup label="Travail \u00e0 faire (comme l\u2019accueil)">';
+  HOME_ETAPES.forEach(function(e){
+    h += '<option value="h:' + e.n + '"' + (ADM_FILTRE === "h:" + e.n ? " selected" : "") + '>'
+      + (e.n === 8 ? "\u2713" : e.n) + ' \u00b7 ' + esc(e.t) + ' \u2014 ' + esc(e.lib) + '</option>';
+  });
+  h += '</optgroup>';
   h += '<optgroup label="Raccourcis">'
     + '<option value="x:attente"' + (ADM_FILTRE === "x:attente" ? " selected" : "") + '>\u23f3 D\u00e9cision prise, pas encore officialis\u00e9e</option>'
     + '</optgroup>';
@@ -8674,6 +8716,125 @@ function poserOrdreColonnes(l){
    dossier) et a l'etape 5 (apres entretien) — le statut seul ne peut pas
    trancher, seules les notes le peuvent. */
 var VU_STATUTS = { rdv2:1, retenu:1, retenu2:1, ecarte2:1, indispo_rdv:1, averti_non:1, averti_mail:1, averti_tel:1 };
+/* ══════════════════════════════════════════════════════════════
+   ACCUEIL — v7.54
+   Une personne qui ouvre l'app pour la premiere fois doit comprendre QUOI
+   faire, dans QUEL ORDRE, et OU. HOME_ETAPES decrit le travail etape par
+   etape : ce qu'on y fait, ou on le fait, et quels dossiers attendent.
+   Le meme tableau alimente le filtre « h:N » de l'onglet Candidats : un clic
+   sur une carte ouvre exactement la liste annoncee.
+   ══════════════════════════════════════════════════════════════ */
+var HOME_ETAPES = [
+  { n:1, t:"R\u00e9ception", lib:"\u00e0 trier",
+    faire:"Lire chaque nouvelle candidature et d\u00e9cider : \u00e0 contacter, ou \u00e9cart\u00e9 sur dossier.",
+    ou:"Fiche du candidat \u2192 \u00e9tape 2. Pour comparer les r\u00e9ponses : Revue des r\u00e9ponses.",
+    f:function(c){ return etatDe(c).base === "nouveau" && !estArchive(c); } },
+  { n:2, t:"Tri sur dossier", lib:"\u00e0 contacter",
+    faire:"Prendre contact : t\u00e9l\u00e9phone, ou message envoy\u00e9 depuis la fiche (le mail fait passer \u00e0 l\u2019\u00e9tape 3).",
+    ou:"Fiche \u2192 \u00e9tape 2 \u2192 \u2709\ufe0f Envoyer un message.",
+    f:function(c){ return etatDe(c).base === "a_contacter" && !estArchive(c); } },
+  { n:3, t:"Prise de contact", lib:"RDV \u00e0 fixer",
+    faire:"Fixer le rendez-vous : une date dans la fiche, ou un cr\u00e9neau que le candidat choisit lui-m\u00eame.",
+    ou:"Fiche \u2192 \u00e9tape 4 (date) \u00b7 onglet Cr\u00e9neaux + message avec {lien_rdv}.",
+    f:function(c){ var b = etatDe(c).base; return (b === "contacte_tel" || b === "mail_envoye") && !estArchive(c); } },
+  { n:4, t:"Rendez-vous", lib:"RDV \u00e0 venir",
+    faire:"Mener l\u2019entretien avec la trame : chaque r\u00e9ponse s\u2019enregistre toute seule.",
+    ou:"Fiche \u2192 \u00e9tape 4 \u2192 \ud83d\udcc5 Le premier rendez-vous.",
+    f:function(c){ var r = rdvProchain(c, aujourdhui()); return !!r && r.n === 1; } },
+  { n:5, t:"D\u00e9cision interne", lib:"d\u00e9cision \u00e0 prendre",
+    faire:"Apr\u00e8s l\u2019entretien : retenu, 2\u1d49 RDV, \u00e9cart\u00e9 ou plus disponible. Noter l\u2019impression APR\u00c8S rendez-vous.",
+    ou:"Fiche \u2192 \u00e9tape 5 \u00b7 l\u2019avis des autres : Avis de l\u2019\u00e9quipe.",
+    f:function(c){ var e = etatDe(c);
+      return !estFerme(c) && !e.d1 && e.base === "rdv" && (aEteVu(c) || (c.rdv_date && c.rdv_date < aujourdhui())); } },
+  { n:6, t:"2\u1d49 rendez-vous", lib:"en cours",
+    faire:"Revoir la personne, puis trancher : retenu ou \u00e9cart\u00e9 apr\u00e8s le 2\u1d49 RDV.",
+    ou:"Fiche \u2192 \u00e9tape 6 \u2192 \ud83d\udcc5 Le deuxi\u00e8me rendez-vous.",
+    f:function(c){ var e = etatDe(c); return e.d1 === "rdv2" && !e.d2; } },
+  { n:7, t:"Candidat averti", lib:"\u00e0 pr\u00e9venir",
+    faire:"Annoncer la d\u00e9cision \u00e0 la personne, par mail ou par t\u00e9l\u00e9phone, puis cocher l\u2019\u00e9tape 7.",
+    ou:"Fiche \u2192 \u00e9tape 2 (message) puis \u00e9tape 7.",
+    f:function(c){ return enAttenteOfficielle(c); } },
+  { n:8, t:"Termin\u00e9", lib:"termin\u00e9s",
+    faire:"Plus rien \u00e0 faire. Les \u00e9cart\u00e9s peuvent \u00eatre rang\u00e9s dans les archives.",
+    ou:"Onglet Candidats, en bas de liste.",
+    f:function(c){ return estTermine(c); } }
+];
+function homeEtape(n){ for(var i=0;i<HOME_ETAPES.length;i++) if(HOME_ETAPES[i].n === n) return HOME_ETAPES[i]; return null; }
+
+function tabAccueil(){
+  var arr = [];
+  for(var k in LAST_CAND){ var o = LAST_CAND[k]; if(o){ o._k = k; arr.push(o); } }
+  var auj = aujourdhui();
+  var h = '<div class="adm-sec home">'
+    + '<h2>Le recrutement, \u00e9tape par \u00e9tape</h2>'
+    + '<p class="aide">Chaque candidature avance de gauche \u00e0 droite. Le chiffre dit combien de dossiers '
+    + '<b>attendent une action</b> \u00e0 cette \u00e9tape ; un clic ouvre la liste. Tout se fait dans la <b>fiche</b> '
+    + 'du candidat (clic sur une ligne de l\u2019onglet Candidats), et chaque clic s\u2019enregistre tout seul.</p>'
+    + '<div class="hproc">';
+  HOME_ETAPES.forEach(function(e, i){
+    var n = arr.filter(e.f).length;
+    h += (i ? '<div class="harr">\u2192</div>' : '')
+      + '<div class="hstep' + (n ? ' actif' : '') + (e.n === 8 ? ' fin' : '') + '" data-h="' + e.n + '" title="Voir ces dossiers">'
+      +   '<div class="hn">' + (e.n === 8 ? '\u2713' : e.n) + '</div>'
+      +   '<div class="ht">' + e.t + '</div>'
+      +   '<div class="hc"><b>' + n + '</b> ' + e.lib + '</div>'
+      +   '<div class="hf">' + e.faire + '</div>'
+      +   '<div class="ho">\ud83d\udccd ' + esc(e.ou) + '</div>'
+      + '</div>';
+  });
+  h += '</div></div>';
+
+  /* Prochains rendez-vous : ce qui arrive dans les 7 jours. */
+  var sem = new Date(); sem.setDate(sem.getDate() + 7);
+  var lim = sem.getFullYear() + "-" + ("0" + (sem.getMonth()+1)).slice(-2) + "-" + ("0" + sem.getDate()).slice(-2);
+  var rdv = [];
+  arr.forEach(function(c){ var r = rdvProchain(c, auj); if(r && r.d <= lim) rdv.push({ c:c, r:r }); });
+  rdv.sort(function(a,b){ return (a.r.d + a.r.h) < (b.r.d + b.r.h) ? -1 : 1; });
+  h += '<div class="hcols"><div class="adm-sec"><h2>\ud83d\udcc5 Rendez-vous des 7 prochains jours</h2>';
+  if(!rdv.length) h += '<p class="aide">Aucun rendez-vous pr\u00e9vu cette semaine.</p>';
+  rdv.forEach(function(o){
+    h += '<div class="hrdv" data-fiche="' + esc(o.c._k) + '"><span class="mono">' + esc(jourFR(o.r.d)) + (o.r.h ? ' ' + esc(o.r.h) : '')
+      + '</span> <b>' + esc(nomComplet(o.c)) + '</b>' + (o.r.n === 2 ? ' <span class="pill2 wip">2\u1d49 RDV</span>' : '') + '</div>';
+  });
+  h += '</div>';
+
+  /* Ou sont les outils : chaque besoin, son endroit. */
+  var OUT = [
+    ["\u2709\ufe0f", "Envoyer un message", "Fiche \u2192 \u00e9tape 2. Le texte se modifie au m\u00eame endroit (bouton \u270f\ufe0f).", "candidats"],
+    ["\u2b50", "Noter les r\u00e9ponses \u00e9crites et vid\u00e9o", "Revue des r\u00e9ponses : une question \u00e0 la fois, tous les candidats c\u00f4te \u00e0 c\u00f4te.", "revue"],
+    ["\ud83d\udc65", "Voir l\u2019avis de l\u2019\u00e9quipe", "Avis de l\u2019\u00e9quipe : impression de chacun, \u00e9carts, codes jury.", "avis"],
+    ["\ud83d\udd52", "Proposer des cr\u00e9neaux", "Cr\u00e9neaux : le candidat r\u00e9serve lui-m\u00eame via le bouton \u00ab Choisir mon cr\u00e9neau \u00bb.", "creneaux"],
+    ["\ud83c\udf1f", "Les extras", "Extras : qui a dit OUI en entretien, \u00e0 qui \u00e9crire, qui a rempli le parcours.", "extras"],
+    ["\u2699\ufe0f", "Changer ce que voient les candidats", "Rang\u00e9e violette : offre, quiz, textes, messages, notation.", "offre"]
+  ];
+  h += '<div class="adm-sec"><h2>\ud83e\udded O\u00f9 faire quoi</h2>';
+  OUT.forEach(function(o){
+    h += '<div class="hout" data-tab="' + o[3] + '"><span class="hi">' + o[0] + '</span><div><b>' + o[1] + '</b>'
+      + '<div class="dim">' + o[2] + '</div></div></div>';
+  });
+  h += '</div></div>';
+
+  /* Les regles du jeu, pour quelqu'un qui arrive. */
+  h += '<details class="adm-sec hregles"><summary>\ud83d\udca1 Premi\u00e8re fois ici ? Les 5 choses \u00e0 savoir</summary><ol>'
+    + '<li><b>La fiche est le centre.</b> Onglet Candidats, clic sur une ligne : tout le parcours du candidat s\u2019y trouve, \u00e9tape par \u00e9tape.</li>'
+    + '<li><b>Rien \u00e0 valider.</b> Un clic sur une puce, une date, une note : c\u2019est enregistr\u00e9. Le voyant vert en haut le confirme.</li>'
+    + '<li><b>La frise en t\u00eate de fiche</b> dit o\u00f9 en est la personne. Vert = avanc\u00e9, rouge = \u00e9cart\u00e9, orange = en attente.</li>'
+    + '<li><b>Une d\u00e9cision n\u2019est pas finie tant que la personne n\u2019est pas pr\u00e9venue</b> (\u00e9tape 7). L\u2019accueil compte celles qui restent.</li>'
+    + '<li><b>Rien n\u2019\u00e9limine automatiquement.</b> Le potentiel range la pile, c\u2019est l\u2019\u00e9quipe qui d\u00e9cide.</li>'
+    + '</ol></details>';
+
+  panneau(h);
+  var st = document.querySelectorAll("#adm-tab .hstep");
+  for(var i=0;i<st.length;i++) st[i].onclick = function(){
+    ADM_FILTRE = "h:" + this.getAttribute("data-h"); ADM_VU = ""; ADM_XT = ""; ADM_Q = "";
+    ADM_TAB = "candidats"; admRender();
+  };
+  var ot = document.querySelectorAll("#adm-tab .hout");
+  for(var j=0;j<ot.length;j++) ot[j].onclick = function(){ ADM_TAB = this.getAttribute("data-tab"); admRender(); };
+  var rv = document.querySelectorAll("#adm-tab .hrdv");
+  for(var r2=0;r2<rv.length;r2++) rv[r2].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-fiche")]); };
+}
+
 function aEteVu(c){
   if(!c) return false;
   if(c.rdv_cr || c.rdv2_cr) return true;
@@ -8974,7 +9135,10 @@ function admCandidats(){
      chaque dossier : affiche, en archives, ou retire par un filtre. Un
      dossier qui disparait sans explication est le pire defaut possible ici. */
   var totalBase = arr.length;
-  if(ADM_FILTRE === "x:attente"){
+  if(ADM_FILTRE.indexOf("h:") === 0){
+    var he = homeEtape(Number(ADM_FILTRE.slice(2)));
+    if(he) arr = arr.filter(he.f);
+  } else if(ADM_FILTRE === "x:attente"){
     arr = arr.filter(enAttenteOfficielle);
   } else if(ADM_FILTRE.indexOf("sv:") === 0){
     var sv = ADM_FILTRE.slice(3);
@@ -9030,7 +9194,7 @@ function admCandidats(){
      ceux qu'on a vus puis ecartes — c'est-a-dire une bonne partie de la
      reponse a la question posee. */
   var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte_dossier"
-                  || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_FILTRE.indexOf("x:") === 0 || ADM_VU || ADM_XT);
+                  || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_FILTRE.indexOf("x:") === 0 || ADM_FILTRE.indexOf("h:") === 0 || ADM_VU || ADM_XT);
   var actifs = arr, fermes = [], archives = [];
   if(separer){
     actifs = [];
@@ -9193,6 +9357,13 @@ function admCandidats(){
       })()
     + ((ADM_XT && estAdmin()) ? ' <button class="fraz" id="a-xtmail">\u2709 Copier les adresses mail de cette liste</button>' : '')
     + '</div>'
+    + (function(){
+        if(ADM_FILTRE.indexOf("h:") !== 0) return "";
+        var e = homeEtape(Number(ADM_FILTRE.slice(2))); if(!e) return "";
+        return '<div class="hband"><b>' + (e.n === 8 ? '\u2713' : '\u00c9tape ' + e.n) + ' \u00b7 ' + e.t + '</b> \u2014 ' + e.faire
+          + '<br><span class="dim">\ud83d\udccd ' + esc(e.ou) + '</span>'
+          + ' <a class="lien" href="#" id="a-home">\u2190 retour \u00e0 l\u2019accueil</a></div>';
+      })()
     + (ADM_XT === "amailer" ? '<p class="aide">Pour leur \u00e9crire \u00e0 part : ouvrez la fiche et envoyez un message de la biblioth\u00e8que '
         + 'qui contient <b>{lien_extra}</b>. D\u00e8s qu\u2019il est parti, la personne quitte d\u2019elle-m\u00eame cette liste.</p>' : '');
 
@@ -9290,6 +9461,7 @@ function admCandidats(){
   }
   if($("a-colraz")) $("a-colraz").onclick = function(){ poserOrdreColonnes([]); admCandidats(); };
   if($("a-xtmail")) $("a-xtmail").onclick = function(){ copierAdresses(arr); };
+  if($("a-home")) $("a-home").onclick = function(ev){ ev.preventDefault(); ADM_FILTRE = "tous"; ADM_TAB = "accueil"; admRender(); };
   if($("a-trizero")) $("a-trizero").onclick = function(ev){ ev.preventDefault(); ADM_TRI = "avancement"; ADM_SENS = 1; admCandidats(); };
   if($("a-att")) $("a-att").onclick = function(){ ADM_FILTRE = "x:attente"; ADM_VU = ""; ADM_XT = ""; ADM_Q = ""; admTab(); };
   brancherPhotosZoom($("a-cand"));
