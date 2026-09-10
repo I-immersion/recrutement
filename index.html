@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.51 -->
+<!-- LUMIIA RECRUTE — v7.52 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -992,7 +992,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.51</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.52</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1007,7 +1007,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.51";
+var VERSION = "v7.52";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -5066,6 +5066,26 @@ function brancherEnvoi(c, racine){
         var nb2 = racine.querySelector("#sv-msgacc .nenv");
         if(nb2) nb2.textContent = envoisListe(c).length + " d\u00e9j\u00e0 envoy\u00e9" + (envoisListe(c).length > 1 ? "s" : "");
         sel.value = ""; rendreApercu();
+        /* v7.52 — un mail parti a quelqu'un qu'on n'avait pas encore contacte
+           fait passer le dossier a l'etape 3 « Envoye mail », tout seul. Seulement
+           depuis « A traiter » ou « A contacter » : on ne fait jamais reculer un
+           dossier deja plus loin, et on ne rouvre pas un dossier ecarte. */
+        var baseAv = etatDe(c).base;
+        if(baseAv === "nouveau" || baseAv === "a_contacter"){
+          var titreEnv = ((CFG.messages || {})[cle] || {}).titre || cle;
+          var histE = histTab(c).slice();
+          histE.push({ ts: Date.now(), st: "mail_envoye", txt: "Mail envoy\u00e9 : " + titreEnv });
+          majCandidat(c._k, { suivi_statut: "mail_envoye", suivi_hist: histE }).then(function(){
+            c.suivi_statut = "mail_envoye"; c.suivi_hist = histE; c._meule = null;
+            c._accMsgOuvert = true;   /* l'accordeon reste ouvert apres le redessin */
+            redessinerSuivi(c, racine);
+            toast("Message envoy\u00e9 \u2713 \u2014 \u00e9tape 3 : Envoy\u00e9 mail");
+          }).catch(function(e3){
+            voyantEchec(e3);
+            message("Message envoy\u00e9 \u2713 mais l\u2019\u00e9tape 3 n\u2019a pas pu \u00eatre enregistr\u00e9e : cliquez \u00ab\u00a0Envoy\u00e9 mail\u00a0\u00bb.", "ko");
+          });
+          return;
+        }
         message("Message envoyé ✓ — il figure maintenant dans « Déjà envoyé »", "ok", true);
         toast("Message envoyé ✓");
         return;
@@ -7247,7 +7267,7 @@ function blocSuivi(c){
        en cours sur « A contacter ». */
     if(e.n === 2 && voirMsg){
       var nEnv = envoisListe(c).length;
-      h += '<details class="rdvacc msg" id="sv-msgacc"' + (st === "a_contacter" ? " open" : "") + '>'
+      h += '<details class="rdvacc msg" id="sv-msgacc"' + ((st === "a_contacter" || c._accMsgOuvert) ? " open" : "") + '>'
         + '<summary>\u2709\ufe0f ENVOYER UN MESSAGE'
         + (nEnv ? ' <span class="nenv">' + nEnv + ' d\u00e9j\u00e0 envoy\u00e9' + (nEnv > 1 ? "s" : "") + '</span>' : '')
         + '</summary>' + blocEnvoi(c) + '</details>';
