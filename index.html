@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.43 -->
+<!-- LUMIIA RECRUTE — v7.44 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -724,6 +724,17 @@ body.adm{background:#0d1117;}
 .fiche .suivi details.rdvacc .nenv{margin-left:10px;font-family:'Nunito';font-size:.72rem;font-weight:800;
   letter-spacing:0;color:#9fe4ee;background:rgba(77,217,232,.12);border:1px solid #2c6b76;border-radius:99px;padding:1px 9px;}
 .fiche .envbloc{margin-top:12px;}
+.fiche .envbloc .pgrp.envnouv{margin-top:20px;padding-top:14px;border-top:1px solid #2c3a44;}
+.fiche .envbloc details.envh{margin-top:8px;border:1px solid #2c6b76;border-radius:8px;background:rgba(77,217,232,.05);}
+.fiche .envbloc details.envh > summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:12px;
+  align-items:center;padding:9px 12px;font-size:.88rem;}
+.fiche .envbloc details.envh > summary::-webkit-details-marker{display:none;}
+.fiche .envbloc details.envh > summary::before{content:"\25b8";color:#4dd9e8;font-size:.75rem;margin-right:2px;transition:transform .15s;}
+.fiche .envbloc details.envh[open] > summary::before{transform:rotate(90deg);}
+.fiche .envbloc .envht{flex:1;font-weight:800;color:#cfeff3;}
+.fiche .envbloc .envhd{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;color:#9fe4ee;white-space:nowrap;}
+.fiche .envbloc details.envh .apercu{margin:0 10px 10px;}
+.fiche .envbloc .apercu:empty{display:none;}
 .fiche .xtind{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:6px 0 10px;padding:8px 10px;
   border:1px dashed #6b5f1a;border-radius:8px;background:rgba(255,215,0,.04);}
 .fiche .xtind .xtil{font-size:.7rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#c9b54a;}
@@ -897,7 +908,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.43</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.44</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -912,7 +923,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.43";
+var VERSION = "v7.44";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4675,12 +4686,17 @@ function blocEnvoi(c){
   var L = messagesTries();
   /* v7.42 : classe propre. Le bloc vit desormais DANS le parcours de suivi, et
      redessinerSuivi() reconnait ce dernier a sa classe .suivi. */
-  var h = '<div class="envbloc">';
+  /* v7.44 : ce qui a DEJA ete envoye passe en tete, chaque message dans son
+     accordeon. En dessous, le nouvel envoi part d'un menu VIDE : le premier
+     message de la bibliotheque s'affichait d'office avec son apercu, et on le
+     lisait comme un message deja parti. */
+  var h = '<div class="envbloc"><div id="env-hist">' + envoisHtml(c) + '</div>';
   if(!L.length){
     return h + '<p class="aide">Aucun message n\u2019est encore écrit. Onglet <b>Messages</b> pour en créer.</p></div>';
   }
-  h += '<label class="f">Message à envoyer</label>'
-    + '<select id="env-cle" style="width:100%">';
+  h += '<div class="pgrp envnouv">Nouvel envoi</div>'
+    + '<select id="env-cle" style="width:100%">'
+    + '<option value="" selected>\u2014 Choisir le message \u00e0 envoyer \u2014</option>';
   L.forEach(function(o){ h += '<option value="' + esc(o.k) + '">' + esc(o.m.titre) + '</option>'; });
   h += '</select>'
     + '<div class="dim" style="margin-top:8px">Destinataire : <b>' + esc(nomComplet(c)) + '</b>'
@@ -4689,8 +4705,8 @@ function blocEnvoi(c){
     + '</div>'
     + '<div id="env-apercu" class="apercu"></div>'
     + '<div class="factions" style="margin-top:12px;border:none;padding-top:0;gap:10px">'
-    + '<button class="btn" id="env-go"' + (c.email ? '' : ' disabled') + '>Envoyer</button>'
-    + '<button class="btn sec" id="env-test">Envoyer un test interne</button>'
+    + '<button class="btn" id="env-go" disabled>Envoyer</button>'
+    + '<button class="btn sec" id="env-test" disabled>Envoyer un test interne</button>'
     + '</div>'
     + '<div class="dim" style="margin-top:8px">Le test part sur <b>' + esc(ADM_TEST_EMAIL) + '</b>, '
     + 'au nom de <b>' + esc(ADM_TEST_PRENOM + " " + ADM_TEST_NOM) + '</b>, par le m\u00eame chemin qu\u2019un envoi r\u00e9el. '
@@ -4706,26 +4722,70 @@ function blocEnvoi(c){
     +   '</div>'
     +   '<div class="dim" style="margin-top:6px">Le m\u00eame code que pour ouvrir l\u2019admin. '
     +   'Vous restez connect\u00e9, il n\u2019est pas conserv\u00e9.</div>'
-    + '</div>'
-    + '<div id="env-hist">' + envoisHtml(c) + '</div>';
+    + '</div>';
   return h + '</div>';
 }
 
-function envoisHtml(c){
-  var e = c.envois || {}, lignes = [];
+/* Variables remplacees COMME LE SERVEUR LE FERA — sert a l'apercu d'un nouvel
+   envoi ET a la relecture d'un message deja parti. */
+function apercuTexte(c, t){
+  var pr = String(c.prenom || "").trim(), no = String(c.nom || "").trim();
+  var s = esc(String(t || ""));
+  s = s.split("{prenom}").join(pr ? esc(pr) : '<span class="vide">pr\u00e9nom absent de la fiche</span>');
+  s = s.split("{nom}").join(no ? esc(no) : '<span class="vide">nom absent de la fiche</span>');
+  /* Les deux longues AVANT {lien}, qu'elles contiennent. */
+  s = s.split("{lien_extra}").join('<span class="lienbtn cyan">LES EXTRAS, \u00c7A M\u2019INT\u00c9RESSE</span>');
+  s = s.split("{lien_rdv}").join('<span class="lienbtn lime">CHOISIR MON CR\u00c9NEAU</span>');
+  s = s.split("{lien}").join('<span class="lienbtn">REPRENDRE MA CANDIDATURE</span>');
+  return s;
+}
+
+/* HISTORIQUE DES ENVOIS — v7.44.
+   Deux sources :
+   - envois_hist : ecrit par l'app a chaque envoi reussi depuis la v7.44. Une
+     entree PAR ENVOI, avec le texte tel qu'il est parti. C'est la source exacte.
+   - envois : ecrit par le serveur, une seule date par message (un renvoi
+     ecrase la precedente). Pour les envois d'avant la v7.44 c'est tout ce qu'on
+     a : le texte montre est alors celui de la bibliotheque AUJOURD'HUI. */
+function envoisListe(c){
+  var L = [], hist = c.envois_hist || {};
+  for(var hk in hist){
+    var x = hist[hk]; if(!x || !x.ts) continue;
+    L.push({ cle:x.cle, titre:x.titre || x.cle, objet:x.objet || "", corps:x.corps || "", ts:x.ts, exact:true });
+  }
+  var e = c.envois || {};
   for(var k in e){
     if(!e[k]) continue;
+    var dejaLa = L.some(function(o){ return o.exact && o.cle === k && Math.abs(o.ts - e[k]) < 120000; });
+    if(dejaLa) continue;
     var m = (CFG.messages || {})[k];
-    lignes.push({ t: (m && m.titre) ? m.titre : k, ts: e[k] });
+    L.push({ cle:k, titre:(m && m.titre) ? m.titre : k, objet:m ? (m.objet || "") : "", corps:m ? (m.corps || "") : "",
+             ts:e[k], exact:false, perdu:!m });
   }
-  if(!lignes.length) return "";
-  lignes.sort(function(a,b){ return b.ts - a.ts; });
-  var h = '<div class="pgrp" style="margin-top:18px">Déjà envoyé</div>';
-  lignes.forEach(function(l){
-    var d = new Date(l.ts || 0);
-    h += '<div class="kv"><span class="kk">' + esc(l.t) + '</span><span class="kvv">'
-      + d.toLocaleDateString("fr-FR") + " à " + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})
-      + '</span></div>';
+  L.sort(function(a,b){ return b.ts - a.ts; });
+  return L;
+}
+function envoisHtml(c){
+  var L = envoisListe(c);
+  if(!L.length) return '<div class="pgrp">D\u00e9j\u00e0 envoy\u00e9</div><div class="dim">Aucun message envoy\u00e9 \u00e0 cette personne depuis l\u2019app.</div>';
+  var h = '<div class="pgrp">D\u00e9j\u00e0 envoy\u00e9 \u00b7 ' + L.length + ' message' + (L.length > 1 ? 's' : '') + '</div>';
+  L.forEach(function(o){
+    var d = new Date(o.ts || 0);
+    h += '<details class="envh"><summary><span class="envht">\u2709 ' + esc(o.titre) + '</span>'
+      + '<span class="envhd">' + d.toLocaleDateString("fr-FR") + ' \u00e0 '
+      + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) + '</span></summary>'
+      + '<div class="apercu">';
+    if(o.perdu){
+      h += '<div class="ap-note">Ce message a \u00e9t\u00e9 supprim\u00e9 de la biblioth\u00e8que : son texte n\u2019est plus disponible.</div>';
+    } else {
+      h += '<div class="ap-objet">Objet : ' + apercuTexte(c, o.objet) + '</div>'
+        + '<div class="ap-corps">' + apercuTexte(c, o.corps).replace(/\n/g, "<br>") + '</div>'
+        + '<div class="ap-note">' + (o.exact
+            ? 'Texte tel qu\u2019il est parti.'
+            : 'Envoi d\u2019avant la v7.44 : texte ACTUEL de ce message dans la biblioth\u00e8que, il a pu \u00eatre modifi\u00e9 depuis. '
+              + 'Seule la date du dernier envoi de ce message est connue.') + '</div>';
+    }
+    h += '</div></details>';
   });
   return h;
 }
@@ -4786,7 +4846,8 @@ function brancherEnvoi(c, racine){
      est fabrique par le serveur, on ne l'invente pas, on le signale. */
   var zoneAp = racine.querySelector("#env-apercu");
 
-  function remplacer(t){
+  function remplacer(t){ return apercuTexte(c, t); }
+  function remplacerAncien(t){
     var pr = String(c.prenom || "").trim(), no = String(c.nom || "").trim();
     var s = esc(String(t || ""));
     s = s.split("{prenom}").join(pr ? esc(pr) : '<span class="vide">pr\u00e9nom absent de la fiche</span>');
@@ -4807,6 +4868,8 @@ function brancherEnvoi(c, racine){
   function rendreApercu(){
     if(!zoneAp) return;
     var m = (CFG.messages || {})[sel.value];
+    bt.disabled = !m || !c.email;
+    var btT0 = racine.querySelector("#env-test"); if(btT0) btT0.disabled = !m;
     if(!m){ zoneAp.innerHTML = ""; return; }
     zoneAp.innerHTML = '<div class="ap-objet">Objet : ' + remplacer(m.objet) + '</div>'
       + '<div class="ap-corps">' + remplacer(m.corps).replace(/\n/g, "<br>") + '</div>'
@@ -4851,9 +4914,22 @@ function brancherEnvoi(c, racine){
       if(res.j && res.j.ok){
         c.envois = c.envois || {};
         c.envois[cle] = res.j.date || Date.now();
+        var mEnv = (CFG.messages || {})[cle] || {};
+        var trace = { cle:cle, titre:mEnv.titre || cle, objet:mEnv.objet || "", corps:mEnv.corps || "", ts:c.envois[cle] };
+        c.envois_hist = c.envois_hist || {};
+        if(db){
+          var nr = db.ref(FB_PATH + "/candidats/" + c._k + "/envois_hist").push();
+          c.envois_hist[nr.key] = trace;
+          nr.set(trace).catch(function(e2){ voyantEchec(e2); });
+        } else {
+          c.envois_hist["l" + Date.now()] = trace;
+        }
         var box = racine.querySelector("#env-hist");
         if(box) box.innerHTML = envoisHtml(c);
-        message("Message envoyé ✓", "ok", true);
+        var nb2 = racine.querySelector("#sv-msgacc .nenv");
+        if(nb2) nb2.textContent = envoisListe(c).length + " d\u00e9j\u00e0 envoy\u00e9" + (envoisListe(c).length > 1 ? "s" : "");
+        sel.value = ""; rendreApercu();
+        message("Message envoyé ✓ — il figure maintenant dans « Déjà envoyé »", "ok", true);
         toast("Message envoyé ✓");
         return;
       }
@@ -4888,7 +4964,6 @@ function brancherEnvoi(c, racine){
      ferait refuser le deuxieme test du meme message. */
   var btT = racine.querySelector("#env-test");
   if(!btT) return;
-  var btInit = bt.disabled;
 
   function lancerTest(){
     var cle = sel.value;
@@ -4913,7 +4988,7 @@ function brancherEnvoi(c, racine){
     })
     .then(function(r){ return r.json().then(function(j){ return { s:r.status, j:j }; }); })
     .then(function(res){
-      btT.disabled = false; bt.disabled = btInit;
+      btT.disabled = false; bt.disabled = !sel.value || !c.email;
       if(res.j && res.j.ok){
         var d = new Date(res.j.date || Date.now());
         message("Test envoyé à " + ADM_TEST_EMAIL + ", au nom de "
@@ -4932,7 +5007,7 @@ function brancherEnvoi(c, racine){
       else                    message("Échec du test (" + (e || res.s) + ").", "ko");
     })
     .catch(function(err){
-      btT.disabled = false; bt.disabled = btInit;
+      btT.disabled = false; bt.disabled = !sel.value || !c.email;
       message("Test impossible : " + ((err && err.message) ? err.message : "guichet injoignable"), "ko");
     });
   }
@@ -6902,7 +6977,7 @@ function blocSuivi(c){
        creneau, reponse finale). Ouvert d'office tant que l'etape 2 est celle
        en cours sur « A contacter ». */
     if(e.n === 2 && voirMsg){
-      var nEnv = envoisDe(c).length;
+      var nEnv = envoisListe(c).length;
       h += '<details class="rdvacc msg" id="sv-msgacc"' + (st === "a_contacter" ? " open" : "") + '>'
         + '<summary>\u2709\ufe0f ENVOYER UN MESSAGE'
         + (nEnv ? ' <span class="nenv">' + nEnv + ' d\u00e9j\u00e0 envoy\u00e9' + (nEnv > 1 ? "s" : "") + '</span>' : '')
