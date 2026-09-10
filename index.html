@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.45 -->
+<!-- LUMIIA RECRUTE — v7.46 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -724,6 +724,18 @@ body.adm{background:#0d1117;}
 .fiche .suivi details.rdvacc .nenv{margin-left:10px;font-family:'Nunito';font-size:.72rem;font-weight:800;
   letter-spacing:0;color:#9fe4ee;background:rgba(77,217,232,.12);border:1px solid #2c6b76;border-radius:99px;padding:1px 9px;}
 .fiche .envbloc{margin-top:12px;}
+#admin .fermbloc{margin-top:22px;padding-top:14px;border-top:2px solid #5a2a2a;}
+#admin .fermt{font-weight:900;font-size:.95rem;color:#ff8b81;letter-spacing:.02em;}
+#admin .fermbloc table.cmp{opacity:.9;}
+#admin th.tharch,#admin td.tdarch{white-space:nowrap;}
+#admin .btn.mini.arch{padding:5px 10px;font-size:.74rem;}
+#admin .btn.mini.arch.sortir{border-color:#2f7a3d;color:#7ee787;}
+#admin .mprog{display:inline-flex;align-items:center;gap:0;}
+#admin .mprog i{display:inline-block;width:9px;height:9px;border-radius:50%;border:2px solid #3a4552;background:transparent;margin-right:4px;position:relative;}
+#admin .mprog i.fait{background:var(--pc);border-color:var(--pc);}
+#admin .mprog i.saute{width:5px;height:5px;border-color:#4d9dff;}
+#admin .mprog i.na{border-style:dashed;opacity:.5;}
+#admin .mprog i.cur{box-shadow:0 0 0 3px rgba(77,157,255,.35);}
 /* frise de progression */
 .fiche .fprog{display:flex;margin:4px 0 18px;padding:16px 8px 12px;border:1px solid #2a323d;border-radius:12px;background:#11161d;}
 .fiche .fpst{position:relative;flex:1;text-align:center;cursor:pointer;min-width:0;padding:0 3px;}
@@ -934,7 +946,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.45</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.46</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -949,7 +961,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.45";
+var VERSION = "v7.46";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -5064,7 +5076,7 @@ var ADM_TABS = [
   { k:"listes",     n:"Listes déroulantes" },
   { k:"reglages",   n:"Réglages" }
 ];
-var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "potentiel", ADM_Q = "", ADM_VU = "", ADM_XT = "";
+var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "avancement", ADM_Q = "", ADM_VU = "", ADM_XT = "";
 /* Archives repliees par defaut : voir admCandidats. */
 var ADM_ARCH = false;
 /* Faux jusqu'a la premiere arrivee des candidatures. Voir admLoad. */
@@ -8520,6 +8532,36 @@ function rafraichirIndicExtra(c){
   var v = document.getElementById("sv-xtind");
   if(v && v.parentNode) v.parentNode.replaceChild(el(indicExtraHtml(c)), v);
 }
+/* v7.46 — DOSSIERS CLOS ET ARCHIVES.
+   Clos = la derniere decision dit non : ecarte (dossier, entretien, 2e RDV),
+   plus disponible, sans suite. Les clos descendent en fin de liste, visibles.
+   Archive = range hors de vue. Par defaut, un dossier clos SANS rencontre est
+   archive (regle de la v7.30) ; le champ « archive » de la fiche, pose au
+   bouton, l'emporte dans les deux sens : true = archive, false = jamais. */
+function estFerme(c){
+  var e = etatDe(c);
+  if(e.d2) return e.d2 === "ecarte2";
+  if(e.d1) return e.d1 === "ecarte" || e.d1 === "indispo_rdv";
+  return e.base === "ecarte_dossier" || e.base === "indispo" || e.base === "sans_suite" || e.base === "ecarte";
+}
+function estArchive(c){
+  if(c.archive === true) return true;
+  if(c.archive === false) return false;
+  return estFerme(c) && !aEteVu(c);
+}
+/* Mini-frise pour le tableau : les memes 7 points que la fiche, en petit. */
+function miniProgHtml(c){
+  var P = progValeurs(c), COUL = { hot:"#3fb950", no:"#f85149", wip:"#d29922" }, h = '<span class="mprog" title="\u00c9tape ' + P.cur + ' / 7">';
+  for(var n=1;n<=7;n++){
+    var k = P.v[n], st = "";
+    if(n === 6 && !P.six) st = "na";
+    else if(n === 1 || k) st = "fait";
+    else if(n < P.cur) st = "saute";
+    h += '<i class="' + st + (n === P.cur ? " cur" : "") + '"'
+      + ((n === 1 || k) && st === "fait" ? ' style="--pc:' + (k ? (COUL[suiviDe(k).c] || "#4d9dff") : "#4d9dff") + '"' : '') + '></i>';
+  }
+  return h + '</span><br><span class="dim">\u00e9tape ' + P.cur + '</span>';
+}
 function extraCell(c){
   var x = extraInfo(c), h = "";
   if(x.ent === "oui") h += '<span class="pill2 xt">OK extras</span>';
@@ -8631,8 +8673,12 @@ function admCandidats(){
   }
   var cachesFiltre = totalBase - apresFiltre;
   var cachesRech = apresFiltre - arr.length;
-  arr.forEach(function(c){ c._ev = evalCandidat(c); });
+  arr.forEach(function(c){ c._ev = evalCandidat(c); c._pa = progValeurs(c).cur; });
   arr.sort(function(a,b){
+    /* v7.46 — par defaut, les dossiers les MOINS avances d'abord : ce sont
+       ceux sur lesquels il reste du travail avant de clore. A etape egale,
+       le meilleur potentiel passe devant. */
+    if(ADM_TRI === "avancement") return (a._pa - b._pa) || (b._ev.total - a._ev.total);
     if(ADM_TRI === "potentiel") return b._ev.total - a._ev.total;
     if(ADM_TRI === "score") return (b.score||0) - (a.score||0);
     if(ADM_TRI === "savoirs") return nb(b.savoirs) - nb(a.savoirs);
@@ -8667,16 +8713,16 @@ function admCandidats(){
      reponse a la question posee. */
   var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte_dossier"
                   || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_VU || ADM_XT);
-  var actifs = arr, archives = [];
+  var actifs = arr, fermes = [], archives = [];
   if(separer){
     actifs = [];
     arr.forEach(function(c){
-      /* On n'archive que les dossiers fermes SANS rencontre. Quelqu'un qu'on a
-         recu puis ecarte reste dans la liste : on l'a vu, on peut vouloir le
-         recomparer, le rappeler pour un extra, revenir sur la decision. Le
-         replier reviendrait a effacer le travail de l'entretien. */
-      var clos = ARCH.indexOf(statutEffectif(c)) > -1;
-      ((clos && !aEteVu(c)) ? archives : actifs).push(c);
+      /* v7.46 : trois ensembles. Les dossiers ouverts d'abord ; puis les
+         clos (ecartes, plus disponibles), visibles en fin de liste ; puis les
+         archives, repliees. Voir estFerme / estArchive. */
+      if(estArchive(c)) archives.push(c);
+      else if(estFerme(c)) fermes.push(c);
+      else actifs.push(c);
     });
   }
 
@@ -8688,6 +8734,8 @@ function admCandidats(){
      un confort de lecture personnel, pas une donnee de l'entreprise. */
   function colonnes(ctx){
     return [
+      { id:"avancement", t:"Avancement", tri:"avancement", apres:"candidat", cell:function(c){
+          return '<td>' + miniProgHtml(c) + '</td>'; } },
       { id:"potentiel", t:"Potentiel", tri:"potentiel", cell:function(c){
           return '<td class="potc"><span class="pot ' + couleurPot(c._ev.total) + '">' + c._ev.total + '</span></td>'; } },
       { id:"profil", t:"Profil", cell:function(c){
@@ -8771,7 +8819,7 @@ function admCandidats(){
     ];
   }
 
-  function tableCand(liste){
+  function tableCand(liste, mode){
     var ctx = { maxSc: maxSc, nExpT: nExpT, nSav: nSav };
     var defs = colonnes(ctx), par = {};
     defs.forEach(function(d){ par[d.id] = d; });
@@ -8793,7 +8841,7 @@ function admCandidats(){
       vus[d.id] = 1;
     });
 
-    var h = '<table class="cmp"><thead><tr>';
+    var h = '<table class="cmp"><thead><tr>' + ((mode && estAdmin()) ? '<th class="tharch">Archives</th>' : '');
     ordre.forEach(function(id){
       var d = par[id];
       h += '<th draggable="true" data-col="' + id + '"'
@@ -8804,6 +8852,10 @@ function admCandidats(){
     h += '</tr></thead><tbody>';
     liste.forEach(function(c){
       h += '<tr data-k="' + c._k + '"' + (extraInfo(c).ok ? ' class="rxt"' : '') + '>';
+      if(mode && estAdmin()){
+        h += '<td class="tdarch"><button class="btn sec mini arch' + (mode === "archive" ? " sortir" : "") + '" data-arch="' + esc(c._k) + '" data-v="'
+          + (mode === "archive" ? "0" : "1") + '">' + (mode === "archive" ? "\u21a9 Sortir des archives" : "\ud83d\uddc4 Archiver") + '</button></td>';
+      }
       ordre.forEach(function(id){ h += par[id].cell(c); });
       h += '</tr>';
     });
@@ -8811,8 +8863,9 @@ function admCandidats(){
   }
 
   var compte = '<div class="compte"><b>' + totalBase + '</b> candidature' + (totalBase > 1 ? 's' : '')
-    + ' en base \u00b7 <b>' + actifs.length + '</b> dans la liste'
-    + (archives.length ? ' \u00b7 <b>' + archives.length + '</b> en archives (écartés sans rencontre), plus bas' : '')
+    + ' en base \u00b7 <b>' + actifs.length + '</b> \u00e0 traiter'
+    + (fermes.length ? ' \u00b7 <b>' + fermes.length + '</b> \u00e9cart\u00e9' + (fermes.length > 1 ? 's' : '') + ' ou plus disponible' + (fermes.length > 1 ? 's' : '') + ', en fin de liste' : '')
+    + (archives.length ? ' \u00b7 <b>' + archives.length + '</b> en archives' : '')
     + (cachesFiltre ? ' \u00b7 <b class="rouge">' + cachesFiltre + '</b> masquée' + (cachesFiltre > 1 ? 's' : '') + ' par le filtre' : '')
     + (cachesRech ? ' \u00b7 <b class="rouge">' + cachesRech + '</b> masquée' + (cachesRech > 1 ? 's' : '') + ' par la recherche' : '')
     + ((cachesFiltre || cachesRech) ? ' <button class="fraz" id="a-raz2">Tout afficher</button>' : '')
@@ -8822,22 +8875,28 @@ function admCandidats(){
     + (ADM_XT === "amailer" ? '<p class="aide">Pour leur \u00e9crire \u00e0 part : ouvrez la fiche et envoyez un message de la biblioth\u00e8que '
         + 'qui contient <b>{lien_extra}</b>. D\u00e8s qu\u2019il est parti, la personne quitte d\u2019elle-m\u00eame cette liste.</p>' : '');
 
+  var TRI_LIB = { avancement:"du moins avanc\u00e9 au plus avanc\u00e9 (\u00e0 \u00e9tape \u00e9gale, meilleur potentiel d\u2019abord)",
+                  potentiel:"par potentiel d\u00e9croissant", score:"par score au jeu", savoirs:"par nombre de savoir-faire",
+                  exp:"par nombre d\u2019exp\u00e9riences", ts:"par date de mise \u00e0 jour" };
   var h = compte + (actifs.length ? tableCand(actifs)
-    : '<p class="aide">Aucune candidature active' + (archives.length ? ' \u2014 tout est en archives, dépliez le bloc ci-dessous.' : '.') + '</p>')
-    + '<p class="aide">Tri\u00e9 par potentiel d\u00e9croissant. Les cinq barres donnent le profil : '
+    : '<p class="aide">Aucun dossier \u00e0 traiter' + ((fermes.length || archives.length) ? ' \u2014 tout est clos ou en archives, plus bas.' : '.') + '</p>')
+    + '<p class="aide">Tri\u00e9 ' + (TRI_LIB[ADM_TRI] || TRI_LIB.ts) + ' \u2014 cliquez un titre de colonne marqu\u00e9 \u2195 pour changer. Les cinq barres donnent le profil : '
     + 'm\u00e9tier, terrain, posture, engagement, praticit\u00e9. Le potentiel n\u2019\u00e9limine personne, il range la pile \u2014 '
     + 'les poids se r\u00e8glent dans l\u2019onglet Potentiel. Cliquez une ligne pour ouvrir la fiche compl\u00e8te. '
-    + 'La photo n\u2019appara\u00eet pas dans ce tableau : elle sert \u00e0 reconna\u00eetre la personne le jour de l\u2019entretien, pas \u00e0 comparer.</p>';
+    + 'La photo n\u2019appara\u00eet pas dans ce tableau : elle sert \u00e0 reconna\u00eetre la personne le jour de l\u2019entretien, pas \u00e0 comparer.</p>'
+    + (fermes.length ? '<div class="fermbloc"><div class="fermt">\u00c9cart\u00e9s et plus disponibles \u00b7 ' + fermes.length + '</div>'
+        + '<div class="dim" style="margin:4px 0 10px">Dossiers clos. Toujours consultables ; le bouton les range dans les archives.</div>'
+        + tableCand(fermes, "ferme") + '</div>' : '');
 
   if(archives.length){
     var ouvert = ADM_ARCH || !!ADM_Q;
     h += '<div class="archbloc' + (ouvert ? " ouvert" : "") + '">'
       + '<button class="archbtn" id="a-arch">' + (ouvert ? "\u25be" : "\u25b8") + ' Archives \u00b7 '
       +   archives.length + ' dossier' + (archives.length > 1 ? 's' : '')
-      +   ' \u00e9cart\u00e9' + (archives.length > 1 ? 's' : '') + ' sur dossier, sans rencontre'
+      +   ' <span class="dim">(rang\u00e9s \u00e0 la main, ou \u00e9cart\u00e9s sans rencontre)</span>'
       +   (ADM_Q ? ' <span class="dim">(ouvert : recherche en cours)</span>' : '')
       + '</button>'
-      + (ouvert ? '<div class="archin">' + tableCand(archives) + '</div>' : '')
+      + (ouvert ? '<div class="archin">' + tableCand(archives, "archive") + '</div>' : '')
       + '</div>';
   }
 
@@ -8846,6 +8905,21 @@ function admCandidats(){
   var trs = $("a-cand").querySelectorAll("tr[data-k]");
   for(var i=0;i<trs.length;i++) trs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
   if($("a-arch")) $("a-arch").onclick = function(){ ADM_ARCH = !ADM_ARCH; admCandidats(); };
+  var bArch = $("a-cand").querySelectorAll("[data-arch]");
+  for(var ba=0; ba<bArch.length; ba++) bArch[ba].onclick = function(ev){
+    ev.stopPropagation();
+    var c = LAST_CAND[this.getAttribute("data-arch")], v = this.getAttribute("data-v") === "1", btn = this;
+    if(!c) return;
+    btn.disabled = true;
+    /* Trace dans le journal de la fiche : ranger un dossier est un geste de suivi. */
+    var hist = histTab(c).slice();
+    hist.push({ ts: Date.now(), st: c.suivi_statut || "nouveau", txt: v ? "Pass\u00e9 en archives" : "Sorti des archives" });
+    majCandidat(c._k, { archive: v, suivi_hist: hist }).then(function(){
+      c.archive = v; c.suivi_hist = hist; c._meule = null;
+      toast(v ? "Archiv\u00e9 \u2713" : "Sorti des archives \u2713");
+      admCandidats();
+    }).catch(function(e){ btn.disabled = false; voyantEchec(e); toast("Non enregistr\u00e9 : " + ((e && e.message) || e)); });
+  };
   if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_VU = ""; ADM_XT = ""; ADM_Q = ""; admTab(); };
   var ths = $("a-cand").querySelectorAll("th[data-tri]");
   for(var j=0;j<ths.length;j++) ths[j].onclick = function(){ ADM_TRI = this.getAttribute("data-tri"); admCandidats(); };
