@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.52 -->
+<!-- LUMIIA RECRUTE — v7.53 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -992,7 +992,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.52</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.53</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1007,7 +1007,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.52";
+var VERSION = "v7.53";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -2936,8 +2936,21 @@ function candLocalLoad(){
 function candLocalSave(){
   try{ localStorage.setItem(LSK, JSON.stringify({ id:CAND.id, data:CAND.data, ts:Date.now() })); }catch(e){}
 }
+/* v7.53 — AUDIT. Deux defauts corriges dans l'ecriture cote candidat :
+   1. update(CAND.data) reecrivait TOUTE la fiche telle que le candidat l'avait
+      chargee. Rouvrir sa candidature par le lien du mail puis enregistrer
+      pouvait donc remettre en place un etat perime des champs de l'EQUIPE
+      (suivi, decisions, notes, envois) modifies entre-temps. Ces champs ne
+      partent plus jamais du navigateur du candidat.
+   2. Revalider l'etape 1 reposait statut « en cours » et etape 1 : une
+      candidature complete repassait en « abandon — etape 1 ». Le statut
+      « complet » et l'etape la plus haute atteinte sont desormais conserves. */
+var CHAMPS_EQUIPE = /^(suivi_|decision|averti|second_rdv|rdv_|rdv2_|impression|eval|envois|archive|obs_|relance_|extra$|jury)/;
 function candSave(patch, cb){
-  Object.keys(patch||{}).forEach(function(k){ CAND.data[k] = patch[k]; });
+  patch = patch || {};
+  if(CAND.id && CAND.data.statut === "complet" && patch.statut === "en cours") patch.statut = "complet";
+  if(patch.etape && Number(CAND.data.etape) > Number(patch.etape)) patch.etape = CAND.data.etape;
+  Object.keys(patch).forEach(function(k){ CAND.data[k] = patch[k]; });
   CAND.data.maj = Date.now();
   candLocalSave();
   if(!db){ if(cb) cb(); return; }
@@ -2946,7 +2959,10 @@ function candSave(patch, cb){
     CAND.id = r.key; candLocalSave();
     r.set(CAND.data).then(function(){ if(cb) cb(); }).catch(function(){ if(cb) cb(); });
   } else {
-    db.ref(FB_PATH + "/candidats/" + CAND.id).update(CAND.data)
+    var w = {};
+    Object.keys(CAND.data).forEach(function(k){ if(!CHAMPS_EQUIPE.test(k) && k.charAt(0) !== "_") w[k] = CAND.data[k]; });
+    Object.keys(patch).forEach(function(k){ if(!CHAMPS_EQUIPE.test(k)) w[k] = patch[k]; });
+    db.ref(FB_PATH + "/candidats/" + CAND.id).update(w)
       .then(function(){ if(cb) cb(); }).catch(function(){ if(cb) cb(); });
   }
 }
@@ -3131,8 +3147,11 @@ function screenContact(){
       postes_codes: pCodes.join("|"), postes_vises: pLbls.join("|"),
       permis: chipVal("c-permis"), transport: chipVal("c-tr"),
       parcours:S.parcours,
-      statut:"en cours", etape:1, ts: CAND.data.ts || Date.now()
+      statut:"en cours", etape:1
     };
+    /* La date de debut ne se pose qu'a la creation : la reprise d'une fiche
+       existante ne doit jamais la reecrire (bug « Commencee le », v7.53). */
+    if(!CAND.id || !CAND.data.ts) patch.ts = CAND.data.ts || Date.now();
     /* On n'ecrit le quiz, le score et les jeux QUE si cette session en a.
        Sans cette garde, rouvrir sa candidature par le lien du mail et revalider
        l'etape 1 ecrasait les reponses deja enregistrees par un tableau vide. */
@@ -5900,11 +5919,22 @@ function tabAvis(){
     ev.stopPropagation();
     var id = this.getAttribute("data-avc"), k3 = this.getAttribute("data-avsv");
     var c3 = LAST_CAND[id]; if(!c3) return;
-    var hist = (c3.suivi_hist || []).slice();
-    hist.push({ ts: Date.now(), st: k3, txt: "Depuis le tableau des avis" });
-    majCandidat(id, { suivi_statut: k3, suivi_hist: hist })
-      .then(function(){ toast(suiviDe(k3).n + " \u2713"); })
-      .catch(function(e){ toast("Non enregistr\u00e9 : " + e.message); });
+    /* v7.53 — ces puces ecrivaient directement dans suivi_statut, a l'ancienne
+       (avant les 4 champs de la v7.28) : « Retenu » ne faisait rien si une
+       decision existait deja, et « Ecarte » posait la cle ambigue d'avant la
+       v7.32. Elles passent par les memes champs que le parcours de la fiche. */
+    var patch = {};
+    if(k3 === "retenu") patch.decision1 = "retenu";
+    else if(k3 === "ecarte"){ if(aEteVu(c3)) patch.decision1 = "ecarte"; else patch.suivi_statut = "ecarte_dossier"; }
+    else patch.suivi_statut = k3;
+    var stLog = patch.decision1 || patch.suivi_statut;
+    var hist = histTab(c3).slice();
+    hist.push({ ts: Date.now(), st: stLog, txt: "Depuis le tableau des avis" });
+    patch.suivi_hist = hist;
+    majCandidat(id, patch)
+      .then(function(){ Object.keys(patch).forEach(function(k){ c3[k] = patch[k]; }); c3._meule = null;
+                        toast(suiviDe(stLog).n + " \u2713"); if(ADM_TAB === "avis") tabAvis(); })
+      .catch(function(e){ voyantEchec(e); toast("Non enregistr\u00e9 : " + e.message); });
   };
 }
 
@@ -5919,7 +5949,7 @@ function avisDetail(c, eq, Q){
   if(estAdmin()){
     h += '<div class="chips" style="margin-top:10px">'
       + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="retenu">Retenu</div>'
-      + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="rdv">RDV \u00e0 fixer</div>'
+      + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="a_contacter">\u00c0 contacter</div>'
       + '<div class="chip" data-avc="' + esc(c._k) + '" data-avsv="ecarte">\u00c9cart\u00e9</div>'
       + '</div>';
   }
@@ -8091,20 +8121,21 @@ function tabSuivi(){
       + '<tbody>' + lignes + '</tbody></table></div></div>';
   }
 
-  var retard = "", aFaire = "", rdv = "", nR = 0, nF = 0, nV = 0;
-  arr.slice().sort(function(a,b){ return (a.relance_date||"9") < (b.relance_date||"9") ? -1 : 1; }).forEach(function(c){
-    if(!c.relance_date) return;
-    if(["retenu","retenu2","ecarte","ecarte_dossier","ecarte2","sans_suite","indispo","indispo_rdv"].indexOf(statutEffectif(c)) > -1) return;
-    if(c.relance_date < auj){ retard += ligne(c, c.relance_date); nR++; }
-    else { aFaire += ligne(c, c.relance_date); nF++; }
+  /* v7.53 : RDV a venir + decisions en retard apres un RDV, a la place des
+     rappels (relance_date n'est plus saisissable depuis la v7.16). */
+  var aVenir = [], retardD = [];
+  arr.forEach(function(c){
+    var r = rdvProchain(c, auj); if(r) aVenir.push({ c:c, r:r });
+    var p = decisionEnRetard(c, auj); if(p) retardD.push({ c:c, p:p });
   });
-  arr.slice().sort(function(a,b){ return (a.rdv_date||"9") < (b.rdv_date||"9") ? -1 : 1; }).forEach(function(c){
-    if(!c.rdv_date) return;
-    rdv += ligne(c, c.rdv_date, c.rdv_heure); nV++;
-  });
+  aVenir.sort(function(a,b){ return (a.r.d + a.r.h) < (b.r.d + b.r.h) ? -1 : 1; });
+  retardD.sort(function(a,b){ return a.p.d < b.p.d ? -1 : 1; });
+  var rdv = "", retard = "", nV = aVenir.length, nR = retardD.length;
+  aVenir.forEach(function(o){ rdv += ligne(o.c, o.r.d, (o.r.n === 2 ? "2\u1d49 RDV " : "") + o.r.h); });
+  retardD.forEach(function(o){ retard += ligne(o.c, o.p.d, o.p.n === 2 ? "2\u1d49 RDV" : ""); });
 
-  /* à traiter : jamais ouverts, les meilleurs d'abord */
-  var neufs = arr.filter(function(c){ return !c.suivi_statut || c.suivi_statut === "nouveau"; });
+  /* à traiter : jamais ouverts, les meilleurs d'abord (hors archives) */
+  var neufs = arr.filter(function(c){ return etatDe(c).base === "nouveau" && !estArchive(c); });
   neufs.forEach(function(c){ c._ev = evalCandidat(c); });
   neufs.sort(function(a,b){ return b._ev.total - a._ev.total; });
   var nh = "";
@@ -8114,18 +8145,16 @@ function tabSuivi(){
   arr.forEach(function(c){ var x = extraInfo(c); if(x.ok) nXo++; if(x.aMailer) nXa++; });
 
   var h = '<div class="adm-sec"><h2>Où en est le recrutement</h2><div class="stats">'
-    + '<div class="stat"><div class="sv">' + nR + '</div><div class="sl">rappels en retard</div></div>'
-    + '<div class="stat"><div class="sv">' + nF + '</div><div class="sl">rappels à venir</div></div>'
-    + '<div class="stat"><div class="sv">' + nV + '</div><div class="sl">rendez-vous programmés</div></div>'
+    + '<div class="stat"><div class="sv">' + nV + '</div><div class="sl">rendez-vous \u00e0 venir</div></div>'
+    + '<div class="stat' + (nR ? ' attstat' : '') + '"><div class="sv">' + nR + '</div><div class="sl">RDV pass\u00e9s sans d\u00e9cision</div></div>'
     + '<div class="stat"><div class="sv">' + neufs.length + '</div><div class="sl">jamais ouverts</div></div>'
     + '<div class="stat attstat" id="st-att" title="Voir la liste dans l\u2019onglet Candidats"><div class="sv">' + nAtt
     +   '</div><div class="sl">d\u00e9cisions \u00e0 officialiser</div></div>'
     + '<div class="stat xtstat" id="st-xt" title="Voir la liste dans l\u2019onglet Candidats"><div class="sv">' + nXa + ' / ' + nXo
     +   '</div><div class="sl">OK extras \u00e0 qui \u00e9crire / au total</div></div>'
     + '</div></div>'
-    + table("En retard", "Ces rappels étaient prévus avant aujourd’hui.", retard, "Rien en retard.")
-    + table("Rappels à venir", "Par date de prochaine action.", aFaire, "Aucun rappel programmé.")
-    + table("Rendez-vous", "Les rencontres fixées, dans l’ordre.", rdv, "Aucun rendez-vous fixé.")
+    + table("Rendez-vous à venir", "Premiers et seconds rendez-vous fixés à partir d’aujourd’hui, dans l’ordre.", rdv, "Aucun rendez-vous à venir.")
+    + table("Rendez-vous passés, décision à prendre", "Le rendez-vous a eu lieu mais l’étape de décision est vide.", retard, "Aucune décision en retard.")
     + table("À traiter en priorité", "Candidatures jamais ouvertes, les meilleurs potentiels en premier.", nh, "Tout a été traité.");
 
   panneau(h);
@@ -8760,6 +8789,32 @@ function miniProgHtml(c){
   h += '<b class="mfin' + (P.fin ? ' on' : '') + '">\u2713</b>';
   return h + '</span><br>' + (P.fin ? '<span class="finlib">termin\u00e9</span>' : '<span class="dim">\u00e9tape ' + P.cur + '</span>');
 }
+/* v7.53 — RENDEZ-VOUS. Le champ « prochaine action » (relance_date) n'a plus
+   de saisie depuis la v7.16 : les tableaux « En retard » et « Rappels a venir »
+   de Suivi & RDV ne pouvaient plus se remplir. La vraie prochaine action,
+   c'est le rendez-vous a venir — ou la decision qu'on n'a pas prise apres. */
+function rdvProchain(c, auj){
+  if(estFerme(c) || estTermine(c)) return null;
+  var L = [];
+  if(c.rdv_date && c.rdv_date >= auj) L.push({ d:c.rdv_date, h:c.rdv_heure || "", n:1 });
+  if(c.rdv2_date && c.rdv2_date >= auj) L.push({ d:c.rdv2_date, h:c.rdv2_heure || "", n:2 });
+  L.sort(function(a,b){ return (a.d + a.h) < (b.d + b.h) ? -1 : 1; });
+  return L[0] || null;
+}
+function decisionEnRetard(c, auj){
+  if(estFerme(c) || estTermine(c)) return null;
+  var e = etatDe(c);
+  if(e.d1 === "rdv2" && c.rdv2_date && c.rdv2_date < auj && !e.d2) return { d:c.rdv2_date, n:2 };
+  if(c.rdv_date && c.rdv_date < auj && !e.d1 && e.base === "rdv") return { d:c.rdv_date, n:1 };
+  return null;
+}
+function prochaineCell(c){
+  var auj = aujourdhui(), r = rdvProchain(c, auj), p = decisionEnRetard(c, auj);
+  if(p) return '<span class="pill2 wip">\u26a0 d\u00e9cision \u00e0 prendre</span><br><span class="dim mono">'
+    + (p.n === 2 ? "2\u1d49 " : "") + 'RDV du ' + esc(jourFR(p.d)) + '</span>';
+  if(r) return '<b>' + (r.n === 2 ? "2\u1d49 RDV " : "RDV ") + esc(jourFR(r.d)) + (r.h ? " " + esc(r.h) : "") + '</b>';
+  return '<span class="dim">\u2014</span>';
+}
 function extraCell(c){
   var x = extraInfo(c), h = "";
   if(x.ent === "oui") h += '<span class="pill2 xt">OK extras</span>';
@@ -8875,7 +8930,8 @@ var TRI_COLS = {
   averti:    { s:1,  k:function(c){ if(enAttenteOfficielle(c)) return 0; var a = etatDe(c).av;
                  if(a === "averti_non") return 1; if(a) return 2; return null; } },
   messages:  { s:-1, k:function(c){ var L = envoisDe(c); return L.length ? L[0].ts : null; } },
-  prochaine: { s:1,  k:function(c){ return c.rdv_date ? (c.rdv_date + " " + (c.rdv_heure || "")) : (c.relance_date || null); } },
+  prochaine: { s:1,  k:function(c){ var a = aujourdhui(), p = decisionEnRetard(c, a), r = rdvProchain(c, a);
+                 return p ? "0" + p.d : (r ? "1" + r.d + " " + r.h : null); } },
   candidat:  { s:1,  k:function(c){ var n = aplat(nomComplet(c)); return n && n !== "\u2014" ? n : null; } },
   extras:    { s:1,  k:function(c){ var x = extraInfo(c); if(x.aMailer) return 0; if(x.ok) return 1; if(x.ent === "non") return 3; return 2; } },
   contact:   { s:1,  k:function(c){ return c.email ? String(c.email).toLowerCase() : null; } },
@@ -9022,10 +9078,7 @@ function admCandidats(){
       { id:"noteapres", t:"Note après RDV", cell:function(c){ return '<td>' + noteApresCell(c) + '</td>'; } },
       { id:"averti", t:"7 · Candidat averti", cell:function(c){ return '<td>' + avertiCell(c) + '</td>'; } },
       { id:"messages", t:"Messages envoyés", cell:function(c){ return '<td>' + envoisCell(c) + '</td>'; } },
-      { id:"prochaine", t:"Prochaine action", cell:function(c){
-          return '<td class="mono">' + (c.rdv_date
-            ? '<b>RDV ' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</b>'
-            : (c.relance_date ? esc(jourFR(c.relance_date)) : '<span class="dim">—</span>')) + '</td>'; } },
+      { id:"prochaine", t:"Prochaine action", cell:function(c){ return '<td class="mono">' + prochaineCell(c) + '</td>'; } },
       { id:"candidat", t:"Candidat", cell:function(c){
           return '<td><div class="qui">'
             + (c.photo ? '<img class="vign" src="' + c.photo + '" data-nom="' + esc(nomComplet(c)) + '" alt="">'
