@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.48 -->
+<!-- LUMIIA RECRUTE — v7.50 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -203,6 +203,17 @@ body.adm{background:#0d1117;}
   position:relative;top:2px;}
 #admin .adm-tab:hover{background:#1a212a;color:#c3ccd6;}
 #admin .adm-tab.on{background:#161b22;color:#e6edf3;box-shadow:0 -2px 0 #4d9dff inset;}
+/* v7.50 — deux rangees : utilisation (bleu) / contenus & reglages (violet, plus discrete) */
+#admin .adm-tabs .tglab{align-self:center;margin-right:8px;font-size:.68rem;font-weight:900;letter-spacing:.09em;
+  text-transform:uppercase;white-space:nowrap;}
+#admin .adm-tabs.tgu .tglab{color:#58a6ff;}
+#admin .adm-tabs.tgc{margin-top:10px;border-bottom-color:#3b2a5c;}
+#admin .adm-tabs.tgc .tglab{color:#b48cf0;}
+#admin .adm-tabs.tgc .adm-tab{font-size:.78rem;padding:7px 12px;background:#15121d;border-color:#2e2445;color:#9b8ec2;}
+#admin .adm-tabs.tgc .adm-tab:hover{background:#1d1829;color:#d8c8f5;}
+#admin .adm-tabs.tgc .adm-tab.on{background:#1f1830;color:#f0e6ff;box-shadow:0 -2px 0 #a855f7 inset;}
+#admin .cfgband{margin:12px 0 0;padding:9px 13px;border:1px solid #4a2f80;border-left:4px solid #a855f7;border-radius:8px;
+  background:rgba(168,85,247,.07);color:#cbb8ee;font-size:.84rem;}
 
 #admin .adm-sec{background:#161b22;border:1px solid #2a323d;border-top:none;border-radius:0 0 10px 10px;
   padding:20px;margin-top:0;}
@@ -738,6 +749,10 @@ body.adm{background:#0d1117;}
 #admin .mprog i.cur{box-shadow:0 0 0 3px rgba(77,157,255,.35);}
 #admin .mprog i.att{border-color:#d29922;}
 #admin tr.rfin td:first-child{box-shadow:inset 4px 0 0 #3fb950;}
+#admin table.cmp th[data-tri]{cursor:pointer;}
+#admin table.cmp th[data-tri]:hover{color:#e6edf3;}
+#admin table.cmp th.trion{color:#58a6ff;box-shadow:inset 0 -3px 0 #58a6ff;}
+#admin table.cmp th .trik{opacity:.35;}
 #admin .mprog .mfin{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;margin-left:2px;border-radius:50%;
   border:2px dashed #3a4552;font-size:0;color:#0b0f14;}
 #admin .mprog .mfin.on{border:2px solid #3fb950;background:#3fb950;font-size:.6rem;font-weight:900;}
@@ -972,7 +987,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.48</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.50</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -987,7 +1002,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.48";
+var VERSION = "v7.50";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -5083,26 +5098,31 @@ function brancherEnvoi(c, racine){
    BACK-OFFICE — onglets
    ══════════════════════════════════════ */
 var ADM_TAB = "candidats";
+/* v7.50 — DEUX FAMILLES D'ONGLETS.
+   g:"u" = UTILISATION : ce qu'on fait au quotidien avec les candidatures.
+   g:"c" = CONTENUS & REGLAGES : ce qui modifie l'app elle-meme — ce que les
+   candidats voient, recoivent, et la facon dont on les note. Les deux sont
+   separes a l'ecran pour ne jamais modifier un contenu en croyant consulter. */
 var ADM_TABS = [
-  { k:"candidats",  n:"Candidats" },
-  { k:"revue",      n:"Revue des réponses" },
-  { k:"avis",       n:"Avis de l’équipe" },
-  { k:"extras",     n:"Extras" },
-  { k:"suivi",      n:"Suivi & RDV" },
-  { k:"creneaux",   n:"Créneaux" },
-  { k:"inbox",      n:"Boîte aux lettres" },
-  { k:"messages",   n:"Messages" },
-  { k:"stats",      n:"Statistiques" },
-  { k:"potentiel",  n:"Potentiel" },
-  { k:"textes",     n:"Textes de l’app" },
-  { k:"quiz",       n:"Quiz" },
-  { k:"situations", n:"Mises en situation" },
-  { k:"pitchs",     n:"Pitchs" },
-  { k:"offre",      n:"Offre & postes" },
-  { k:"listes",     n:"Listes déroulantes" },
-  { k:"reglages",   n:"Réglages" }
+  { k:"candidats",  n:"Candidats",           g:"u" },
+  { k:"suivi",      n:"Suivi & RDV",         g:"u" },
+  { k:"creneaux",   n:"Créneaux",            g:"u" },
+  { k:"revue",      n:"Revue des réponses",  g:"u" },
+  { k:"avis",       n:"Avis de l’équipe",    g:"u" },
+  { k:"extras",     n:"Extras",              g:"u" },
+  { k:"inbox",      n:"Boîte aux lettres",   g:"u" },
+  { k:"stats",      n:"Statistiques",        g:"u" },
+  { k:"messages",   n:"Messages",            g:"c" },
+  { k:"offre",      n:"Offre & postes",      g:"c" },
+  { k:"textes",     n:"Textes de l’app",     g:"c" },
+  { k:"quiz",       n:"Quiz",                g:"c" },
+  { k:"situations", n:"Mises en situation",  g:"c" },
+  { k:"pitchs",     n:"Pitchs",              g:"c" },
+  { k:"listes",     n:"Listes déroulantes",  g:"c" },
+  { k:"potentiel",  n:"Potentiel",           g:"c" },
+  { k:"reglages",   n:"Réglages",            g:"c" }
 ];
-var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "avancement", ADM_Q = "", ADM_VU = "", ADM_XT = "";
+var LAST_CAND = {}, ADM_FILTRE = "tous", ADM_TRI = "avancement", ADM_SENS = 1, ADM_Q = "", ADM_VU = "", ADM_XT = "";
 /* Archives repliees par defaut : voir admCandidats. */
 var ADM_ARCH = false;
 /* Faux jusqu'a la premiere arrivee des candidatures. Voir admLoad. */
@@ -5176,11 +5196,22 @@ function admRender(){
      avant tout le reste, pas au moment ou il clique une etoile. */
   if(!estAdmin() && !MEMBRE){ ecranQuiEtesVous(); return; }
 
-  var t = '<div class="adm-tabs">';
-  vis.forEach(function(o){
-    t += '<button class="adm-tab' + (ADM_TAB === o.k ? " on" : "") + '" data-tab="' + o.k + '">' + esc(o.n) + '</button>';
-  });
-  t += '</div>'
+  function rangee(g, cls, lib){
+    var L = vis.filter(function(o){ return (o.g || "u") === g; });
+    if(!L.length) return "";
+    var r = '<div class="adm-tabs ' + cls + '"><span class="tglab">' + lib + '</span>';
+    L.forEach(function(o){
+      r += '<button class="adm-tab' + (ADM_TAB === o.k ? " on" : "") + '" data-tab="' + o.k + '">' + esc(o.n) + '</button>';
+    });
+    return r + '</div>';
+  }
+  var ongletCfg = vis.some(function(o){ return o.k === ADM_TAB && o.g === "c"; });
+  var t = rangee("u", "tgu", "\ud83d\udc65 Recrutement")
+    + rangee("c", "tgc", "\u2699\ufe0f Contenus & r\u00e9glages")
+    /* Un rappel permanent quand on est du cote des contenus : ce qu'on
+       enregistre ici se voit chez les candidats. */
+    + (ongletCfg ? '<div class="cfgband">\u2699\ufe0f Vous \u00eates dans les <b>contenus et r\u00e9glages</b> : '
+        + 'ce que vous enregistrez ici change ce que voient ou re\u00e7oivent les candidats, ou la fa\u00e7on dont ils sont not\u00e9s.</div>' : '')
     + (estAdmin() ? "" :
         '<div class="jurybar">Mode jury \u2014 vous notez sous le nom de <b>'
         + esc(membreNom(MEMBRE)) + '</b>.</div>')
@@ -8736,6 +8767,65 @@ function avertiCell(c){
   return '<span class="dim">\u2014</span>';
 }
 
+/* ══════════════════════════════════════════════════════════════
+   TRI SUR TOUTES LES COLONNES — v7.49
+   Chaque colonne du tableau porte ici sa cle de tri et son sens naturel
+   (s : 1 = du plus petit au plus grand, -1 = l'inverse). Un clic sur un
+   titre trie selon cette colonne ; un second clic inverse. Les cases vides
+   restent TOUJOURS en bas, quel que soit le sens. A valeur egale : le moins
+   avance d'abord, puis le meilleur potentiel.
+   Ordre des cles « metier » : ce qui demande une action vient en premier
+   (extras a mailer, decision a officialiser...).
+   ══════════════════════════════════════════════════════════════ */
+function rangTri(v, liste){ var i = liste.indexOf(v); return i < 0 ? null : i; }
+var TRI_COLS = {
+  avancement:{ s:1,  k:function(c){ return progValeurs(c).cur; } },
+  potentiel: { s:-1, k:function(c){ return c._ev ? c._ev.total : 0; } },
+  profil:    { s:-1, k:function(c){ return c._ev ? c._ev.total : 0; } },
+  statut:    { s:-1, k:function(c){ return c.statut === "complet" ? 99 : (Number(c.etape) || 1); } },
+  suivi:     { s:1,  k:function(c){ var b = etatDe(c).base; for(var i=0;i<SUIVI.length;i++) if(SUIVI[i].k === b) return i; return 50; } },
+  decision:  { s:1,  k:function(c){ return rangTri(etatDe(c).d1, ["retenu","rdv2","ecarte","indispo_rdv"]); } },
+  etape6:    { s:1,  k:function(c){ var e = etatDe(c);
+                 if(e.d2) return e.d2 === "retenu2" ? 0 : 1;
+                 if(e.d1 === "rdv2") return 2; if(e.d1 === "retenu") return 3; if(estFerme(c)) return 4; return null; } },
+  noteapres: { s:-1, k:function(c){ var m = impressionMoy(c, "impression2"); return m ? Number(m.moy) : null; } },
+  averti:    { s:1,  k:function(c){ if(enAttenteOfficielle(c)) return 0; var a = etatDe(c).av;
+                 if(a === "averti_non") return 1; if(a) return 2; return null; } },
+  messages:  { s:-1, k:function(c){ var L = envoisDe(c); return L.length ? L[0].ts : null; } },
+  prochaine: { s:1,  k:function(c){ return c.rdv_date ? (c.rdv_date + " " + (c.rdv_heure || "")) : (c.relance_date || null); } },
+  candidat:  { s:1,  k:function(c){ var n = aplat(nomComplet(c)); return n && n !== "\u2014" ? n : null; } },
+  extras:    { s:1,  k:function(c){ var x = extraInfo(c); if(x.aMailer) return 0; if(x.ok) return 1; if(x.ent === "non") return 3; return 2; } },
+  contact:   { s:1,  k:function(c){ return c.email ? String(c.email).toLowerCase() : null; } },
+  exp:       { s:-1, k:function(c){ return nb(c.experiences); } },
+  savoirs:   { s:-1, k:function(c){ return nb(c.savoirs); } },
+  poste:     { s:1,  k:function(c){ return c.postes_codes || null; } },
+  situations:{ s:-1, k:function(c){ return (c.situations || "").split("|").filter(function(x){ return x !== ""; }).length; } },
+  rappel:    { s:-1, k:function(c){ return (c.grille || "").split("|").filter(Boolean).length; } },
+  permis:    { s:1,  k:function(c){ return c.permis === "Oui" ? 0 : (c.permis === "Non" ? 2 : 1); } },
+  enreg:     { s:-1, k:function(c){ return ["pitch1","pitch2","pitch3","pitch4","motmedia","media"].filter(function(s2){ return c[s2 + "_url"]; }).length; } },
+  offremail: { s:1,  k:function(c){ return c.offre_mail ? 0 : 1; } },
+  jeu:       { s:-1, k:function(c){ return c.score || 0; } },
+  maj:       { s:-1, k:function(c){ return c.maj || c.ts || 0; } }
+};
+/* Anciennes valeurs de ADM_TRI (avant v7.49). */
+var TRI_ALIAS = { score:"jeu", ts:"maj" };
+function trierCandidats(arr){
+  if(TRI_ALIAS[ADM_TRI]) ADM_TRI = TRI_ALIAS[ADM_TRI];
+  if(!TRI_COLS[ADM_TRI]){ ADM_TRI = "avancement"; ADM_SENS = 1; }
+  var T = TRI_COLS[ADM_TRI], sens = T.s * ADM_SENS;
+  arr.forEach(function(c){ var v = T.k(c); c._tk = (v === undefined || v === "") ? null : v; });
+  arr.sort(function(a, b){
+    var x = a._tk, y = b._tk;
+    if((x === null) !== (y === null)) return x === null ? 1 : -1;
+    if(x !== null && x !== y){
+      if(typeof x === "string" || typeof y === "string"){
+        var r = String(x).localeCompare(String(y), "fr");
+        if(r) return r * sens;
+      } else return (x < y ? -1 : 1) * sens;
+    }
+    return (a._pa - b._pa) || (b._ev.total - a._ev.total);
+  });
+}
 function admCandidats(){
   if(!$("a-cand")) return;
   var arr = [];
@@ -8772,17 +8862,8 @@ function admCandidats(){
   var cachesFiltre = totalBase - apresFiltre;
   var cachesRech = apresFiltre - arr.length;
   arr.forEach(function(c){ c._ev = evalCandidat(c); c._pa = progValeurs(c).cur; });
-  arr.sort(function(a,b){
-    /* v7.46 — par defaut, les dossiers les MOINS avances d'abord : ce sont
-       ceux sur lesquels il reste du travail avant de clore. A etape egale,
-       le meilleur potentiel passe devant. */
-    if(ADM_TRI === "avancement") return (a._pa - b._pa) || (b._ev.total - a._ev.total);
-    if(ADM_TRI === "potentiel") return b._ev.total - a._ev.total;
-    if(ADM_TRI === "score") return (b.score||0) - (a.score||0);
-    if(ADM_TRI === "savoirs") return nb(b.savoirs) - nb(a.savoirs);
-    if(ADM_TRI === "exp") return nb(b.experiences) - nb(a.experiences);
-    return (b.maj||b.ts||0) - (a.maj||a.ts||0);
-  });
+  /* v7.46 : par defaut les MOINS avances d'abord. v7.49 : toute colonne trie. */
+  trierCandidats(arr);
   if(!arr.length){
     $("a-cand").innerHTML = '<div class="compte ko"><b>' + totalBase + '</b> candidature'
       + (totalBase > 1 ? 's' : '') + ' en base, <b>aucune</b> affichée — '
@@ -8943,9 +9024,10 @@ function admCandidats(){
     ordre.forEach(function(id){
       var d = par[id];
       h += '<th draggable="true" data-col="' + id + '"'
-        + (d.tri ? ' data-tri="' + d.tri + '"' : '') + '>'
+        + (TRI_COLS[id] ? ' data-tri="' + id + '"' : '') + (ADM_TRI === id ? ' class="trion"' : '')
+        + (TRI_COLS[id] ? ' title="Cliquer pour trier sur cette colonne, recliquer pour inverser"' : '') + '>'
         + '<span class="poign" title="Glisser pour déplacer la colonne">⣿</span> '
-        + d.t + (d.tri ? ' ↕' : '') + '</th>';
+        + d.t + (TRI_COLS[id] ? (ADM_TRI === id ? (ADM_SENS === 1 ? ' \u25b2' : ' \u25bc') : ' <span class="trik">\u2195</span>') : '') + '</th>';
     });
     h += '</tr></thead><tbody>';
     liste.forEach(function(c){
@@ -8978,12 +9060,15 @@ function admCandidats(){
     + (ADM_XT === "amailer" ? '<p class="aide">Pour leur \u00e9crire \u00e0 part : ouvrez la fiche et envoyez un message de la biblioth\u00e8que '
         + 'qui contient <b>{lien_extra}</b>. D\u00e8s qu\u2019il est parti, la personne quitte d\u2019elle-m\u00eame cette liste.</p>' : '');
 
-  var TRI_LIB = { avancement:"du moins avanc\u00e9 au plus avanc\u00e9 (\u00e0 \u00e9tape \u00e9gale, meilleur potentiel d\u2019abord)",
-                  potentiel:"par potentiel d\u00e9croissant", score:"par score au jeu", savoirs:"par nombre de savoir-faire",
-                  exp:"par nombre d\u2019exp\u00e9riences", ts:"par date de mise \u00e0 jour" };
+  var triTitre = "";
+  colonnes({}).forEach(function(d){ if(d.id === ADM_TRI) triTitre = String(d.t).replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " "); });
+  var triPhrase = (ADM_TRI === "avancement" && ADM_SENS === 1)
+    ? "du moins avanc\u00e9 au plus avanc\u00e9 (\u00e0 \u00e9tape \u00e9gale, meilleur potentiel d\u2019abord)"
+    : "par \u00ab\u00a0" + triTitre + "\u00a0\u00bb" + (ADM_SENS === -1 ? " (ordre invers\u00e9)" : "");
   var h = compte + (actifs.length ? tableCand(actifs)
     : '<p class="aide">Aucun dossier \u00e0 traiter' + ((fermes.length || archives.length) ? ' \u2014 tout est clos ou en archives, plus bas.' : '.') + '</p>')
-    + '<p class="aide">Tri\u00e9 ' + (TRI_LIB[ADM_TRI] || TRI_LIB.ts) + ' \u2014 cliquez un titre de colonne marqu\u00e9 \u2195 pour changer. Les cinq barres donnent le profil : '
+    + '<p class="aide">Tri\u00e9 ' + triPhrase + ' \u2014 cliquez n\u2019importe quel titre de colonne pour trier, recliquez pour inverser'
+    + (ADM_TRI !== "avancement" || ADM_SENS !== 1 ? ' \u00b7 <a class="lien" href="#" id="a-trizero">revenir au tri par avancement</a>' : '') + '. Les cinq barres donnent le profil : '
     + 'm\u00e9tier, terrain, posture, engagement, praticit\u00e9. Le potentiel n\u2019\u00e9limine personne, il range la pile \u2014 '
     + 'les poids se r\u00e8glent dans l\u2019onglet Potentiel. Cliquez une ligne pour ouvrir la fiche compl\u00e8te. '
     + 'La photo n\u2019appara\u00eet pas dans ce tableau : elle sert \u00e0 reconna\u00eetre la personne le jour de l\u2019entretien, pas \u00e0 comparer.</p>'
@@ -9025,7 +9110,11 @@ function admCandidats(){
   };
   if($("a-raz2")) $("a-raz2").onclick = function(){ ADM_FILTRE = "tous"; ADM_VU = ""; ADM_XT = ""; ADM_Q = ""; admTab(); };
   var ths = $("a-cand").querySelectorAll("th[data-tri]");
-  for(var j=0;j<ths.length;j++) ths[j].onclick = function(){ ADM_TRI = this.getAttribute("data-tri"); admCandidats(); };
+  for(var j=0;j<ths.length;j++) ths[j].onclick = function(){
+    var t = this.getAttribute("data-tri");
+    if(t === ADM_TRI) ADM_SENS = -ADM_SENS; else { ADM_TRI = t; ADM_SENS = 1; }
+    admCandidats();
+  };
 
   /* GLISSER-DEPOSER DES COLONNES. On ne deplace pas le DOM : on reordonne la
      liste des identifiants et on redessine. Une seule source de verite, et le
@@ -9065,6 +9154,7 @@ function admCandidats(){
   }
   if($("a-colraz")) $("a-colraz").onclick = function(){ poserOrdreColonnes([]); admCandidats(); };
   if($("a-xtmail")) $("a-xtmail").onclick = function(){ copierAdresses(arr); };
+  if($("a-trizero")) $("a-trizero").onclick = function(ev){ ev.preventDefault(); ADM_TRI = "avancement"; ADM_SENS = 1; admCandidats(); };
   if($("a-att")) $("a-att").onclick = function(){ ADM_FILTRE = "x:attente"; ADM_VU = ""; ADM_XT = ""; ADM_Q = ""; admTab(); };
   brancherPhotosZoom($("a-cand"));
 }
