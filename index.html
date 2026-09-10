@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.41 -->
+<!-- LUMIIA RECRUTE — v7.42 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -718,6 +718,12 @@ body.adm{background:#0d1117;}
 /* Le deuxieme rendez-vous porte une autre couleur que le premier : dans une
    fiche qui en contient deux, il faut pouvoir dire lequel on lit sans lire. */
 .fiche .suivi details.rdvacc.deux{border-color:#1f6f5c;background:rgba(45,212,164,.08);}
+.fiche .suivi details.rdvacc.msg{border-color:#2c6b76;background:rgba(77,217,232,.07);}
+.fiche .suivi details.rdvacc.msg > summary{color:#9fe4ee;}
+.fiche .suivi details.rdvacc.msg > summary::before{color:#4dd9e8;}
+.fiche .suivi details.rdvacc .nenv{margin-left:10px;font-family:'Nunito';font-size:.72rem;font-weight:800;
+  letter-spacing:0;color:#9fe4ee;background:rgba(77,217,232,.12);border:1px solid #2c6b76;border-radius:99px;padding:1px 9px;}
+.fiche .envbloc{margin-top:12px;}
 .fiche .suivi details.rdvacc.deux > summary{color:#7fe3c6;}
 .fiche .suivi details.rdvacc.deux > summary::before{color:#2dd4a4;}
 
@@ -814,14 +820,14 @@ body.adm{background:#0d1117;}
 /* APERCU : on relit le message AVANT de cliquer, avec les variables deja
    remplacees par ce candidat-la. C'est la seule facon de voir une erreur
    avant qu'elle parte a quelqu'un. */
-.fiche .fbox.act .apercu{margin-top:10px;padding:12px 14px;border-radius:8px;
+.fiche .fbox.act .apercu,.fiche .envbloc .apercu{margin-top:10px;padding:12px 14px;border-radius:8px;
   background:#0e0a22;border:1px solid #3a2d63;}
-.fiche .fbox.act .apercu .ap-objet{font-weight:900;color:#e6edf3;font-size:.9rem;
+.fiche .fbox.act .apercu .ap-objet,.fiche .envbloc .apercu .ap-objet{font-weight:900;color:#e6edf3;font-size:.9rem;
   padding-bottom:8px;margin-bottom:9px;border-bottom:1px solid #33285a;}
-.fiche .fbox.act .apercu .ap-corps{color:#cfc6e8;font-size:.9rem;line-height:1.6;}
-.fiche .fbox.act .apercu .ap-note{margin-top:11px;font-size:.75rem;color:#8b7fb0;}
-.fiche .fbox.act .apercu .vide{color:#ff9c9c;font-style:italic;}
-.fiche .fbox.act .apercu .lien{color:#7cc4ff;text-decoration:underline;}
+.fiche .fbox.act .apercu .ap-corps,.fiche .envbloc .apercu .ap-corps{color:#cfc6e8;font-size:.9rem;line-height:1.6;}
+.fiche .fbox.act .apercu .ap-note,.fiche .envbloc .apercu .ap-note{margin-top:11px;font-size:.75rem;color:#8b7fb0;}
+.fiche .fbox.act .apercu .vide,.fiche .envbloc .apercu .vide{color:#ff9c9c;font-style:italic;}
+.fiche .fbox.act .apercu .lien,.fiche .envbloc .apercu .lien{color:#7cc4ff;text-decoration:underline;}
 .fiche .fbox.act .suivi select,.fiche .fbox.act input{border-color:#4a3a72;background:#211845;}
 .fiche .stepno{color:#58a6ff;font-family:'Nunito';font-weight:900;font-size:.74rem;letter-spacing:.09em;
   text-transform:uppercase;border-bottom:1px solid #2a323d;padding-bottom:6px;margin-bottom:10px;}
@@ -886,7 +892,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.41</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.42</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -901,7 +907,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.41";
+var VERSION = "v7.42";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4662,7 +4668,9 @@ function tabMessages(){
 /* ── bloc « envoyer un message », affiché dans la fiche ── */
 function blocEnvoi(c){
   var L = messagesTries();
-  var h = '<div class="suivi">';
+  /* v7.42 : classe propre. Le bloc vit desormais DANS le parcours de suivi, et
+     redessinerSuivi() reconnait ce dernier a sa classe .suivi. */
+  var h = '<div class="envbloc">';
   if(!L.length){
     return h + '<p class="aide">Aucun message n\u2019est encore écrit. Onglet <b>Messages</b> pour en créer.</p></div>';
   }
@@ -6823,6 +6831,7 @@ function blocSuivi(c){
      relire ses notes depuis n'importe quelle etape suivante. */
   var voirRdv = !ancien && (st === "rdv" || !!E.d1 || !!E.d2 || !!E.av
                             || !!c.rdv_date || !!c.rdv_cr);
+  var voirMsg = ancien || st !== "nouveau" || !!E.d1 || !!E.d2 || !!E.av || envoisDe(c).length > 0;
   var h = '<div class="suivi">'
     + '<label class="f">Parcours <span class="dim" style="font-weight:700;text-transform:none">— enregistré dès que vous cliquez</span></label>';
   if(ancien){
@@ -6879,6 +6888,18 @@ function blocSuivi(c){
         +   rdvFormHtml(c, RDV_NS.r2)
         + '</details>';
     }
+    /* v7.42 — ENVOYER UN MESSAGE, sous l'etape 2, comme le premier rendez-vous
+       sous l'etape 4. Il apparait des que le dossier a quitte « A traiter », et
+       ne disparait plus ensuite : on ecrit aussi aux etapes suivantes (extras,
+       creneau, reponse finale). Ouvert d'office tant que l'etape 2 est celle
+       en cours sur « A contacter ». */
+    if(e.n === 2 && voirMsg){
+      var nEnv = envoisDe(c).length;
+      h += '<details class="rdvacc msg" id="sv-msgacc"' + (st === "a_contacter" ? " open" : "") + '>'
+        + '<summary>\u2709\ufe0f ENVOYER UN MESSAGE'
+        + (nEnv ? ' <span class="nenv">' + nEnv + ' d\u00e9j\u00e0 envoy\u00e9' + (nEnv > 1 ? "s" : "") + '</span>' : '')
+        + '</summary>' + blocEnvoi(c) + '</details>';
+    }
     if(e.n === 4 && voirRdv){
       /* Un accordeon comme les autres : on l'ouvre, la trame est la. Plus de
          bouton intermediaire — un bouton qui ouvre un panneau qui contient un
@@ -6919,6 +6940,7 @@ function redessinerSuivi(c, racine){
   if(!vieux || !vieux.parentNode) return;
   vieux.parentNode.replaceChild(el(blocSuivi(c)), vieux);
   brancherSuivi(c, racine);
+  brancherEnvoi(c, racine);
 }
 
 /* ── branchements du bloc suivi (appelé après insertion dans le DOM) ── */
@@ -8839,7 +8861,6 @@ function admFiche(c){
     + boite("Impression g\u00e9n\u00e9rale — AVANT rendez-vous", blocImpression(c, "impression"), "act", true)
     + boite("Impression g\u00e9n\u00e9rale — APR\u00c8S rendez-vous", blocImpression(c, "impression2"), "act", !!c.rdv_cr)
     + (estAdmin() ? boite("Parcours de suivi", blocSuivi(c), "", true) : "")
-    + (estAdmin() ? boite("Envoyer un message", blocEnvoi(c), "act") : "")
     + boite("Potentiel", ph)
     + '<div class="fgrid">'
     +   boite("Suivi de la candidature", suivi)
