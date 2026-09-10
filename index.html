@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.46 -->
+<!-- LUMIIA RECRUTE — v7.48 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -736,6 +736,32 @@ body.adm{background:#0d1117;}
 #admin .mprog i.saute{width:5px;height:5px;border-color:#4d9dff;}
 #admin .mprog i.na{border-style:dashed;opacity:.5;}
 #admin .mprog i.cur{box-shadow:0 0 0 3px rgba(77,157,255,.35);}
+#admin .mprog i.att{border-color:#d29922;}
+#admin tr.rfin td:first-child{box-shadow:inset 4px 0 0 #3fb950;}
+#admin .mprog .mfin{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;margin-left:2px;border-radius:50%;
+  border:2px dashed #3a4552;font-size:0;color:#0b0f14;}
+#admin .mprog .mfin.on{border:2px solid #3fb950;background:#3fb950;font-size:.6rem;font-weight:900;}
+#admin .finlib{color:#7ee787;font-weight:800;font-size:.78rem;}
+.fiche .fprog.termine{border-color:#2f7a3d;background:linear-gradient(90deg,#11161d,rgba(63,185,80,.08));}
+.fiche .fprog.termine .fpst.fait::before,.fiche .fprog.termine .fpst.saute::before{background:#3fb950;}
+.fiche .fpst.fin .fpd{border-style:dashed;}
+.fiche .fpst.fin.fait .fpd{border-style:solid;font-size:1.05rem;}
+.fiche .fpst.fin.fait .fpt{color:#7ee787;}
+.fiche .suivi .etp.fin .etpn{font-size:.8rem;border-style:dashed;}
+.fiche .suivi .etp.fin.on{background:rgba(63,185,80,.10);}
+.fiche .suivi .etp.fin.on .etpn{background:#3fb950;border-color:#3fb950;border-style:solid;color:#04121f;}
+.fiche .suivi .etp.fin.on .etpt{color:#7ee787;}
+.fiche .suivi .finv{margin-top:5px;font-size:.84rem;color:#8b98a8;}
+.fiche .suivi .etp.fin.on .finv{color:#cfeed6;font-weight:700;}
+#admin td.sans6{background:repeating-linear-gradient(135deg,rgba(139,152,168,.10) 0 6px,transparent 6px 12px);}
+#admin td.sans6 span{font-size:.74rem;font-weight:800;color:#7d8b9c;white-space:nowrap;}
+#admin td.sans6.ok{background:none;}
+#admin td.sans6.ok span{color:#5f8f6a;font-weight:700;}
+#admin .compte .fraz.attbtn{border-color:#8a6a1f;color:#e3b341;}
+#admin .stat.attstat{cursor:pointer;border-color:#8a6a1f;}
+#admin .stat.attstat .sv{color:#e3b341;}
+.fiche .fpst.attente .fpd{border-color:#d29922;opacity:1;}
+.fiche .fpst.attente .fpv{color:#e3b341;font-weight:700;}
 /* frise de progression */
 .fiche .fprog{display:flex;margin:4px 0 18px;padding:16px 8px 12px;border:1px solid #2a323d;border-radius:12px;background:#11161d;}
 .fiche .fpst{position:relative;flex:1;text-align:center;cursor:pointer;min-width:0;padding:0 3px;}
@@ -946,7 +972,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.46</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.48</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -961,7 +987,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.46";
+var VERSION = "v7.48";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6308,6 +6334,9 @@ function tabCandidats(){
     });
     h += '</optgroup>';
   });
+  h += '<optgroup label="Raccourcis">'
+    + '<option value="x:attente"' + (ADM_FILTRE === "x:attente" ? " selected" : "") + '>\u23f3 D\u00e9cision prise, pas encore officialis\u00e9e</option>'
+    + '</optgroup>';
   h += '<optgroup label="Statuts hérités">';
   SUIVI_ANCIENS.forEach(function(s2){
     h += '<option value="sv:' + s2.k + '"' + (ADM_FILTRE==="sv:"+s2.k?" selected":"") + '>' + esc(s2.n) + '</option>';
@@ -6455,13 +6484,42 @@ function etatDe(c){
   if(!d2 && D2_KS[st]){ d2 = st; if(!d1) d1 = "rdv2"; }
   if(!av && AV_KS[st]) av = st;
   var base = BASE_KS[st] ? st : ((d1 || d2 || av) ? "rdv" : st);
-  return { base:base, d1:d1, d2:d2, av:av };
+  /* v7.47 — des qu'on a rencontre la personne, l'etape 7 vaut « Pas encore
+     averti » tant qu'on ne l'a pas prevenue. Valeur PAR DEFAUT, non ecrite en
+     base (avDefaut) : elle n'avance pas le dossier. La preuve de rencontre est
+     lue ici directement — passer par aEteVu() bouclerait (aEteVu lit
+     statutEffectif, qui lit etatDe). Une decision d'etape 5 ou 6 suppose
+     l'entretien. */
+  var avDefaut = false;
+  if(!av && (c.rdv_cr || c.rdv2_cr || (c.rdv_notes && Object.keys(c.rdv_notes).length) || d1 || d2)){
+    av = "averti_non"; avDefaut = true;
+  }
+  return { base:base, d1:d1, d2:d2, av:av, avDefaut:avDefaut };
 }
 /* Le point le plus avance du dossier : ce qu'on affiche quand une seule
    information tient dans la place disponible. */
 function statutEffectif(c){
   var e = etatDe(c);
-  return e.av || e.d2 || e.d1 || e.base;
+  /* La valeur par defaut de l'etape 7 ne compte pas comme un avancement. */
+  return (e.avDefaut ? "" : e.av) || e.d2 || e.d1 || e.base;
+}
+/* v7.48 — TERMINE : la personne a ete prevenue (mail ou tel). C'est la fin du
+   parcours, quelle que soit l'issue. */
+function estTermine(c){
+  var av = etatDe(c).av;
+  return av === "averti_mail" || av === "averti_tel";
+}
+function issueDe(c){
+  var e = etatDe(c), k = e.d2 || e.d1 || (estFerme(c) ? e.base : "");
+  return k ? suiviDe(k).n : "";
+}
+/* v7.47 — DECISION PRISE, PAS ENCORE OFFICIALISEE : une issue a ete choisie
+   apres rencontre (etape 5 ou 6) et la personne n'a pas ete prevenue. */
+function enAttenteOfficielle(c){
+  var e = etatDe(c);
+  var finale = e.d2 ? (e.d2 === "retenu2" || e.d2 === "ecarte2")
+                    : (e.d1 === "retenu" || e.d1 === "ecarte" || e.d1 === "indispo_rdv");
+  return finale && e.av !== "averti_mail" && e.av !== "averti_tel";
 }
 function etatContient(c, k){
   var e = etatDe(c);
@@ -6578,14 +6636,17 @@ function progValeurs(c){
   });
   if(E.d1) v[5] = E.d1;
   if(E.d2) v[6] = E.d2;
-  if(E.av) v[7] = E.av;
+  /* Seul un avertissement REEL (mail, tel) franchit l'etape 7. */
+  if(E.av && E.av !== "averti_non") v[7] = E.av;
   var cur = 1;
   for(var n=1;n<=7;n++) if(v[n]) cur = n;
   if(nb > cur) cur = nb;
-  return { v:v, cur:cur, six: (E.d1 === "rdv2" || !!E.d2 || !!c.second_rdv) };
+  if(estTermine(c)) cur = 8;
+  return { v:v, cur:cur, six: (E.d1 === "rdv2" || !!E.d2 || !!c.second_rdv),
+           avNon: E.av === "averti_non", att: enAttenteOfficielle(c), fin: cur === 8 };
 }
 function progHtml(c){
-  var P = progValeurs(c), h = '<div class="fprog" id="fprog">';
+  var P = progValeurs(c), h = '<div class="fprog' + (P.fin ? ' termine' : '') + '" id="fprog">';
   var COUL = { hot:"#3fb950", no:"#f85149", wip:"#d29922" };
   for(var n=1;n<=7;n++){
     var k = P.v[n], cls = "fpst", coul = "", sous = "";
@@ -6593,6 +6654,8 @@ function progHtml(c){
     else if(n === 1){ cls += " fait"; coul = "#4d9dff"; sous = "re\u00e7ue"; }
     else if(k){ cls += " fait"; coul = COUL[suiviDe(k).c] || "#4d9dff"; sous = suiviDe(k).n; }
     else if(n < P.cur){ cls += " saute"; sous = "\u2014"; }
+    else if(n === 7 && P.att){ cls += " avenir attente"; sous = "\u23f3 d\u00e9cision \u00e0 officialiser"; }
+    else if(n === 7 && P.avNon){ cls += " avenir"; sous = "pas encore averti"; }
     else { cls += " avenir"; }
     if(n === P.cur) cls += " cur";
     if(n === 4 && c.rdv_date) sous += '<br><span class="fpdt">' + esc(jourFR(c.rdv_date)) + (c.rdv_heure ? " " + esc(c.rdv_heure) : "") + '</span>';
@@ -6603,6 +6666,11 @@ function progHtml(c){
       + '<div class="fpt">' + PROG_TITRES[n] + '</div>'
       + '<div class="fpv">' + (n === 4 || n === 7 ? sous : esc(sous)) + '</div></div>';
   }
+  /* v7.48 — le drapeau d'arrivee. */
+  h += '<div class="fpst fin' + (P.fin ? ' fait cur' : ' avenir') + '" data-etp="8"' + (P.fin ? ' style="--pc:#3fb950"' : '')
+    + ' title="' + (P.fin ? 'Parcours termin\u00e9' : 'Se valide d\u00e8s que le candidat est averti') + '">'
+    + '<div class="fpd">\u2713</div><div class="fpt">Termin\u00e9</div>'
+    + '<div class="fpv">' + (P.fin ? esc(issueDe(c) || "dossier clos") : '') + '</div></div>';
   return h + '</div>';
 }
 /* Un clic sur un point amene a l'etape correspondante du parcours. */
@@ -7108,6 +7176,15 @@ function blocSuivi(c){
     }
     h += '</div></div>';
   });
+  /* v7.48 — l'arrivee du parcours, apres l'etape 7. */
+  var fini = estTermine(c);
+  h += '<div class="etp fin' + (fini ? ' on' : '') + '"><div class="etpn">\u2713</div><div class="etpc">'
+    + '<div class="etpt">Termin\u00e9</div><div class="finv">'
+    + (fini ? 'Parcours termin\u00e9' + (issueDe(c) ? ' \u2014 ' + esc(issueDe(c)) : '')
+              + ', averti ' + (etatDe(c).av === "averti_tel" ? 'par t\u00e9l\u00e9phone' : 'par mail')
+              + (c.averti_date ? ' le ' + esc(jourFR(c.averti_date)) : '') + '.'
+            : 'Se valide tout seul d\u00e8s que le candidat est averti (\u00e9tape 7).')
+    + '</div></div></div>';
   h += '</div>'
     /* Le journal garde ce qui n'est PAS l'entretien : un appel qui n'aboutit
        pas, un mail de relance, un decalage demande. Sans lui, ces echanges-la
@@ -7918,6 +7995,7 @@ function tabSuivi(){
   neufs.sort(function(a,b){ return b._ev.total - a._ev.total; });
   var nh = "";
   neufs.slice(0, 15).forEach(function(c){ nh += ligne(c, ""); });
+  var nAtt = arr.filter(enAttenteOfficielle).length;
   var nXo = 0, nXa = 0;
   arr.forEach(function(c){ var x = extraInfo(c); if(x.ok) nXo++; if(x.aMailer) nXa++; });
 
@@ -7926,6 +8004,8 @@ function tabSuivi(){
     + '<div class="stat"><div class="sv">' + nF + '</div><div class="sl">rappels à venir</div></div>'
     + '<div class="stat"><div class="sv">' + nV + '</div><div class="sl">rendez-vous programmés</div></div>'
     + '<div class="stat"><div class="sv">' + neufs.length + '</div><div class="sl">jamais ouverts</div></div>'
+    + '<div class="stat attstat" id="st-att" title="Voir la liste dans l\u2019onglet Candidats"><div class="sv">' + nAtt
+    +   '</div><div class="sl">d\u00e9cisions \u00e0 officialiser</div></div>'
     + '<div class="stat xtstat" id="st-xt" title="Voir la liste dans l\u2019onglet Candidats"><div class="sv">' + nXa + ' / ' + nXo
     +   '</div><div class="sl">OK extras \u00e0 qui \u00e9crire / au total</div></div>'
     + '</div></div>'
@@ -7937,6 +8017,7 @@ function tabSuivi(){
   panneau(h);
   var trs = document.querySelectorAll("#adm-tab tr[data-k]");
   for(var i=0;i<trs.length;i++) trs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-k")]); };
+  if($("st-att")) $("st-att").onclick = function(){ ADM_FILTRE = "x:attente"; ADM_XT = ""; ADM_VU = ""; ADM_Q = ""; ADM_TAB = "candidats"; admRender(); };
   if($("st-xt")) $("st-xt").onclick = function(){ ADM_XT = "amailer"; ADM_FILTRE = "tous"; ADM_VU = ""; ADM_Q = ""; ADM_TAB = "candidats"; admRender(); };
 }
 
@@ -8551,16 +8632,19 @@ function estArchive(c){
 }
 /* Mini-frise pour le tableau : les memes 7 points que la fiche, en petit. */
 function miniProgHtml(c){
-  var P = progValeurs(c), COUL = { hot:"#3fb950", no:"#f85149", wip:"#d29922" }, h = '<span class="mprog" title="\u00c9tape ' + P.cur + ' / 7">';
+  var P = progValeurs(c), COUL = { hot:"#3fb950", no:"#f85149", wip:"#d29922" },
+      h = '<span class="mprog' + (P.fin ? ' termine' : '') + '" title="' + (P.fin ? 'Termin\u00e9' : '\u00c9tape ' + P.cur + ' / 7') + '">';
   for(var n=1;n<=7;n++){
     var k = P.v[n], st = "";
     if(n === 6 && !P.six) st = "na";
     else if(n === 1 || k) st = "fait";
     else if(n < P.cur) st = "saute";
+    if(n === 7 && P.att) st += " att";
     h += '<i class="' + st + (n === P.cur ? " cur" : "") + '"'
       + ((n === 1 || k) && st === "fait" ? ' style="--pc:' + (k ? (COUL[suiviDe(k).c] || "#4d9dff") : "#4d9dff") + '"' : '') + '></i>';
   }
-  return h + '</span><br><span class="dim">\u00e9tape ' + P.cur + '</span>';
+  h += '<b class="mfin' + (P.fin ? ' on' : '') + '">\u2713</b>';
+  return h + '</span><br>' + (P.fin ? '<span class="finlib">termin\u00e9</span>' : '<span class="dim">\u00e9tape ' + P.cur + '</span>');
 }
 function extraCell(c){
   var x = extraInfo(c), h = "";
@@ -8618,6 +8702,17 @@ function parcoursPills(c){
   });
   return h;
 }
+/* v7.47 — COLONNE 6. « — » ne distinguait pas « pas encore » de « jamais ».
+   Hachures grises = il n'y aura pas de 2e rendez-vous (dossier clos). */
+function etape6Cell(c){
+  var e = etatDe(c);
+  if(e.d2) return '<td>' + etapeCell(e.d2) + '</td>';
+  if(estFerme(c)) return '<td class="sans6"><span>\u2715 pas de 2\u1d49 RDV</span></td>';
+  if(e.d1 === "retenu") return '<td class="sans6 ok"><span>\u2713 pas n\u00e9cessaire</span></td>';
+  if(e.d1 === "rdv2") return '<td><span class="pill2 wip">\u00e0 venir</span>'
+    + (c.rdv2_date ? '<br><span class="dim mono">' + esc(jourFR(c.rdv2_date)) + (c.rdv2_heure ? " " + esc(c.rdv2_heure) : "") + '</span>' : '') + '</td>';
+  return '<td><span class="dim">\u2014</span></td>';
+}
 function etapeCell(k){
   if(!k) return '<span class="dim">\u2014</span>';
   return '<span class="pill2 ' + suiviDe(k).c + '">' + esc(suiviDe(k).n) + '</span>';
@@ -8636,7 +8731,8 @@ function avertiCell(c){
     return '<span class="pill2 hot">' + esc(suiviDe(st).n) + '</span>'
       + (c.averti_date ? '<br><span class="dim mono">' + esc(jourFR(c.averti_date)) + '</span>' : '');
   }
-  if(st === "averti_non") return '<span class="pill2 no">Pas encore averti</span>';
+  if(enAttenteOfficielle(c)) return '<span class="pill2 wip">\u23f3 D\u00e9cision \u00e0 officialiser</span>';
+  if(st === "averti_non") return '<span class="pill2">Pas encore averti</span>';
   return '<span class="dim">\u2014</span>';
 }
 
@@ -8649,7 +8745,9 @@ function admCandidats(){
      chaque dossier : affiche, en archives, ou retire par un filtre. Un
      dossier qui disparait sans explication est le pire defaut possible ici. */
   var totalBase = arr.length;
-  if(ADM_FILTRE.indexOf("sv:") === 0){
+  if(ADM_FILTRE === "x:attente"){
+    arr = arr.filter(enAttenteOfficielle);
+  } else if(ADM_FILTRE.indexOf("sv:") === 0){
     var sv = ADM_FILTRE.slice(3);
     arr = arr.filter(function(c){ return etatContient(c, sv); });
   } else if(ADM_FILTRE !== "tous"){
@@ -8712,7 +8810,7 @@ function admCandidats(){
      ceux qu'on a vus puis ecartes — c'est-a-dire une bonne partie de la
      reponse a la question posee. */
   var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte_dossier"
-                  || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_VU || ADM_XT);
+                  || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_FILTRE.indexOf("x:") === 0 || ADM_VU || ADM_XT);
   var actifs = arr, fermes = [], archives = [];
   if(separer){
     actifs = [];
@@ -8756,7 +8854,7 @@ function admCandidats(){
       /* v7.40 : une colonne par etape de decision. La colonne « Decision »
          empilait les etapes 5 et 6 dans la meme case. */
       { id:"decision", t:"5 · Décision", cell:function(c){ return '<td>' + etapeCell(etatDe(c).d1) + '</td>'; } },
-      { id:"etape6", t:"6 · Après 2ᵉ RDV", apres:"decision", cell:function(c){ return '<td>' + etapeCell(etatDe(c).d2) + '</td>'; } },
+      { id:"etape6", t:"6 · Après 2ᵉ RDV", apres:"decision", cell:function(c){ return etape6Cell(c); } },
       { id:"noteapres", t:"Note après RDV", cell:function(c){ return '<td>' + noteApresCell(c) + '</td>'; } },
       { id:"averti", t:"7 · Candidat averti", cell:function(c){ return '<td>' + avertiCell(c) + '</td>'; } },
       { id:"messages", t:"Messages envoyés", cell:function(c){ return '<td>' + envoisCell(c) + '</td>'; } },
@@ -8851,7 +8949,7 @@ function admCandidats(){
     });
     h += '</tr></thead><tbody>';
     liste.forEach(function(c){
-      h += '<tr data-k="' + c._k + '"' + (extraInfo(c).ok ? ' class="rxt"' : '') + '>';
+      h += '<tr data-k="' + c._k + '"' + (estTermine(c) ? ' class="rfin"' : (extraInfo(c).ok ? ' class="rxt"' : '')) + '>';
       if(mode && estAdmin()){
         h += '<td class="tdarch"><button class="btn sec mini arch' + (mode === "archive" ? " sortir" : "") + '" data-arch="' + esc(c._k) + '" data-v="'
           + (mode === "archive" ? "0" : "1") + '">' + (mode === "archive" ? "\u21a9 Sortir des archives" : "\ud83d\uddc4 Archiver") + '</button></td>';
@@ -8870,6 +8968,11 @@ function admCandidats(){
     + (cachesRech ? ' \u00b7 <b class="rouge">' + cachesRech + '</b> masquée' + (cachesRech > 1 ? 's' : '') + ' par la recherche' : '')
     + ((cachesFiltre || cachesRech) ? ' <button class="fraz" id="a-raz2">Tout afficher</button>' : '')
     + (ordreColonnes().length ? ' <button class="fraz" id="a-colraz">Remettre les colonnes dans l’ordre d’origine</button>' : '')
+    + (function(){
+        if(ADM_FILTRE === "x:attente") return "";
+        var n = 0; for(var ka in LAST_CAND) if(LAST_CAND[ka] && enAttenteOfficielle(LAST_CAND[ka])) n++;
+        return n ? ' <button class="fraz attbtn" id="a-att">\u23f3 ' + n + ' d\u00e9cision' + (n > 1 ? "s" : "") + ' \u00e0 officialiser</button>' : "";
+      })()
     + ((ADM_XT && estAdmin()) ? ' <button class="fraz" id="a-xtmail">\u2709 Copier les adresses mail de cette liste</button>' : '')
     + '</div>'
     + (ADM_XT === "amailer" ? '<p class="aide">Pour leur \u00e9crire \u00e0 part : ouvrez la fiche et envoyez un message de la biblioth\u00e8que '
@@ -8962,6 +9065,7 @@ function admCandidats(){
   }
   if($("a-colraz")) $("a-colraz").onclick = function(){ poserOrdreColonnes([]); admCandidats(); };
   if($("a-xtmail")) $("a-xtmail").onclick = function(){ copierAdresses(arr); };
+  if($("a-att")) $("a-att").onclick = function(){ ADM_FILTRE = "x:attente"; ADM_VU = ""; ADM_XT = ""; ADM_Q = ""; admTab(); };
   brancherPhotosZoom($("a-cand"));
 }
 
