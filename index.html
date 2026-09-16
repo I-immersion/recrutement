@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.55 -->
+<!-- LUMIIA RECRUTE — v7.57 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -769,6 +769,8 @@ body.adm{background:#0d1117;}
 #admin .fermbloc{margin-top:22px;padding-top:14px;border-top:2px solid #5a2a2a;}
 #admin .fermt{font-weight:900;font-size:.95rem;color:#ff8b81;letter-spacing:.02em;}
 #admin .fermbloc table.cmp{opacity:.9;}
+#admin .fermbloc.xtbloc{border-top-color:#8a7a1f;}
+#admin .fermbloc.xtbloc .fermt{color:#e3c84a;}
 #admin th.tharch,#admin td.tdarch{white-space:nowrap;}
 #admin .btn.mini.arch{padding:5px 10px;font-size:.74rem;}
 #admin .btn.mini.arch.sortir{border-color:#2f7a3d;color:#7ee787;}
@@ -886,6 +888,7 @@ body.adm{background:#0d1117;}
 .fiche .suivi .svbloc.off{border-style:dashed;opacity:.55;background:none;}
 .fiche .suivi .svbloc.off .svbt{background:none;border-bottom:none;}
 .fiche .suivi .svoff{padding:0 14px 12px 55px;font-size:.84rem;color:#8b98a8;}
+.fiche .suivi .svfinseul{margin-top:16px;border:1px solid #2f7a3d;border-radius:12px;overflow:hidden;}
 .fiche .suivi .svbloc.fort{border-width:3px;box-shadow:0 6px 26px rgba(63,185,80,.14);}
 .fiche .suivi .svbloc.fort .svbt{font-size:1.75rem;padding:14px 16px;}
 .fiche .suivi .svbloc.fort .svbn{min-width:36px;height:36px;font-size:1.15rem;}
@@ -1046,7 +1049,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.55</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.57</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1061,7 +1064,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.55";
+var VERSION = "v7.57";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6710,9 +6713,10 @@ function etatDe(c){
      l'entretien. */
   /* v7.55 — etape 3.1. Une date de 2e RDV posee avant la v7.55 vaut « RDV fixe ». */
   var r2 = c.rdv2_statut || "";
-  if(!r2 && (d1 === "rdv2" || c.second_rdv) && c.rdv2_date) r2 = "rdv2_fixe";
+  if(!r2 && d1 === "rdv2" && c.rdv2_date) r2 = "rdv2_fixe";
   var avDefaut = false;
-  if(!av && (c.rdv_cr || c.rdv2_cr || (c.rdv_notes && Object.keys(c.rdv_notes).length) || d1 || d2)){
+  var retire = !d2 && (d1 === "indispo_rdv" || r2 === "indispo_rdv2");
+  if(!av && !retire && (c.rdv_cr || c.rdv2_cr || (c.rdv_notes && Object.keys(c.rdv_notes).length) || d1 || d2)){
     av = "averti_non"; avDefaut = true;
   }
   return { base:base, d1:d1, d2:d2, r2:r2, av:av, avDefaut:avDefaut };
@@ -6728,6 +6732,12 @@ function statutEffectif(c){
    parcours, quelle que soit l'issue. */
 function estTermine(c){
   var av = etatDe(c).av;
+  /* v7.57 — « Candidat plus disponible » (2.2 ou 3.1) termine la candidature :
+     il n'y a ni decision de la direction a prendre, ni decision a annoncer. */
+  return av === "averti_mail" || av === "averti_tel" || sansDirection(c);
+}
+function avertiReel(c){
+  var av = etatDe(c).av;
   return av === "averti_mail" || av === "averti_tel";
 }
 function issueDe(c){
@@ -6741,11 +6751,22 @@ function enAttenteOfficielle(c){
   /* v7.55 — une decision est finale quand la DIRECTION a tranche (4.1), ou
      quand la personne n'est plus disponible (2.2 ou 3.1) : dans ce cas il n'y
      a rien a trancher. Le choix du recruteur seul n'est plus final. */
-  var finale = (e.d2 === "retenu2" || e.d2 === "ecarte2")
-            || e.d1 === "indispo_rdv" || e.r2 === "indispo_rdv2";
+  /* v7.57 — un retrait du candidat n'est plus « a officialiser » : il est termine. */
+  var finale = (e.d2 === "retenu2" || e.d2 === "ecarte2");
   return finale && e.av !== "averti_mail" && e.av !== "averti_tel";
 }
 /* v7.55 — le deuxieme rendez-vous a-t-il eu lieu ? Trame remplie, ou date passee. */
+/* v7.56 — Y A-T-IL (EU) UN DEUXIEME RENDEZ-VOUS ? Le drapeau second_rdv ne
+   suffit plus : il reste pose quand le recruteur change d'avis (« Demander un
+   2e RDV » puis « Ecarter apres premier entretien »), et la colonne 3.1
+   affichait alors « a fixer » pour quelqu'un d'ecarte. Seuls comptent la
+   decision en cours ou une trace reelle du 2e RDV. */
+function aDeuxiemeRdv(c){
+  if(!c) return false;
+  var e = etatDe(c);
+  return e.d1 === "rdv2" || !!c.rdv2_statut || !!c.rdv2_cr
+      || !!(c.rdv2_notes && Object.keys(c.rdv2_notes).length);
+}
 function vuAuDeuxieme(c){
   return !!(c && (c.rdv2_cr || (c.rdv2_notes && Object.keys(c.rdv2_notes).length)
              || (c.rdv2_date && c.rdv2_date < aujourdhui())));
@@ -6921,8 +6942,7 @@ function progValeurs(c){
   SUIVI_ETAPES.forEach(function(e, i){ if(v[e.n]) cur = i + 1; });
   if(rangEtape(nb) > cur) cur = rangEtape(nb);
   if(estTermine(c)) cur = 9;
-  var deux = E.d1 === "rdv2" || !!E.r2 || !!c.second_rdv || !!c.rdv2_date
-          || !!c.rdv2_cr || !!(c.rdv2_notes && Object.keys(c.rdv2_notes).length);
+  var deux = aDeuxiemeRdv(c);
   return { v:v, cur:cur, deux:deux, sansDir: sansDirection(c),
            lab: cur === 9 ? "\u2713" : SUIVI_ETAPES[cur - 1].lab,
            avNon: E.av === "averti_non", att: enAttenteOfficielle(c), attDir: attenteDirection(c), fin: cur === 9 };
@@ -6933,7 +6953,7 @@ function progHtml(c){
   SUIVI_ETAPES.forEach(function(e, i){
     var n = e.n, r = i + 1, k = P.v[n], cls = "fpst", coul = "", sous = "";
     if(n === 9 && !P.deux && !k){ cls += " na"; sous = "si 2\u1d49 RDV"; }
-    else if(n === 6 && P.sansDir){ cls += " na"; sous = "sans objet"; }
+    else if((n === 6 || n === 7) && P.sansDir && !k){ cls += " na"; sous = "sans objet"; }
     else if(n === 1){ cls += " fait"; coul = "#4d9dff"; sous = "re\u00e7ue"; }
     else if(k){ cls += " fait"; coul = COUL[suiviDe(k).c] || "#4d9dff"; sous = suiviDe(k).n; }
     else if(r < P.cur){ cls += " saute"; sous = "\u2014"; }
@@ -7389,8 +7409,7 @@ function blocSuivi(c){
   var voirMsg = ancien || st !== "nouveau" || !!E.d1 || !!E.d2 || !!E.av || envoisDe(c).length > 0;
   /* Le bloc du 2e rendez-vous s'ouvre des qu'il est demande, et ne se referme
      plus ensuite (drapeau second_rdv) : sinon son compte rendu disparaitrait. */
-  var deux = E.d1 === "rdv2" || !!E.r2 || !!c.second_rdv
-             || !!c[RDV_NS.r2.cr] || !!c.rdv2_date || !!c[RDV_NS.r2.notes];
+  var deux = aDeuxiemeRdv(c) || !!c.rdv2_date;
   var sansDir = sansDirection(c);
 
   function zoneRdv(num, ns, cd, ch, idAcc, idD, idH, idRec, titre){
@@ -7468,7 +7487,8 @@ function blocSuivi(c){
     var fini = estTermine(c);
     return '<div class="etp fin' + (fini ? ' on' : '') + '" data-etp="8"><div class="etpn">\u2713</div><div class="etpc">'
       + '<div class="etpt">Termin\u00e9</div><div class="finv">'
-      + (fini ? 'Parcours termin\u00e9' + (issueDe(c) ? ' \u2014 ' + esc(issueDe(c)) : '')
+      + ((fini && !avertiReel(c)) ? 'Candidature termin\u00e9e \u2014 ' + esc(issueDe(c)) + '.'
+        : fini ? 'Parcours termin\u00e9' + (issueDe(c) ? ' \u2014 ' + esc(issueDe(c)) : '')
                 + ', averti ' + (E.av === "averti_tel" ? 'par t\u00e9l\u00e9phone' : 'par mail')
                 + (c.averti_date ? ' le ' + esc(jourFR(c.averti_date)) : '') + '.'
               : 'Se valide tout seul d\u00e8s que le candidat est averti (\u00e9tape 4.2).')
@@ -7482,7 +7502,17 @@ function blocSuivi(c){
       + ' — choisissez l’étape correspondante ci-dessous pour le reprendre dans le parcours.</div>';
   }
   h += '<div id="sv-st">';
+  /* v7.57 — candidat retire : le bloc 4 se grise (rien a trancher, rien a
+     annoncer), sauf s'il porte deja un avertissement saisi avant. */
+  var dirOff = sansDir && !avertiReel(c);
   SUIVI_BLOCS.forEach(function(b){
+    if(b.id === "dir" && dirOff){
+      h += '<section class="svbloc off" data-bloc="dir" style="--bc:' + b.bc + ';--bg:' + b.bg + ';--bt:' + b.bt + '">'
+        + '<div class="svbt"><span class="svbn">' + b.num + '</span><span>' + esc(b.t) + '</span></div>'
+        + '<div class="svoff">Sans objet : le candidat n\u2019est plus disponible. Pas de d\u00e9cision de la direction, rien \u00e0 annoncer.</div></section>'
+        + '<div class="etapes svfinseul">' + finHtml() + '</div>';
+      return;
+    }
     var off = b.si && !deux;
     h += '<section class="svbloc' + (off ? ' off' : '') + (b.fort ? ' fort' : '') + '" data-bloc="' + b.id + '"'
       + ' style="--bc:' + b.bc + ';--bg:' + b.bg + ';--bt:' + b.bt + '">'
@@ -9064,12 +9094,18 @@ function estFerme(c){
   var e = etatDe(c);
   if(e.d2) return e.d2 === "ecarte2";
   if(e.r2 === "indispo_rdv2") return true;
-  /* v7.55 — « Ecarter apres premier entretien » est l'avis du recruteur : le
-     dossier reste ouvert tant que la direction n'a pas tranche (4.1). Les
-     fiches d'avant, deja annoncees au candidat, restent closes. */
-  if(e.d1 === "ecarte") return !attenteDirection(c);
-  if(e.d1) return e.d1 === "indispo_rdv";
+  /* v7.56 — un ecarte au 1er entretien rejoint les clos tout de suite
+     (demande d'Emmanuel), meme si la direction doit encore le confirmer. */
+  if(e.d1) return e.d1 === "ecarte" || e.d1 === "indispo_rdv";
   return e.base === "ecarte_dossier" || e.base === "indispo" || e.base === "sans_suite" || e.base === "ecarte";
+}
+/* v7.56 — ECARTE APRES ENTRETIEN (1er ou 2e) mais partant pour les extras :
+   un vivier a part, en bas de la liste des candidats. */
+function ecarteOkExtras(c){
+  if(!estFerme(c)) return false;
+  var e = etatDe(c);
+  var ecarte = e.d2 ? e.d2 === "ecarte2" : e.d1 === "ecarte";
+  return ecarte && extraInfo(c).ok;
 }
 function estArchive(c){
   if(c.archive === true) return true;
@@ -9083,7 +9119,7 @@ function miniProgHtml(c){
   SUIVI_ETAPES.forEach(function(e, i){
     var n = e.n, r = i + 1, k = P.v[n], st = "";
     if(n === 9 && !P.deux && !k) st = "na";
-    else if(n === 6 && P.sansDir) st = "na";
+    else if((n === 6 || n === 7) && P.sansDir && !k) st = "na";
     else if(n === 1 || k) st = "fait";
     else if(r < P.cur) st = "saute";
     if((n === 7 && P.att) || (n === 6 && P.attDir)) st += " att";
@@ -9184,7 +9220,7 @@ function etape6Cell(c){
   var e = etatDe(c);
   var dt = c.rdv2_date ? '<br><span class="dim mono">' + esc(jourFR(c.rdv2_date)) + (c.rdv2_heure ? " " + esc(c.rdv2_heure) : "") + '</span>' : '';
   if(e.r2 === "indispo_rdv2") return '<td>' + etapeCell(e.r2) + dt + '</td>';
-  if(e.d1 === "rdv2" || c.second_rdv || c.rdv2_date){
+  if(aDeuxiemeRdv(c)){
     if(e.d2 || vuAuDeuxieme(c)) return '<td><span class="pill2 hot">\u2713 a eu lieu</span>' + dt + '</td>';
     if(e.r2 === "rdv2_fixe") return '<td>' + etapeCell(e.r2) + dt + '</td>';
     return '<td><span class="pill2 wip">\u00e0 fixer</span>' + dt + '</td>';
@@ -9220,6 +9256,7 @@ function avertiCell(c){
       + (c.averti_date ? '<br><span class="dim mono">' + esc(jourFR(c.averti_date)) + '</span>' : '');
   }
   if(enAttenteOfficielle(c)) return '<span class="pill2 wip">\u23f3 D\u00e9cision \u00e0 officialiser</span>';
+  if(sansDirection(c)) return '<span class="dim">\u2715 sans objet</span>';
   if(st === "averti_non") return '<span class="pill2">Pas encore averti</span>';
   return '<span class="dim">\u2014</span>';
 }
@@ -9243,7 +9280,7 @@ var TRI_COLS = {
   suivi:     { s:1,  k:function(c){ var b = etatDe(c).base; for(var i=0;i<SUIVI.length;i++) if(SUIVI[i].k === b) return i; return 50; } },
   decision:  { s:1,  k:function(c){ return rangTri(etatDe(c).d1, ["retenu","rdv2","ecarte","indispo_rdv"]); } },
   etape6:    { s:1,  k:function(c){ var e = etatDe(c);
-                 if(e.d1 === "rdv2" || c.second_rdv || c.rdv2_date){
+                 if(aDeuxiemeRdv(c)){
                    if(e.r2 === "indispo_rdv2") return 3;
                    if(e.d2 || vuAuDeuxieme(c)) return 2;
                    return e.r2 === "rdv2_fixe" ? 1 : 0; }
@@ -9359,7 +9396,7 @@ function admCandidats(){
      reponse a la question posee. */
   var separer = !(ADM_FILTRE === "sv:ecarte" || ADM_FILTRE === "sv:ecarte_dossier"
                   || ADM_FILTRE === "sv:ecarte2" || ADM_FILTRE === "sv:sans_suite" || ADM_FILTRE.indexOf("x:") === 0 || ADM_FILTRE.indexOf("h:") === 0 || ADM_VU || ADM_XT);
-  var actifs = arr, fermes = [], archives = [];
+  var actifs = arr, fermes = [], archives = [], viviers = [];
   if(separer){
     actifs = [];
     arr.forEach(function(c){
@@ -9367,6 +9404,7 @@ function admCandidats(){
          clos (ecartes, plus disponibles), visibles en fin de liste ; puis les
          archives, repliees. Voir estFerme / estArchive. */
       if(estArchive(c)) archives.push(c);
+      else if(ecarteOkExtras(c)) viviers.push(c);
       else if(estFerme(c)) fermes.push(c);
       else actifs.push(c);
     });
@@ -9510,6 +9548,7 @@ function admCandidats(){
   var compte = '<div class="compte"><b>' + totalBase + '</b> candidature' + (totalBase > 1 ? 's' : '')
     + ' en base \u00b7 <b>' + actifs.length + '</b> \u00e0 traiter'
     + (fermes.length ? ' \u00b7 <b>' + fermes.length + '</b> \u00e9cart\u00e9' + (fermes.length > 1 ? 's' : '') + ' ou plus disponible' + (fermes.length > 1 ? 's' : '') + ', en fin de liste' : '')
+    + (viviers.length ? ' \u00b7 <b>' + viviers.length + '</b> \u00e9cart\u00e9' + (viviers.length > 1 ? 's' : '') + ' OK extras' : '')
     + (archives.length ? ' \u00b7 <b>' + archives.length + '</b> en archives' : '')
     + (cachesFiltre ? ' \u00b7 <b class="rouge">' + cachesFiltre + '</b> masquée' + (cachesFiltre > 1 ? 's' : '') + ' par le filtre' : '')
     + (cachesRech ? ' \u00b7 <b class="rouge">' + cachesRech + '</b> masquée' + (cachesRech > 1 ? 's' : '') + ' par la recherche' : '')
@@ -9538,7 +9577,7 @@ function admCandidats(){
     ? "du moins avanc\u00e9 au plus avanc\u00e9 (\u00e0 \u00e9tape \u00e9gale, meilleur potentiel d\u2019abord)"
     : "par \u00ab\u00a0" + triTitre + "\u00a0\u00bb" + (ADM_SENS === -1 ? " (ordre invers\u00e9)" : "");
   var h = compte + (actifs.length ? tableCand(actifs)
-    : '<p class="aide">Aucun dossier \u00e0 traiter' + ((fermes.length || archives.length) ? ' \u2014 tout est clos ou en archives, plus bas.' : '.') + '</p>')
+    : '<p class="aide">Aucun dossier \u00e0 traiter' + ((fermes.length || viviers.length || archives.length) ? ' \u2014 tout est clos ou en archives, plus bas.' : '.') + '</p>')
     + '<p class="aide">Tri\u00e9 ' + triPhrase + ' \u2014 cliquez n\u2019importe quel titre de colonne pour trier, recliquez pour inverser'
     + (ADM_TRI !== "avancement" || ADM_SENS !== 1 ? ' \u00b7 <a class="lien" href="#" id="a-trizero">revenir au tri par avancement</a>' : '') + '. Les cinq barres donnent le profil : '
     + 'm\u00e9tier, terrain, posture, engagement, praticit\u00e9. Le potentiel n\u2019\u00e9limine personne, il range la pile \u2014 '
@@ -9546,7 +9585,11 @@ function admCandidats(){
     + 'La photo n\u2019appara\u00eet pas dans ce tableau : elle sert \u00e0 reconna\u00eetre la personne le jour de l\u2019entretien, pas \u00e0 comparer.</p>'
     + (fermes.length ? '<div class="fermbloc"><div class="fermt">\u00c9cart\u00e9s et plus disponibles \u00b7 ' + fermes.length + '</div>'
         + '<div class="dim" style="margin:4px 0 10px">Dossiers clos. Toujours consultables ; le bouton les range dans les archives.</div>'
-        + tableCand(fermes, "ferme") + '</div>' : '');
+        + tableCand(fermes, "ferme") + '</div>' : '')
+    + (viviers.length ? '<div class="fermbloc xtbloc"><div class="fermt">\u2b50 \u00c9cart\u00e9s apr\u00e8s entretien, OK pour les extras \u00b7 ' + viviers.length + '</div>'
+        + '<div class="dim" style="margin:4px 0 10px">Pas retenus pour le poste, mais partants pour des extras (r\u00e9ponse en entretien ou parcours extras). '
+        + 'Pour leur \u00e9crire : filtre Extras, puis \u00ab\u00a0Copier les adresses mail\u00a0\u00bb.</div>'
+        + tableCand(viviers, "ferme") + '</div>' : '');
 
   if(archives.length){
     var ouvert = ADM_ARCH || !!ADM_Q;
