@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.60 -->
+<!-- LUMIIA RECRUTE — v7.61 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1057,7 +1057,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.60</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.61</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1072,7 +1072,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.60";
+var VERSION = "v7.61";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -7869,7 +7869,7 @@ function voyantControle(){
     return '<div class="vl" data-r="' + esc(e.r) + '"><span class="vp att"></span><b>'
       + esc(e.n) + '</b><span class="vd">vérification…</span></div>';
   }).join("") + '<div class="vl"><span class="vp"></span><b>Miroir Google Agenda</b><span class="vd">'
-    + (creAgendaCfg().url ? "configuré" : "non configuré — report manuel") + '</span></div>';
+    + (creAgendaCfg().script ? "script install\u00e9 \u2014 synchro toutes les 5 min" : "non install\u00e9 \u2014 report manuel") + '</span></div>';
 
   essais.forEach(function(e){
     var ligne = p.querySelector('.vl[data-r="' + e.r + '"]');
@@ -8145,23 +8145,13 @@ function crePasse(c){
 
 /* ── Miroir Google Agenda (facultatif) ────────────────────────────────── */
 function creAgendaCfg(){ return (CFG && CFG.agenda) || {}; }
-function creVersGoogle(c, nomCand, cb){
-  var a = creAgendaCfg();
-  if(!a.url){ if(cb) cb(false, "pas configuré"); return; }
-  var corps = JSON.stringify({
-    cle: a.cle || "",
-    titre: "Entretien recrutement — " + (nomCand || "candidat"),
-    debut: c.d + "T" + (c.h || "00:00") + ":00",
-    duree: Number(c.duree) || 30,
-    description: "Créneau réservé depuis LUMIIA RECRUTE."
-  });
-  /* text/plain volontairement : un en-tete JSON declencherait une requete
-     preliminaire que les scripts Google ne savent pas honorer. */
-  fetch(a.url, { method:"POST", body: corps, headers:{ "Content-Type":"text/plain;charset=utf-8" } })
-    .then(function(r){ return r.json(); })
-    .then(function(r){ if(cb) cb(!!(r && r.ok), r && r.err); })
-    .catch(function(e){ if(cb) cb(false, e.message); });
-}
+/* v7.61 — LE MIROIR EST UN SCRIPT GOOGLE QUI LIT L'APP (toutes les 5 min).
+   Avant, c'etait le navigateur du CANDIDAT qui appelait Google avec une cle
+   partagee : la cle devait donc etre lisible par n'importe quel candidat,
+   et donc par n'importe qui. Le script ne fait que lire /recrutement/creneaux
+   (deja public, l'ecran de reservation le lit) : aucune cle, aucun secret.
+   CFG.agenda.script = true quand Emmanuel a installe le script. */
+var MIROIR_GS = "/* LUMIIA RECRUTE — miroir des rendez-vous réservés vers Google Agenda.\n   Toutes les 5 minutes, le script lit les créneaux réservés dans l'app et\n   met l'agenda à jour : création, déplacement, suppression si le créneau est\n   libéré (sauf rendez-vous déjà passés, qu'on garde en historique).\n   Rien à régler dans l'app, aucune clé : le script ne fait que LIRE l'app. */\n\nconst AGENDA = 'COLLER-ICI-L-ID-DE-L-AGENDA';\nconst BASE   = 'https://lumiia-live-default-rtdb.europe-west1.firebasedatabase.app/recrutement/creneaux.json';\nconst ADMIN  = 'https://i-immersion.github.io/recrutement/?admin';\n\nfunction synchroniser(){\n  const cal = CalendarApp.getCalendarById(AGENDA);\n  if(!cal) throw new Error('Agenda introuvable : vérifie la ligne AGENDA.');\n  const props = PropertiesService.getScriptProperties();\n  const suivis = JSON.parse(props.getProperty('suivis') || '{}');\n  const creneaux = JSON.parse(UrlFetchApp.fetch(BASE).getContentText()) || {};\n  const vus = {};\n  Object.keys(creneaux).forEach(function(k){\n    const c = creneaux[k];\n    if(!c || !c.cand || !c.d || !c.h) return;\n    const n = Number(c.n) || 1;\n    const titre = (n > 1 ? n + 'e entretien' : 'Entretien') + ' recrutement — ' + (c.nom || 'candidat');\n    const debut = new Date(c.d + 'T' + c.h + ':00');\n    const fin = new Date(debut.getTime() + (Number(c.duree) || 30) * 60000);\n    const sig = [c.cand, c.d, c.h, c.duree, n, c.nom].join('|');\n    vus[k] = true;\n    const s = suivis[k];\n    if(s && s.sig === sig) return;\n    if(s) effacer(cal, s.id);\n    const ev = cal.createEvent(titre, debut, fin, { description: 'Créneau réservé depuis LUMIIA RECRUTE.\\n' + ADMIN });\n    suivis[k] = { id: ev.getId(), sig: sig, debut: debut.getTime() };\n  });\n  Object.keys(suivis).forEach(function(k){\n    if(vus[k]) return;\n    if(suivis[k].debut && suivis[k].debut < Date.now()){ delete suivis[k]; return; }\n    effacer(cal, suivis[k].id);\n    delete suivis[k];\n  });\n  props.setProperty('suivis', JSON.stringify(suivis));\n}\n\nfunction effacer(cal, id){\n  try{ const ev = cal.getEventById(id); if(ev) ev.deleteEvent(); }catch(e){}\n}\n\n/* À lancer UNE fois : pose le déclencheur toutes les 5 minutes. */\nfunction installer(){\n  ScriptApp.getProjectTriggers().forEach(function(t){ ScriptApp.deleteTrigger(t); });\n  ScriptApp.newTrigger('synchroniser').timeBased().everyMinutes(5).create();\n  synchroniser();\n}\n";
 
 /* ══════════ ONGLET CRENEAUX (admin) ══════════ */
 function tabCreneaux(){
@@ -8185,16 +8175,22 @@ function tabCreneaux(){
     + '<div id="cr-liste"><p class="aide">Chargement…</p></div>'
 
     + '<div class="adm-sec" style="margin-top:26px"><h2>Miroir Google Agenda</h2>'
-    + '<p class="aide">Facultatif. Sans adresse, tout fonctionne : les créneaux réservés '
-    + 'apparaissent ici et dans la fiche du candidat, et vous reportez sur Google à la main. '
-    + 'Avec l’adresse du script, chaque réservation crée l’événement toute seule.</p>'
-    + '<div class="fgrid">'
-    +   '<div class="txrow"><label class="f">Adresse du script (…/exec)</label>'
-    +     '<input type="text" id="cr-url" value="' + esc(a.url || "") + '" placeholder="https://script.google.com/macros/s/…/exec"></div>'
-    +   '<div class="txrow"><label class="f">Clé partagée</label>'
-    +     '<input type="text" id="cr-cle" value="' + esc(a.cle || "") + '"></div>'
-    + '</div>'
-    + boutonSauver("cr-save", "ENREGISTRER L’ADRESSE")
+    + '<p class="aide">Facultatif. Un petit script Google lit les réservations toutes les 5 minutes '
+    + 'et les recopie dans votre agenda : création, déplacement, suppression si le créneau est libéré. '
+    + 'Aucune adresse ni clé à saisir ici.</p>'
+    + '<div class="essai"><div class="essait">' + (a.script ? '\u2705 Script install\u00e9' : '\u26aa Script pas encore install\u00e9') + '</div>'
+    + '<ol class="dim" style="margin:8px 0 0 18px;line-height:1.7">'
+    +   '<li>Google Agenda \u2192 \u2699 Param\u00e8tres \u2192 votre agenda \u2192 <b>Int\u00e9grer l\u2019agenda</b> \u2192 copier l\u2019<b>ID de l\u2019agenda</b>.</li>'
+    +   '<li><a class="lien" href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com \u2192 Nouveau projet</a>, tout effacer, coller le script (bouton ci-dessous).</li>'
+    +   '<li>Remplacer <code>COLLER-ICI-L-ID-DE-L-AGENDA</code> par l\u2019ID, enregistrer.</li>'
+    +   '<li>\u2699 Param\u00e8tres du projet \u2192 fuseau horaire <b>(GMT+01:00) Paris</b>.</li>'
+    +   '<li>Choisir la fonction <b>installer</b> \u2192 Ex\u00e9cuter \u2192 autoriser l\u2019acc\u00e8s \u00e0 votre agenda.</li>'
+    +   '<li>Cocher la case ci-dessous.</li>'
+    + '</ol>'
+    + '<div style="margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">'
+    +   '<button class="btn sec" id="cr-copygs" style="width:auto;margin:0;padding:10px 22px">Copier le script</button>'
+    +   '<label style="display:flex;gap:8px;align-items:center;cursor:pointer;white-space:nowrap;font-weight:700"><input type="checkbox" id="cr-gsok"' + (a.script ? ' checked' : '') + '> Script install\u00e9</label>'
+    + '</div></div>'
     + '</div></div>';
   panneau(h);
   var zEssai = $("cr-essai");
@@ -8244,10 +8240,17 @@ function tabCreneaux(){
       .catch(function(e){ creMsg(creRegleKO(e) || ("Échec : " + e.message), "ko"); })
       .then(function(){ bt.disabled = false; });
   };
-  $("cr-save").onclick = function(){
-    var patch = { agenda: { url: ($("cr-url").value || "").trim(), cle: ($("cr-cle").value || "").trim() } };
+  $("cr-copygs").onclick = function(){
+    var bt = this;
+    function fait(){ bt.textContent = "Script copié ✓"; setTimeout(function(){ bt.textContent = "Copier le script"; }, 2500); }
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(MIROIR_GS).then(fait).catch(function(){ toast("Copie impossible"); });
+    else toast("Copie impossible dans ce navigateur");
+  };
+  $("cr-gsok").onchange = function(){
+    /* url et cle vides : l'ancien mode (envoi depuis le navigateur) est abandonne. */
+    var patch = { agenda: { script: !!this.checked, url: "", cle: "" } };
     db.ref(FB_PATH + "/config").update(patch)
-      .then(function(){ CFG.agenda = patch.agenda; toast("Adresse enregistrée ✓"); })
+      .then(function(){ CFG.agenda = patch.agenda; toast(patch.agenda.script ? "Miroir noté comme installé ✓" : "Miroir noté comme non installé"); tabCreneaux(); })
       .catch(function(e){ voyantEchec(e); toast("Échec : " + e.message); });
   };
 
@@ -8450,7 +8453,6 @@ function creReserver(cle, id, nom, num, cb){
     patchR[R.date] = c.d; patchR[R.heure] = c.h;
     Object.keys(R.statut).forEach(function(k2){ patchR[k2] = R.statut[k2]; });
     db.ref(FB_PATH + "/candidats/" + id).update(patchR).catch(function(){});
-    creVersGoogle(c, nom, function(){});
     creAlerter(cle, id);
     cb(true);
   });
