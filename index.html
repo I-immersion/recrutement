@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.65 -->
+<!-- LUMIIA RECRUTE — v7.66 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -679,6 +679,8 @@ body.adm{background:#0d1117;}
 .crchoix:disabled{opacity:.4;cursor:default;}
 .crconf{margin-top:14px;padding:12px 14px;border-radius:10px;background:#1f3d16;border:1px solid #58a33a;color:#b9f09a;font-weight:800;text-align:center;}
 #cr-val{margin:16px 0 6px;}
+.crmail{margin-top:10px;padding:10px 14px;border-radius:10px;background:#1b1433;border:1px solid #3a2e66;color:#c9bff0;line-height:1.5;}
+.crmail.ok{border-color:#58a33a;color:#d8f5c4;background:#15260f;}
 .crok{margin-top:14px;padding:16px;border-radius:10px;background:#12210f;border:1px solid #3f6b2a;
   color:#e6edf3;font-size:1.1rem;line-height:1.6;}
 .crvide{margin-top:14px;padding:14px;border-radius:10px;background:#2a2413;border:1px solid #6d5a22;
@@ -1059,7 +1061,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.65</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.66</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1074,7 +1076,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.65";
+var VERSION = "v7.66";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -8328,7 +8330,9 @@ function creDessinerAdmin(){
     h += '<div class="crl' + (pris ? " pris" : "") + (passe ? " passe" : "") + '">'
       + '<span class="crh">' + esc(c.h) + ' – ' + esc(creFin(c)) + '</span>'
       + (dbl ? '<span class="pill2 no" title="Un autre créneau occupe la même plage">\u26a0 doublon</span>' : '')
-      + '<span class="crn">' + (pris ? esc(c.nom || "réservé") + (numResa(c.n) > 1 ? ' <span class="pill2 wip">' + numResa(c.n) + '\u1d49 RDV</span>' : '') : '<span class="dim">libre</span>') + '</span>'
+      + '<span class="crn">' + (pris ? esc(c.nom || "réservé") + (numResa(c.n) > 1 ? ' <span class="pill2 wip">' + numResa(c.n) + '\u1d49 RDV</span>' : '')
+            + ((LAST_CAND[c.cand] && LAST_CAND[c.cand].rdv_mails && LAST_CAND[c.cand].rdv_mails[c._k])
+                ? ' <span class="pill2 hot" title="Mail de confirmation envoy\u00e9 au candidat">\ud83d\udce9 mail envoy\u00e9</span>' : '') : '<span class="dim">libre</span>') + '</span>'
       + (pris
           ? '<button class="crx" data-lib="' + c._k + '">Libérer</button>'
           : '<button class="crx" data-del="' + c._k + '">Supprimer</button>')
@@ -8384,7 +8388,11 @@ function creEcranCandidat(id, fiche, num){
         + '<div class="crok"><b>' + esc(creJourFR(mien.d)) + '</b><br>'
         + esc(mien.h) + ' \u2013 ' + esc(creFin(mien)) + '<br>'
         + '<span class="dim">LUMIIA \u00b7 1 route de Fontagnal, Aouste-sur-Sye</span></div>'
-        + '<div class="crconf">\u2713 Rendez-vous r\u00e9serv\u00e9. Vous pouvez fermer cette page.</div>'
+        + '<div class="crconf">\u2713 Rendez-vous r\u00e9serv\u00e9.</div>'
+        + ({ envoi: '<div class="crmail">\ud83d\udce9 Envoi du mail de confirmation\u2026</div>',
+             ok:    '<div class="crmail ok">\ud83d\udce9 Un mail de confirmation vient de vous \u00eatre envoy\u00e9, avec le rendez-vous \u00e0 ajouter \u00e0 votre agenda. Vous pouvez fermer cette page.</div>',
+             ko:    '<div class="crmail">Le mail de confirmation n\u2019a pas pu partir, mais votre rendez-vous est bien r\u00e9serv\u00e9. Notez-le : vous pouvez fermer cette page.</div>'
+           }[CRE_MAIL[mien._k]] || '')
         + '<p class="mut">Un emp\u00eachement ? Vous pouvez changer de cr\u00e9neau tant qu\u2019il en reste.</p>'
         + '<button class="btn sec" id="cr-chg">Choisir un autre cr\u00e9neau</button></div>';
       view(h);
@@ -8411,6 +8419,7 @@ function creEcranCandidat(id, fiche, num){
             dessine(); return;
           }
           CRE_SELECT = ""; CRE_CHANGE = false;
+          creConfirmerMail(choisi._k, id, dessine);
           dessine();
         });
       };
@@ -8463,6 +8472,21 @@ var CRE_PERDU = false; /* v7.65 — le creneau choisi a ete pris entre-temps */
    n'annule JAMAIS la reservation — le creneau est pris, c'est le seul
    fait qui compte ; l'alerte n'est qu'un confort. */
 var CRE_NOTIF_URL = "https://reservation.lumiia.fr/api/recrutement-notif.php";
+/* v7.66 — MAIL DE CONFIRMATION AU CANDIDAT (recrutement-rdv.php). Meme
+   principe que l'alerte : deux identifiants, le serveur relit tout dans la
+   base et n'ecrit qu'a l'adresse de la fiche. Un echec n'annule rien. */
+var CRE_RDV_URL = "https://reservation.lumiia.fr/api/recrutement-rdv.php";
+var CRE_MAIL = {};   /* cle du creneau -> "envoi" | "ok" | "ko", pour cette visite */
+function creConfirmerMail(cle, id, apres){
+  CRE_MAIL[cle] = "envoi";
+  try{
+    fetch(CRE_RDV_URL, { method:"POST", headers:{ "Content-Type":"application/json" },
+                         body: JSON.stringify({ id: id, cle: cle }) })
+      .then(function(r){ return r.json(); })
+      .then(function(r){ CRE_MAIL[cle] = (r && r.ok) ? "ok" : "ko"; apres(); })
+      .catch(function(){ CRE_MAIL[cle] = "ko"; apres(); });
+  }catch(e){ CRE_MAIL[cle] = "ko"; apres(); }
+}
 function creAlerter(cle, id){
   try{
     fetch(CRE_NOTIF_URL, {
