@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.62 -->
+<!-- LUMIIA RECRUTE — v7.63 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1057,7 +1057,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.62</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.63</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1072,7 +1072,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.62";
+var VERSION = "v7.63";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -8197,7 +8197,7 @@ function tabCreneaux(){
     +   '<li>Google Agenda \u2192 \u2699 Param\u00e8tres \u2192 votre agenda \u2192 <b>Int\u00e9grer l\u2019agenda</b> \u2192 copier l\u2019<b>ID de l\u2019agenda</b>.</li>'
     +   '<li><a class="lien" href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com \u2192 Nouveau projet</a>, tout effacer, coller le script (bouton ci-dessous).</li>'
     +   '<li>Remplacer <code>COLLER-ICI-L-ID-DE-L-AGENDA</code> par l\u2019ID, enregistrer.</li>'
-    +   '<li>\u2699 Param\u00e8tres du projet \u2192 fuseau horaire <b>(GMT+01:00) Paris</b>.</li>'
+    +   '<li>\u2699 Param\u00e8tres du projet \u2192 fuseau horaire <b>Paris</b> (Google affiche GMT+02:00 en \u00e9t\u00e9, GMT+01:00 en hiver : c\u2019est le m\u00eame, il suit le changement d\u2019heure).</li>'
     +   '<li>Choisir la fonction <b>installer</b> \u2192 Ex\u00e9cuter \u2192 autoriser l\u2019acc\u00e8s \u00e0 votre agenda.</li>'
     +   '<li>Cocher la case ci-dessous.</li>'
     + '</ol>'
