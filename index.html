@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.59 -->
+<!-- LUMIIA RECRUTE — v7.60 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1057,7 +1057,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.59</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.60</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1072,7 +1072,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.59";
+var VERSION = "v7.60";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -8118,6 +8118,25 @@ function creFin(c){
   var t = Number(p[0]) * 60 + Number(p[1]) + (Number(c.duree) || 30);
   return String(Math.floor(t / 60) % 24).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0");
 }
+/* v7.60 — CHEVAUCHEMENTS. Deux creneaux le meme jour se chevauchent si l'un
+   commence avant la fin de l'autre. Un doublon exact en est le cas extreme. */
+function creMin(h){ var p = (h || "00:00").split(":"); return Number(p[0]) * 60 + Number(p[1]); }
+function creChevauche(a, b){
+  if(!a || !b || a.d !== b.d) return false;
+  var da = creMin(a.h), fa = da + (Number(a.duree) || 30);
+  var db2 = creMin(b.h), fb = db2 + (Number(b.duree) || 30);
+  return da < fb && db2 < fa;
+}
+/* Creneaux deja en base qui empietent sur « c » (hors lui-meme). */
+function creConflits(c, cache){
+  var out = [];
+  for(var k in (cache || {})){
+    if(k === c._k) continue;
+    var o = cache[k];
+    if(o && creChevauche(c, o)) out.push(o);
+  }
+  return out;
+}
 function crePasse(c){
   var p = (c.d || "").split("-"), h = (c.h || "00:00").split(":");
   if(p.length !== 3) return false;
@@ -8199,17 +8218,31 @@ function tabCreneaux(){
     var dur = Math.max(5, Number($("cr-dur").value) || 30);
     var n = Math.min(20, Math.max(1, Number($("cr-n").value) || 1));
     if(!d || !h0){ creMsg("Il manque la date ou l’heure.", "ko"); return; }
-    var p = h0.split(":"), t = Number(p[0]) * 60 + Number(p[1]), lot = {};
+    var bt = this;
+    if(bt.disabled) return;          /* v7.60 : pas de double clic */
+    var p = h0.split(":"), t = Number(p[0]) * 60 + Number(p[1]), lot = {}, nOk = 0, refus = [];
     for(var i = 0; i < n; i++){
-      var cle = creRef().push().key;
-      lot[cle] = { d:d, h: String(Math.floor(t / 60) % 24).padStart(2,"0") + ":" + String(t % 60).padStart(2,"0"),
+      var nouv = { d:d, h: String(Math.floor(t / 60) % 24).padStart(2,"0") + ":" + String(t % 60).padStart(2,"0"),
                    duree: dur, cand:"", nom:"", ts: Date.now() };
       t += dur;
+      /* v7.60 — un creneau qui empiete sur un creneau existant n'est pas cree. */
+      if(creConflits(nouv, CRE_CACHE).length){ refus.push(nouv.h); continue; }
+      lot[creRef().push().key] = nouv; nOk++;
     }
+    var txtRefus = refus.length
+      ? refus.length + " refusé" + (refus.length > 1 ? "s" : "") + " : il y a déjà un créneau à "
+        + refus.join(", ") + " ce jour-là."
+      : "";
+    if(!nOk){ creMsg("Rien de créé — " + txtRefus, "ko"); return; }
+    bt.disabled = true;
     creMsg("Enregistrement…");
     creRef().update(lot)
-      .then(function(){ creMsg(n + " créneau" + (n > 1 ? "x" : "") + " ouvert" + (n > 1 ? "s" : "") + " ✓"); })
-      .catch(function(e){ creMsg(creRegleKO(e) || ("Échec : " + e.message), "ko"); });
+      .then(function(){
+        creMsg(nOk + " créneau" + (nOk > 1 ? "x" : "") + " ouvert" + (nOk > 1 ? "s" : "") + " ✓"
+               + (txtRefus ? " · " + txtRefus : ""), txtRefus ? "ko" : "");
+      })
+      .catch(function(e){ creMsg(creRegleKO(e) || ("Échec : " + e.message), "ko"); })
+      .then(function(){ bt.disabled = false; });
   };
   $("cr-save").onclick = function(){
     var patch = { agenda: { url: ($("cr-url").value || "").trim(), cle: ($("cr-cle").value || "").trim() } };
@@ -8252,7 +8285,10 @@ function creDessinerAdmin(){
   var h = '<div class="compte"><b>' + l.length + '</b> créneau' + (l.length > 1 ? 'x' : '')
     + ' \u00b7 <b>' + libres + '</b> encore libre' + (libres > 1 ? 's' : '')
     + ' \u00b7 <b>' + l.filter(function(c){ return !!c.cand; }).length + '</b> réservé'
-    + (l.filter(function(c){ return !!c.cand; }).length > 1 ? 's' : '') + '</div>';
+    + (l.filter(function(c){ return !!c.cand; }).length > 1 ? 's' : '') + '</div>'
+    + (function(){ var nd = l.filter(function(c){ return !c.cand && !crePasse(c) && creConflits(c, CRE_CACHE).length; }).length;
+        return nd ? '<p class="aide" style="color:#f0a0a0">\u26a0 ' + nd + ' créneau' + (nd > 1 ? 'x libres chevauchent' : ' libre chevauche')
+          + ' un autre : supprimez le doublon (bouton Supprimer).</p>' : ''; })();
   var jour = "";
   l.forEach(function(c){
     if(c.d !== jour){
@@ -8261,8 +8297,11 @@ function creDessinerAdmin(){
       h += '<div class="crjour"><div class="crjt">' + esc(creJourFR(c.d)) + '</div>';
     }
     var pris = !!c.cand, passe = crePasse(c);
+    /* v7.60 — les chevauchements deja en base sont signales, a supprimer. */
+    var dbl = !passe && creConflits(c, CRE_CACHE).length > 0;
     h += '<div class="crl' + (pris ? " pris" : "") + (passe ? " passe" : "") + '">'
       + '<span class="crh">' + esc(c.h) + ' – ' + esc(creFin(c)) + '</span>'
+      + (dbl ? '<span class="pill2 no" title="Un autre créneau occupe la même plage">\u26a0 doublon</span>' : '')
       + '<span class="crn">' + (pris ? esc(c.nom || "réservé") + (numResa(c.n) > 1 ? ' <span class="pill2 wip">' + numResa(c.n) + '\u1d49 RDV</span>' : '') : '<span class="dim">libre</span>') + '</span>'
       + (pris
           ? '<button class="crx" data-lib="' + c._k + '">Libérer</button>'
@@ -8297,7 +8336,15 @@ function creEcranCandidat(id, fiche, num){
        Le bouton ne servait a rien. */
     /* v7.55 — le creneau du 1er RDV ne compte pas pour le 2e (et inversement). */
     var mien = CRE_CHANGE ? null : l.filter(function(c){ return c.cand === id && numResa(c.n) === num; })[0];
-    var libres = l.filter(function(c){ return !c.cand && !crePasse(c); });
+    /* v7.60 — un creneau libre qui chevauche un creneau deja pris, ou un libre
+       deja propose, n'est pas montre : le candidat ne voit chaque plage qu'une fois. */
+    var vus = [];
+    var libres = l.filter(function(c){
+      if(c.cand || crePasse(c)) return false;
+      if(l.some(function(o){ return o !== c && o.cand && creChevauche(c, o); })) return false;
+      if(vus.some(function(o){ return creChevauche(c, o); })) return false;
+      vus.push(c); return true;
+    });
     var h = '<div class="card"><div class="stepno">' + R.titre + '</div>';
 
     if(mien){
@@ -8378,6 +8425,12 @@ function creAlerter(cle, id){
    modification faite par l'admin au meme instant sur l'horaire. */
 function creReserver(cle, id, nom, num, cb){
   num = numResa(num);
+  /* v7.60 — si un doublon a deja ete reserve par quelqu'un d'autre, on refuse. */
+  var cible = CRE_CACHE[cle];
+  if(cible){
+    var pris = creConflits(Object.assign({ _k: cle }, cible), CRE_CACHE).filter(function(o){ return o.cand && o.cand !== id; });
+    if(pris.length){ cb(false, null); return; }
+  }
   creRef().child(cle + "/cand").transaction(function(actuel){
     if(actuel && actuel !== id) return;          /* deja pris : on abandonne */
     return id;
