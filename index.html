@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.61 -->
+<!-- LUMIIA RECRUTE — v7.62 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1057,7 +1057,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.61</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.62</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1072,7 +1072,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.61";
+var VERSION = "v7.62";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -1378,11 +1378,16 @@ var DEFAULT_TXT = {
   /* — Boutons communs — */
   btn_continuer:    "CONTINUER",
   btn_retour:       "Retour",
-  bandeau:          "Enregistré au fur et à mesure. Vous pouvez fermer et revenir plus tard."
+  bandeau:          "Enregistré au fur et à mesure. Vous pouvez fermer et revenir plus tard.",
+  /* v7.62 — ecran de reservation : texte sous le titre, saisi a la main (la
+     duree du creneau n'est pas celle de l'entretien). */
+  rdv1_texte: "Un entretien d\u2019environ 30 minutes, \u00e0 LUMIIA.",
+  rdv2_texte: "Votre deuxi\u00e8me entretien, \u00e0 LUMIIA."
 };
 
 /* Les groupes servent uniquement à ranger l'éditeur du back-office en onglets. */
 var TXT_GROUPES = [
+  { g:"Écran de réservation (créneaux)", cles:["rdv1_texte","rdv2_texte"] },
   { g:"Accueil",           cles:["acc_titre","acc_sous","acc_reprise_t","acc_reprise_s","acc_reprise_btn","acc_recommencer"] },
   { g:"Écran d’intro",     cles:["intro_l1","intro_l2","intro_sous","intro_note","intro_btn","intro_lien_offre"] },
   { g:"Mini-jeux",         cles:["jeu_btn","jeu_passer","jeufin_suivant","jeufin_dernier","jeufin_rejouer","jeufin_note",
@@ -7196,9 +7201,9 @@ function lienRdvDe(c, n){
    rendez-vous = une ligne de plus ici (et son bloc dans SUIVI_BLOCS). */
 var RDV_RESA = {
   1: { date:"rdv_date",  heure:"rdv_heure",  statut:{ suivi_statut:"rdv" },
-       titre:"RENDEZ-VOUS", texte:"Un entretien d\u2019environ 30 minutes, \u00e0 LUMIIA." },
+       titre:"RENDEZ-VOUS", txt:"rdv1_texte" },
   2: { date:"rdv2_date", heure:"rdv2_heure", statut:{ rdv2_statut:"rdv2_fixe" },
-       titre:"DEUXI\u00c8ME RENDEZ-VOUS", texte:"Votre deuxi\u00e8me entretien, \u00e0 LUMIIA." }
+       titre:"DEUXI\u00c8ME RENDEZ-VOUS", txt:"rdv2_texte" }
 };
 function numResa(n){ n = Number(n) || 1; return RDV_RESA[n] ? n : 1; }
 function rdvCle(c, ns){ return "lumiia_rdvnotes_" + (ns ? ns.id + "_" : "") + ((c && c._k) || "x"); }
@@ -8171,6 +8176,15 @@ function tabCreneaux(){
     +   '<button class="btn" id="cr-add">Ouvrir ces créneaux</button>'
     +   '<div class="crmsg" id="cr-msg"></div>'
     + '</div>'
+    /* v7.62 — ce que lit le candidat sous le titre, modifiable ici. */
+    + '<div class="crenew" style="margin-top:14px"><div class="f" style="margin-bottom:6px">Texte affiché au candidat, sous le titre</div>'
+    +   '<div class="fgrid">'
+    +     '<div class="txrow"><label class="f">Premier rendez-vous</label><input type="text" id="cr-t1" value="' + esc(T("rdv1_texte")) + '"></div>'
+    +     '<div class="txrow"><label class="f">Deuxième rendez-vous</label><input type="text" id="cr-t2" value="' + esc(T("rdv2_texte")) + '"></div>'
+    +   '</div>'
+    +   '<div class="dim" style="margin-top:6px">La durée des créneaux ne s’affiche pas en toutes lettres : indiquez ici la durée réelle de l’entretien. Champ vidé = texte d’origine.</div>'
+    +   '<button class="btn sec" id="cr-tsave" style="width:auto;padding:10px 22px">Enregistrer le texte</button>'
+    + '</div>'
     + '<div id="cr-essai"></div>'
     + '<div id="cr-liste"><p class="aide">Chargement…</p></div>'
 
@@ -8239,6 +8253,13 @@ function tabCreneaux(){
       })
       .catch(function(e){ creMsg(creRegleKO(e) || ("Échec : " + e.message), "ko"); })
       .then(function(){ bt.disabled = false; });
+  };
+  $("cr-tsave").onclick = function(){
+    var p = { rdv1_texte: $("cr-t1").value.trim(), rdv2_texte: $("cr-t2").value.trim() };
+    db.ref(FB_PATH + "/config/textes").update(p)
+      .then(function(){ CFG.textes = CFG.textes || {}; CFG.textes.rdv1_texte = p.rdv1_texte; CFG.textes.rdv2_texte = p.rdv2_texte;
+                        $("cr-t1").value = T("rdv1_texte"); $("cr-t2").value = T("rdv2_texte"); toast("Texte enregistré ✓"); })
+      .catch(function(e){ voyantEchec(e); toast("Échec : " + e.message); });
   };
   $("cr-copygs").onclick = function(){
     var bt = this;
@@ -8363,7 +8384,7 @@ function creEcranCandidat(id, fiche, num){
     }
 
     h += '<div class="q">Bonjour ' + esc(fiche.prenom || "") + ', choisissez votre créneau</div>'
-      + '<div class="dim">' + R.texte + '</div>';
+      + '<div class="dim">' + esc(T(R.txt)) + '</div>';
     if(!libres.length){
       h += '<div class="crvide">Aucun créneau libre pour le moment. '
         + 'Nous vous recontactons très vite pour convenir d’un horaire.</div></div>';
