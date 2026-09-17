@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.63 -->
+<!-- LUMIIA RECRUTE — v7.64 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -677,6 +677,8 @@ body.adm{background:#0d1117;}
   border:1px solid #3a4552;background:#12171e;color:#e6edf3;font-family:'Nunito';font-size:1.05rem;cursor:pointer;}
 .crchoix:hover{border-color:#b8ff3c;background:#12210f;}
 .crchoix:disabled{opacity:.4;cursor:default;}
+.crconf{margin-top:14px;padding:12px 14px;border-radius:10px;background:#1f3d16;border:1px solid #58a33a;color:#b9f09a;font-weight:800;text-align:center;}
+#cr-val{margin:16px 0 6px;}
 .crok{margin-top:14px;padding:16px;border-radius:10px;background:#12210f;border:1px solid #3f6b2a;
   color:#e6edf3;font-size:1.1rem;line-height:1.6;}
 .crvide{margin-top:14px;padding:14px;border-radius:10px;background:#2a2413;border:1px solid #6d5a22;
@@ -1057,7 +1059,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.63</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.64</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1072,7 +1074,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.63";
+var VERSION = "v7.64";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -8326,7 +8328,8 @@ function creDessinerAdmin(){
     h += '<div class="crl' + (pris ? " pris" : "") + (passe ? " passe" : "") + '">'
       + '<span class="crh">' + esc(c.h) + ' – ' + esc(creFin(c)) + '</span>'
       + (dbl ? '<span class="pill2 no" title="Un autre créneau occupe la même plage">\u26a0 doublon</span>' : '')
-      + '<span class="crn">' + (pris ? esc(c.nom || "réservé") + (numResa(c.n) > 1 ? ' <span class="pill2 wip">' + numResa(c.n) + '\u1d49 RDV</span>' : '') : '<span class="dim">libre</span>') + '</span>'
+      + '<span class="crn">' + (pris ? esc(c.nom || "réservé") + (numResa(c.n) > 1 ? ' <span class="pill2 wip">' + numResa(c.n) + '\u1d49 RDV</span>' : '')
+            + (c.conf ? ' <span class="pill2 hot" title="Le candidat a cliqu\u00e9 \u00ab Valider ce cr\u00e9neau \u00bb">\u2713 confirm\u00e9</span>' : ' <span class="pill2" title="R\u00e9serv\u00e9, pas encore valid\u00e9 par le candidat">\u00e0 confirmer</span>') : '<span class="dim">libre</span>') + '</span>'
       + (pris
           ? '<button class="crx" data-lib="' + c._k + '">Libérer</button>'
           : '<button class="crx" data-del="' + c._k + '">Supprimer</button>')
@@ -8343,7 +8346,7 @@ function creDessinerAdmin(){
   for(var j=0;j<lib.length;j++) lib[j].onclick = function(){
     /* Liberer ne touche pas la fiche du candidat : la date y reste, et c'est
        voulu — on ne réécrit pas le suivi de quelqu'un dans son dos. */
-    creRef().child(this.getAttribute("data-lib")).update({ cand:"", nom:"", n:null })
+    creRef().child(this.getAttribute("data-lib")).update({ cand:"", nom:"", n:null, conf:null })
       .catch(function(e){ voyantEchec(e); toast("Échec : " + e.message); });
   };
 }
@@ -8372,14 +8375,28 @@ function creEcranCandidat(id, fiche, num){
     var h = '<div class="card"><div class="stepno">' + R.titre + '</div>';
 
     if(mien){
-      h += '<div class="q">C’est noté, ' + esc(fiche.prenom || "") + '.</div>'
+      h += '<div class="q">' + (mien.conf ? 'C’est noté, ' + esc(fiche.prenom || "") + '.'
+                                         : esc(fiche.prenom || "") + ', votre créneau :') + '</div>'
         + '<div class="crok"><b>' + esc(creJourFR(mien.d)) + '</b><br>'
         + esc(mien.h) + ' – ' + esc(creFin(mien)) + '<br>'
         + '<span class="dim">LUMIIA · 1 route de Fontagnal, Aouste-sur-Sye</span></div>'
+        /* v7.64 — un geste clair pour conclure : « Valider ce creneau ». La
+           reservation est deja faite ; la validation est notee sur le creneau
+           (conf) et visible dans l'onglet Creneaux. */
+        + (mien.conf
+            ? '<div class="crconf">\u2713 Rendez-vous confirm\u00e9. Vous pouvez fermer cette page.</div>'
+            : '<button class="btn" id="cr-val">Valider ce cr\u00e9neau</button>')
         + '<p class="mut">Un empêchement ? Vous pouvez changer de créneau tant qu’il en reste.</p>'
         + '<button class="btn sec" id="cr-chg">Choisir un autre créneau</button></div>';
       view(h);
       $("cr-chg").onclick = function(){ CRE_CHANGE = true; dessine(); };
+      if($("cr-val")) $("cr-val").onclick = function(){
+        var bt = this; bt.disabled = true; bt.textContent = "Validation\u2026";
+        var t = Date.now();
+        creRef().child(mien._k).update({ conf: t })
+          .then(function(){ if(CRE_CACHE[mien._k]) CRE_CACHE[mien._k].conf = t; mien.conf = t; dessine(); })
+          .catch(function(){ bt.disabled = false; bt.textContent = "Valider ce cr\u00e9neau"; toast("Connexion impossible, r\u00e9essayez."); });
+      };
       return;
     }
 
@@ -8461,12 +8478,12 @@ function creReserver(cle, id, nom, num, cb){
   }, function(err, valide){
     if(err){ cb(false, "Erreur : " + err.message); return; }
     if(!valide){ cb(false, "Ce créneau vient d’être pris."); return; }
-    creRef().child(cle).update({ nom: nom, ts: Date.now(), n: num });
+    creRef().child(cle).update({ nom: nom, ts: Date.now(), n: num, conf: null });
     /* On libere les autres creneaux du meme candidat : on ne peut pas etre a
        deux endroits, et un creneau fantome bloque quelqu'un d'autre. */
     for(var k in CRE_CACHE){
       if(k !== cle && CRE_CACHE[k] && CRE_CACHE[k].cand === id && numResa(CRE_CACHE[k].n) === num){
-        creRef().child(k).update({ cand:"", nom:"", n:null });
+        creRef().child(k).update({ cand:"", nom:"", n:null, conf:null });
       }
     }
     var c = CRE_CACHE[cle] || {};
