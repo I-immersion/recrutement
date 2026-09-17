@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.64 -->
+<!-- LUMIIA RECRUTE — v7.65 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1059,7 +1059,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.64</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.65</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1074,7 +1074,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.64";
+var VERSION = "v7.65";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -8328,8 +8328,7 @@ function creDessinerAdmin(){
     h += '<div class="crl' + (pris ? " pris" : "") + (passe ? " passe" : "") + '">'
       + '<span class="crh">' + esc(c.h) + ' – ' + esc(creFin(c)) + '</span>'
       + (dbl ? '<span class="pill2 no" title="Un autre créneau occupe la même plage">\u26a0 doublon</span>' : '')
-      + '<span class="crn">' + (pris ? esc(c.nom || "réservé") + (numResa(c.n) > 1 ? ' <span class="pill2 wip">' + numResa(c.n) + '\u1d49 RDV</span>' : '')
-            + (c.conf ? ' <span class="pill2 hot" title="Le candidat a cliqu\u00e9 \u00ab Valider ce cr\u00e9neau \u00bb">\u2713 confirm\u00e9</span>' : ' <span class="pill2" title="R\u00e9serv\u00e9, pas encore valid\u00e9 par le candidat">\u00e0 confirmer</span>') : '<span class="dim">libre</span>') + '</span>'
+      + '<span class="crn">' + (pris ? esc(c.nom || "réservé") + (numResa(c.n) > 1 ? ' <span class="pill2 wip">' + numResa(c.n) + '\u1d49 RDV</span>' : '') : '<span class="dim">libre</span>') + '</span>'
       + (pris
           ? '<button class="crx" data-lib="' + c._k + '">Libérer</button>'
           : '<button class="crx" data-del="' + c._k + '">Supprimer</button>')
@@ -8374,34 +8373,54 @@ function creEcranCandidat(id, fiche, num){
     });
     var h = '<div class="card"><div class="stepno">' + R.titre + '</div>';
 
-    if(mien){
-      h += '<div class="q">' + (mien.conf ? 'C’est noté, ' + esc(fiche.prenom || "") + '.'
-                                         : esc(fiche.prenom || "") + ', votre créneau :') + '</div>'
+    /* v7.65 — RESERVER = VALIDER. Cliquer un creneau ne fait que le
+       SELECTIONNER ; c'est « Valider ce creneau » qui le reserve. Sans
+       validation, rien n'est pris : plus d'etat « a confirmer ». */
+    var choisi = CRE_SELECT ? l.filter(function(c){ return c._k === CRE_SELECT; })[0] : null;
+    if(choisi && ((choisi.cand && choisi.cand !== id) || crePasse(choisi))){ choisi = null; CRE_SELECT = ""; CRE_PERDU = true; }
+
+    if(mien && !choisi){
+      h += '<div class="q">C\u2019est not\u00e9, ' + esc(fiche.prenom || "") + '.</div>'
         + '<div class="crok"><b>' + esc(creJourFR(mien.d)) + '</b><br>'
-        + esc(mien.h) + ' – ' + esc(creFin(mien)) + '<br>'
-        + '<span class="dim">LUMIIA · 1 route de Fontagnal, Aouste-sur-Sye</span></div>'
-        /* v7.64 — un geste clair pour conclure : « Valider ce creneau ». La
-           reservation est deja faite ; la validation est notee sur le creneau
-           (conf) et visible dans l'onglet Creneaux. */
-        + (mien.conf
-            ? '<div class="crconf">\u2713 Rendez-vous confirm\u00e9. Vous pouvez fermer cette page.</div>'
-            : '<button class="btn" id="cr-val">Valider ce cr\u00e9neau</button>')
-        + '<p class="mut">Un empêchement ? Vous pouvez changer de créneau tant qu’il en reste.</p>'
-        + '<button class="btn sec" id="cr-chg">Choisir un autre créneau</button></div>';
+        + esc(mien.h) + ' \u2013 ' + esc(creFin(mien)) + '<br>'
+        + '<span class="dim">LUMIIA \u00b7 1 route de Fontagnal, Aouste-sur-Sye</span></div>'
+        + '<div class="crconf">\u2713 Rendez-vous r\u00e9serv\u00e9. Vous pouvez fermer cette page.</div>'
+        + '<p class="mut">Un emp\u00eachement ? Vous pouvez changer de cr\u00e9neau tant qu\u2019il en reste.</p>'
+        + '<button class="btn sec" id="cr-chg">Choisir un autre cr\u00e9neau</button></div>';
       view(h);
       $("cr-chg").onclick = function(){ CRE_CHANGE = true; dessine(); };
-      if($("cr-val")) $("cr-val").onclick = function(){
-        var bt = this; bt.disabled = true; bt.textContent = "Validation\u2026";
-        var t = Date.now();
-        creRef().child(mien._k).update({ conf: t })
-          .then(function(){ if(CRE_CACHE[mien._k]) CRE_CACHE[mien._k].conf = t; mien.conf = t; dessine(); })
-          .catch(function(){ bt.disabled = false; bt.textContent = "Valider ce cr\u00e9neau"; toast("Connexion impossible, r\u00e9essayez."); });
+      return;
+    }
+
+    if(choisi){
+      h += '<div class="q">' + esc(fiche.prenom || "") + ', vous avez choisi :</div>'
+        + '<div class="crok"><b>' + esc(creJourFR(choisi.d)) + '</b><br>'
+        + esc(choisi.h) + ' \u2013 ' + esc(creFin(choisi)) + '<br>'
+        + '<span class="dim">LUMIIA \u00b7 1 route de Fontagnal, Aouste-sur-Sye</span></div>'
+        + '<button class="btn" id="cr-val">Valider ce cr\u00e9neau</button>'
+        + '<div class="crmsg" id="cr-msg"></div>'
+        + '<button class="btn sec" id="cr-chg">Choisir un autre cr\u00e9neau</button></div>';
+      view(h);
+      $("cr-chg").onclick = function(){ CRE_SELECT = ""; dessine(); };
+      $("cr-val").onclick = function(){
+        var bt = this; bt.disabled = true; bt.textContent = "R\u00e9servation\u2026";
+        creReserver(choisi._k, id, nom, num, function(ok, err){
+          if(!ok){
+            CRE_SELECT = ""; CRE_PERDU = !err;
+            if(err){ bt.disabled = false; bt.textContent = "Valider ce cr\u00e9neau"; creMsg(err, "ko"); return; }
+            dessine(); return;
+          }
+          CRE_SELECT = ""; CRE_CHANGE = false;
+          dessine();
+        });
       };
       return;
     }
 
     h += '<div class="q">Bonjour ' + esc(fiche.prenom || "") + ', choisissez votre créneau</div>'
-      + '<div class="dim">' + esc(T(R.txt)) + '</div>';
+      + '<div class="dim">' + esc(T(R.txt)) + '</div>'
+      + (CRE_PERDU ? '<div class="crvide">Ce cr\u00e9neau vient d\u2019\u00eatre pris par quelqu\u2019un d\u2019autre, choisissez-en un autre.</div>' : '');
+    CRE_PERDU = false;
     if(!libres.length){
       h += '<div class="crvide">Aucun créneau libre pour le moment. '
         + 'Nous vous recontactons très vite pour convenir d’un horaire.</div></div>';
@@ -8422,18 +8441,9 @@ function creEcranCandidat(id, fiche, num){
 
     var bts = document.querySelectorAll(".crchoix[data-cre]");
     for(var i=0;i<bts.length;i++) bts[i].onclick = function(){
-      var cle = this.getAttribute("data-cre");
-      for(var z=0;z<bts.length;z++) bts[z].disabled = true;
-      creMsg("Réservation…");
-      creReserver(cle, id, nom, num, function(ok, err){
-        if(!ok){
-          for(var z2=0;z2<bts.length;z2++) bts[z2].disabled = false;
-          creMsg(err || "Ce créneau vient d’être pris, choisissez-en un autre.", "ko");
-          return;
-        }
-        CRE_CHANGE = false;
-        dessine();
-      });
+      CRE_SELECT = this.getAttribute("data-cre");
+      dessine();
+      window.scrollTo(0, 0);
     };
   }
 
@@ -8444,6 +8454,8 @@ function creEcranCandidat(id, fiche, num){
   });
 }
 var CRE_CHANGE = false;
+var CRE_SELECT = "";   /* v7.65 — creneau choisi, pas encore reserve */
+var CRE_PERDU = false; /* v7.65 — le creneau choisi a ete pris entre-temps */
 
 /* Alerte a l'equipe. Le navigateur du candidat n'envoie que deux
    identifiants : c'est le serveur qui relit le creneau dans la base et
@@ -8477,15 +8489,18 @@ function creReserver(cle, id, nom, num, cb){
     return id;
   }, function(err, valide){
     if(err){ cb(false, "Erreur : " + err.message); return; }
-    if(!valide){ cb(false, "Ce créneau vient d’être pris."); return; }
-    creRef().child(cle).update({ nom: nom, ts: Date.now(), n: num, conf: null });
+    if(!valide){ cb(false, null); return; }   /* v7.65 : null = pris par un autre */
+    creRef().child(cle).update({ nom: nom, ts: Date.now(), n: num, conf: null });   /* conf : champ de la v7.64, abandonne */
     /* On libere les autres creneaux du meme candidat : on ne peut pas etre a
        deux endroits, et un creneau fantome bloque quelqu'un d'autre. */
     for(var k in CRE_CACHE){
       if(k !== cle && CRE_CACHE[k] && CRE_CACHE[k].cand === id && numResa(CRE_CACHE[k].n) === num){
         creRef().child(k).update({ cand:"", nom:"", n:null, conf:null });
+        CRE_CACHE[k].cand = ""; CRE_CACHE[k].nom = "";
       }
     }
+    /* v7.65 — l'ecran se redessine tout de suite, sans attendre l'ecouteur. */
+    if(CRE_CACHE[cle]){ CRE_CACHE[cle].cand = id; CRE_CACHE[cle].nom = nom; CRE_CACHE[cle].n = num; }
     var c = CRE_CACHE[cle] || {};
     var R = RDV_RESA[num], patchR = { suivi_maj: Date.now() };
     patchR[R.date] = c.d; patchR[R.heure] = c.h;
