@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.69 -->
+<!-- LUMIIA RECRUTE — v7.70 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1061,7 +1061,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.69</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.70</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1076,7 +1076,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.69";
+var VERSION = "v7.70";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6324,18 +6324,26 @@ var XT_ESSAI = null;
 /* OK EN ENTRETIEN (v7.39). L'onglet ne montrait que ceux qui avaient deja
    rempli le parcours du mail. Or la liste utile en premier est l'autre : ceux
    qui ont dit OUI en face de nous et a qui il faut encore ecrire. */
-var XT_VUE = "amailer", XT_OK_LISTE = [];
+var XT_VUE = "tous", XT_OK_LISTE = [];
 function blocOkEntretien(){
   var L = [];
   for(var k in LAST_CAND){
     var c = LAST_CAND[k]; if(!c) continue; c._k = k;
     var x = extraInfo(c);
-    if(x.ent === "oui") L.push({ c:c, x:x });
+    /* v7.70 — aussi ceux qui ont RECU le mail extras sans avoir dit oui en
+       entretien (ex. relance envoyee a quelqu'un d'autre) : sinon ils ne
+       figuraient nulle part. */
+    if(x.ent === "oui" || x.mail) L.push({ c:c, x:x });
   }
   var nA = L.filter(function(o){ return o.x.aMailer; }).length;
+  var nM = L.filter(function(o){ return o.x.mail; }).length;
+  var nR = L.filter(function(o){ return !!o.c.sondage_extras; }).length;
+  var nS = L.filter(function(o){ return o.x.mail && !o.c.sondage_extras; }).length;
   var V = L.filter(function(o){
     if(XT_VUE === "amailer")   return o.x.aMailer;
     if(XT_VUE === "contactes") return !o.x.aMailer;
+    if(XT_VUE === "repondu")   return !!o.c.sondage_extras;
+    if(XT_VUE === "sansrep")   return o.x.mail && !o.c.sondage_extras;
     return true;
   });
   XT_OK_LISTE = V.map(function(o){ return o.c; });
@@ -6349,13 +6357,16 @@ function blocOkEntretien(){
     + '<label class="flab">Afficher<select id="xt-vue">'
     +   opt("amailer", "\u00c0 qui \u00e9crire (" + nA + ")")
     +   opt("contactes", "D\u00e9j\u00e0 contact\u00e9s (" + (L.length - nA) + ")")
+    +   opt("sansrep", "Mail reçu, sans réponse (" + nS + ")")
+    +   opt("repondu", "Ont répondu au sondage (" + nR + ")")
     +   opt("tous", "Tous (" + L.length + ")")
     + '</select></label>'
+    + '<span class="dim" style="align-self:center">✉ ' + nM + ' ont reçu le mail · ✓ ' + nR + ' ont répondu</span>'
     + ((estAdmin() && V.length) ? '<button class="fraz" id="xt-copie">\u2709 Copier les adresses mail</button>' : '')
     + '</div>';
   if(!V.length) return h + '<div class="dim" style="margin-top:10px">Personne dans cette vue.</div></div>';
   h += '<div class="adm-scroll"><table class="cmp"><thead><tr><th>Candidat</th><th>Contact</th>'
-    + '<th>P\u00e9riodes, rythme (entretien)</th><th>Mail extras</th><th>Parcours</th><th></th></tr></thead><tbody>';
+    + '<th>P\u00e9riodes, rythme (entretien)</th><th>Mail extras</th><th>Réponse sondage</th><th>Parcours</th><th></th></tr></thead><tbody>';
   V.forEach(function(o){
     var c = o.c, x = o.x;
     h += '<tr class="rxt">'
@@ -6364,6 +6375,14 @@ function blocOkEntretien(){
       + '<td>' + (x.obs ? esc(String(x.obs).slice(0, 140)) : '<span class="dim">\u2014</span>') + '</td>'
       + '<td>' + (x.mail ? '<span class="pill2 msg">\u2709 ' + new Date(x.mail).toLocaleDateString("fr-FR") + '</span>'
                          : '<span class="pill2 no">pas encore</span>') + '</td>'
+      /* v7.70 — REPONSE AU SONDAGE CRENEAUX. Les votes vivent dans Creneaux
+         (HUB), que le recrutement ne lit pas : on la coche ici a la main, en
+         relisant la page Reponses de Creneaux. Champ candidats/<id>/sondage_extras
+         = date du pointage ; recliquer efface. */
+      + '<td>' + (estAdmin()
+          ? '<button class="pill2 ' + (c.sondage_extras ? 'hot' : (x.mail ? 'no' : '')) + '" style="cursor:pointer" data-sdg="' + esc(c._k) + '">'
+            + (c.sondage_extras ? '✓ a répondu' : (x.mail ? 'pas de réponse' : '—')) + '</button>'
+          : (c.sondage_extras ? '<span class="pill2 hot">✓ a répondu</span>' : '<span class="dim">—</span>')) + '</td>'
       + '<td>' + (x.parc === null ? '<span class="dim">\u2014</span>'
                  : '<span class="pill2 ' + (x.parc === "oui" ? "hot" : "wip") + '">'
                    + (x.parc === "oui" ? "statut en place" : (x.parc === "non" ? "sans statut" : "commenc\u00e9")) + '</span>') + '</td>'
@@ -6376,6 +6395,15 @@ function brancherOkEntretien(){
   var s = $("xt-vue");
   if(s) s.onchange = function(){ XT_VUE = this.value; tabExtras(); };
   if($("xt-copie")) $("xt-copie").onclick = function(){ copierAdresses(XT_OK_LISTE); };
+  var sg = document.querySelectorAll("#adm-tab [data-sdg]");
+  for(var j=0;j<sg.length;j++) sg[j].onclick = function(){
+    var k = this.getAttribute("data-sdg"), c = LAST_CAND[k]; if(!c) return;
+    var v = c.sondage_extras ? null : Date.now();
+    this.disabled = true;
+    majCandidat(k, { sondage_extras: v }).then(function(){
+      c.sondage_extras = v || undefined; tabExtras();
+    }).catch(function(e){ toast("Non enregistré : " + (e && e.message ? e.message : e)); tabExtras(); });
+  };
   var fs = document.querySelectorAll("#adm-tab [data-fok]");
   for(var i=0;i<fs.length;i++) fs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-fok")]); };
 }
@@ -6659,7 +6687,7 @@ var SUIVI = [
      du tout. Meme piege que « ecarte », regle de la meme facon : une cle par
      etape. */
   { k:"indispo_rdv", n:"Candidat plus disponible",c:"no" },
-  /* v7.69 — 2.2 « Pas encore decide » : l'entretien a eu lieu, le recruteur
+  /* v7.70 — 2.2 « Pas encore decide » : l'entretien a eu lieu, le recruteur
      n'a pas tranche. Ecrit dans decision1 (la puce s'allume, recliquer
      l'efface), mais ne ferme rien, n'envoie rien a la direction, et le dossier
      reste sur la carte d'accueil « decision a prendre ». */
@@ -9288,7 +9316,7 @@ function extraInfo(c){
   for(var m in e){
     if(!e[m]) continue;
     var msg = (CFG.messages || {})[m];
-    /* v7.69 — un « mail extras » peut aussi renvoyer au sondage Creneaux du HUB
+    /* v7.70 — un « mail extras » peut aussi renvoyer au sondage Creneaux du HUB
        (lien hub.lumiia.fr/creneaux colle dans le texte), comme « LA FETE DES
        EXTRAS » du 22/09. Reconnu lui aussi a son CONTENU, jamais a son titre.
        Les reponses au sondage, elles, restent dans Creneaux : aucune connexion. */
