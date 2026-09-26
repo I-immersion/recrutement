@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.71 -->
+<!-- LUMIIA RECRUTE — v7.72 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1061,7 +1061,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.71</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.72</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1076,7 +1076,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.71";
+var VERSION = "v7.72";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6330,10 +6330,12 @@ function blocOkEntretien(){
   for(var k in LAST_CAND){
     var c = LAST_CAND[k]; if(!c) continue; c._k = k;
     var x = extraInfo(c);
-    /* v7.70 — aussi ceux qui ont RECU le mail extras sans avoir dit oui en
-       entretien (ex. relance envoyee a quelqu'un d'autre) : sinon ils ne
-       figuraient nulle part. */
-    if(x.ent === "oui" || x.mail) L.push({ c:c, x:x });
+    /* v7.72 — RETOUR A LA REGLE D'ORIGINE, demande d'Emmanuel (26/09) :
+       ne figurent ici QUE les personnes pour qui le bouton « Oui » de
+       « Interesse par des extras ? » a ete clique dans la trame du 1er RDV.
+       La v7.70 ajoutait « a recu un mail extras », ce qui faisait entrer des
+       gens jamais inscrits (mail « Poste 24h » portant {lien_extra}). */
+    if(x.ent === "oui") L.push({ c:c, x:x });
   }
   var nA = L.filter(function(o){ return o.x.aMailer; }).length;
   var nM = L.filter(function(o){ return o.x.sond; }).length;
