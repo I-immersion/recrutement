@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.72 -->
+<!-- LUMIIA RECRUTE — v7.73 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1061,7 +1061,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.72</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.73</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1076,7 +1076,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.72";
+var VERSION = "v7.73";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -4562,6 +4562,15 @@ function admLoad(){
          chaque export. */
       delete LAST_CAND[ADM_TEST_KEY];
       delete LAST_CAND[ADM_TEST_VIEUX];
+      /* v7.73 — CHAQUE FICHE PORTE SA CLE DES LA RECEPTION. Avant, _k n'etait
+         pose que par les fonctions qui dessinent une liste. Or chaque ecriture
+         (un envoi, un pointage) rappelle cet ecouteur et remplace TOUTES les
+         fiches par des objets neufs, sans _k. Une fiche ouverte ensuite depuis
+         un bouton qui lit LAST_CAND directement (« Fiche » de l'onglet Extras)
+         n'avait donc plus d'identifiant : l'envoi suivant partait sans id et le
+         guichet repondait « Echec de l'envoi (id) » (Laure, 26/09, juste apres
+         l'envoi a Guillaume). */
+      for(var kC in LAST_CAND){ if(LAST_CAND[kC]) LAST_CAND[kC]._k = kC; }
       migrerEval();
       /* Les candidatures arrivent APRES le premier rendu. Cette liste ne citait
          que « candidats » et « suivi » : tout onglet ajoute ensuite restait fige
