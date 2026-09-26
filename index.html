@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.70 -->
+<!-- LUMIIA RECRUTE — v7.71 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1061,7 +1061,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.70</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.71</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1076,7 +1076,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.70";
+var VERSION = "v7.71";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6336,14 +6336,14 @@ function blocOkEntretien(){
     if(x.ent === "oui" || x.mail) L.push({ c:c, x:x });
   }
   var nA = L.filter(function(o){ return o.x.aMailer; }).length;
-  var nM = L.filter(function(o){ return o.x.mail; }).length;
+  var nM = L.filter(function(o){ return o.x.sond; }).length;
   var nR = L.filter(function(o){ return !!o.c.sondage_extras; }).length;
-  var nS = L.filter(function(o){ return o.x.mail && !o.c.sondage_extras; }).length;
+  var nS = L.filter(function(o){ return o.x.sond && !o.c.sondage_extras; }).length;
   var V = L.filter(function(o){
     if(XT_VUE === "amailer")   return o.x.aMailer;
     if(XT_VUE === "contactes") return !o.x.aMailer;
     if(XT_VUE === "repondu")   return !!o.c.sondage_extras;
-    if(XT_VUE === "sansrep")   return o.x.mail && !o.c.sondage_extras;
+    if(XT_VUE === "sansrep")   return o.x.sond && !o.c.sondage_extras;
     return true;
   });
   XT_OK_LISTE = V.map(function(o){ return o.c; });
@@ -6361,7 +6361,7 @@ function blocOkEntretien(){
     +   opt("repondu", "Ont répondu au sondage (" + nR + ")")
     +   opt("tous", "Tous (" + L.length + ")")
     + '</select></label>'
-    + '<span class="dim" style="align-self:center">✉ ' + nM + ' ont reçu le mail · ✓ ' + nR + ' ont répondu</span>'
+    + '<span class="dim" style="align-self:center">✉ ' + nM + ' ont reçu le sondage · ✓ ' + nR + ' ont répondu</span>'
     + ((estAdmin() && V.length) ? '<button class="fraz" id="xt-copie">\u2709 Copier les adresses mail</button>' : '')
     + '</div>';
   if(!V.length) return h + '<div class="dim" style="margin-top:10px">Personne dans cette vue.</div></div>';
@@ -6379,9 +6379,12 @@ function blocOkEntretien(){
          (HUB), que le recrutement ne lit pas : on la coche ici a la main, en
          relisant la page Reponses de Creneaux. Champ candidats/<id>/sondage_extras
          = date du pointage ; recliquer efface. */
-      + '<td>' + (estAdmin()
-          ? '<button class="pill2 ' + (c.sondage_extras ? 'hot' : (x.mail ? 'no' : '')) + '" style="cursor:pointer" data-sdg="' + esc(c._k) + '">'
-            + (c.sondage_extras ? '✓ a répondu' : (x.mail ? 'pas de réponse' : '—')) + '</button>'
+      /* v7.71 — cliquable SEULEMENT si le sondage a ete envoye (ou pour
+         decocher). Avant, le « — » etait un bouton : un clic sur une
+         personne jamais sollicitee la marquait « a repondu » (tristan, 26/09). */
+      + '<td>' + (estAdmin() && (x.sond || c.sondage_extras)
+          ? '<button class="pill2 ' + (c.sondage_extras ? 'hot' : 'no') + '" style="cursor:pointer" data-sdg="' + esc(c._k) + '">'
+            + (c.sondage_extras ? '✓ a répondu' : 'pas de réponse') + '</button>'
           : (c.sondage_extras ? '<span class="pill2 hot">✓ a répondu</span>' : '<span class="dim">—</span>')) + '</td>'
       + '<td>' + (x.parc === null ? '<span class="dim">\u2014</span>'
                  : '<span class="pill2 ' + (x.parc === "oui" ? "hot" : "wip") + '">'
@@ -9307,7 +9310,7 @@ function cleQExtra(){
   return "";
 }
 function extraInfo(c){
-  var o = { ent:"", obs:"", parc:null, mail:0, ok:false, aMailer:false };
+  var o = { ent:"", obs:"", parc:null, mail:0, sond:0, ok:false, aMailer:false };
   if(!c) return o;
   var k = cleQExtra(), n = c.rdv_notes || {};
   if(k){ o.ent = n["r:" + k] || ""; o.obs = n[k] || ""; }
@@ -9321,6 +9324,9 @@ function extraInfo(c){
        EXTRAS » du 22/09. Reconnu lui aussi a son CONTENU, jamais a son titre.
        Les reponses au sondage, elles, restent dans Creneaux : aucune connexion. */
     if(msg && /\{lien_extra\}|hub\.lumiia\.fr\/creneaux/.test(String(msg.corps || ""))) o.mail = Math.max(o.mail, e[m]);
+    /* v7.71 — le SONDAGE en particulier (lien Creneaux) : seul ce mail-la
+       appelle une « reponse au sondage ». */
+    if(msg && /hub\.lumiia\.fr\/creneaux/.test(String(msg.corps || ""))) o.sond = Math.max(o.sond, e[m]);
   }
   o.ok = (o.ent === "oui") || o.parc !== null;
   o.aMailer = (o.ent === "oui") && !o.mail && o.parc === null;
