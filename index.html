@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.66 -->
+<!-- LUMIIA RECRUTE — v7.69 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1061,7 +1061,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.66</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.69</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1076,7 +1076,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.66";
+var VERSION = "v7.69";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6343,7 +6343,7 @@ function blocOkEntretien(){
   var h = '<div class="xtok"><div class="essait">\u2b50 OK pour les extras \u2014 dit en entretien</div>'
     + '<div class="dim">Les personnes qui ont r\u00e9pondu OUI \u00e0 \u00ab\u00a0Int\u00e9ress\u00e9 par des extras\u00a0?\u00a0\u00bb '
     + 'pendant le premier rendez-vous. Pour leur \u00e9crire \u00e0 part : un message de la biblioth\u00e8que qui contient '
-    + '<b>{lien_extra}</b>, envoy\u00e9 depuis leur fiche. D\u00e8s qu\u2019il est parti, la personne passe dans \u00ab\u00a0d\u00e9j\u00e0 contact\u00e9s\u00a0\u00bb.</div>';
+    + '<b>{lien_extra}</b> ou un lien <b>hub.lumiia.fr/creneaux</b>, envoy\u00e9 depuis leur fiche. D\u00e8s qu\u2019il est parti, la personne passe dans \u00ab\u00a0d\u00e9j\u00e0 contact\u00e9s\u00a0\u00bb.</div>';
   if(!L.length) return h + '<div class="dim" style="margin-top:10px">Personne pour le moment.</div></div>';
   h += '<div class="filtres" style="margin-top:12px">'
     + '<label class="flab">Afficher<select id="xt-vue">'
@@ -6659,6 +6659,11 @@ var SUIVI = [
      du tout. Meme piege que « ecarte », regle de la meme facon : une cle par
      etape. */
   { k:"indispo_rdv", n:"Candidat plus disponible",c:"no" },
+  /* v7.69 — 2.2 « Pas encore decide » : l'entretien a eu lieu, le recruteur
+     n'a pas tranche. Ecrit dans decision1 (la puce s'allume, recliquer
+     l'efface), mais ne ferme rien, n'envoie rien a la direction, et le dossier
+     reste sur la carte d'accueil « decision a prendre ». */
+  { k:"indecis",     n:"Pas encore décidé",       c:"wip" },
   { k:"rdv2",        n:"2ᵉ rendez-vous demandé",  b:"Demander un deuxième rendez-vous", c:"wip" },
   { k:"retenu",      n:"Retenu",                  c:"hot" },
   { k:"ecarte_dossier", n:"Écarté sur dossier",   c:"no" },
@@ -6691,7 +6696,7 @@ var SUIVI = [
      etape 6     -> decision2
      etape 7     -> averti
    Les fiches d'avant portent tout dans suivi_statut : etatDe() les relit. */
-var D1_KS = { retenu:1, rdv2:1, ecarte:1, indispo_rdv:1 };
+var D1_KS = { retenu:1, rdv2:1, ecarte:1, indispo_rdv:1, indecis:1 };
 var D2_KS = { retenu2:1, ecarte2:1 };
 var R2_KS = { rdv2_fixe:1, indispo_rdv2:1 };
 var AV_KS = { averti_non:1, averti_mail:1, averti_tel:1 };
@@ -6879,7 +6884,7 @@ var SUIVI_ETAPES = [
   { n:2, lab:"1.2", t:"Tri sur dossier",        ks:["a_contacter","ecarte_dossier"] },
   { n:3, lab:"1.3", t:"Prise de contact",       ks:["contacte_tel","mail_envoye"] },
   { n:4, lab:"2.1", t:"Rendez-vous", tl:"Premier rendez-vous", ks:["rdv","indispo"] },
-  { n:5, lab:"2.2", t:"Décision du recruteur",  ks:["retenu","rdv2","ecarte","indispo_rdv"] },
+  { n:5, lab:"2.2", t:"Décision du recruteur",  ks:["retenu","rdv2","ecarte","indispo_rdv","indecis"] },
   { n:9, lab:"3.1", t:"Rendez-vous", tl:"Deuxième rendez-vous", ks:["rdv2_fixe","indispo_rdv2"], si:"rdv2" },
   { n:6, lab:"4.1", t:"Choix de la direction",  ks:["retenu2","ecarte2"] },
   { n:7, lab:"4.2", t:"Candidat averti",        ks:["averti_non","averti_mail","averti_tel"] }
@@ -9116,7 +9121,7 @@ function poserOrdreColonnes(l){
    « Ecarte » n'en fait PAS partie : c'est la meme puce a l'etape 2 (sur
    dossier) et a l'etape 5 (apres entretien) — le statut seul ne peut pas
    trancher, seules les notes le peuvent. */
-var VU_STATUTS = { rdv2:1, retenu:1, retenu2:1, ecarte2:1, indispo_rdv:1, rdv2_fixe:1, indispo_rdv2:1, averti_non:1, averti_mail:1, averti_tel:1 };
+var VU_STATUTS = { indecis:1, rdv2:1, retenu:1, retenu2:1, ecarte2:1, indispo_rdv:1, rdv2_fixe:1, indispo_rdv2:1, averti_non:1, averti_mail:1, averti_tel:1 };
 /* ══════════════════════════════════════════════════════════════
    ACCUEIL — v7.54
    Une personne qui ouvre l'app pour la premiere fois doit comprendre QUOI
@@ -9153,7 +9158,7 @@ var HOME_ETAPES = [
     faire:"Apr\u00e8s l\u2019entretien : retenu, deuxi\u00e8me rendez-vous, \u00e9carter ou plus disponible. Noter l\u2019impression APR\u00c8S rendez-vous.",
     ou:"Fiche \u2192 \u00e9tape 2.2 \u00b7 l\u2019avis des autres : Avis de l\u2019\u00e9quipe.",
     f:function(c){ var e = etatDe(c);
-      return !estFerme(c) && !e.d1 && e.base === "rdv" && (aEteVu(c) || (c.rdv_date && c.rdv_date < aujourdhui())); } },
+      return !estFerme(c) && (!e.d1 || e.d1 === "indecis") && e.base === "rdv" && (aEteVu(c) || (c.rdv_date && c.rdv_date < aujourdhui())); } },
   { n:9, lab:"3.1", hb:"#2dd4a4", t:"Deuxi\u00e8me rendez-vous", lib:"\u00e0 fixer ou \u00e0 venir",
     faire:"Fixer le deuxi\u00e8me rendez-vous (date, ou lien de cr\u00e9neau copi\u00e9 depuis la fiche), puis mener l\u2019entretien.",
     ou:"Fiche \u2192 \u00e9tape 3.1 \u2192 \ud83d\udcc5 Le deuxi\u00e8me rendez-vous.",
@@ -9283,7 +9288,11 @@ function extraInfo(c){
   for(var m in e){
     if(!e[m]) continue;
     var msg = (CFG.messages || {})[m];
-    if(msg && String(msg.corps || "").indexOf("{lien_extra}") > -1) o.mail = Math.max(o.mail, e[m]);
+    /* v7.69 — un « mail extras » peut aussi renvoyer au sondage Creneaux du HUB
+       (lien hub.lumiia.fr/creneaux colle dans le texte), comme « LA FETE DES
+       EXTRAS » du 22/09. Reconnu lui aussi a son CONTENU, jamais a son titre.
+       Les reponses au sondage, elles, restent dans Creneaux : aucune connexion. */
+    if(msg && /\{lien_extra\}|hub\.lumiia\.fr\/creneaux/.test(String(msg.corps || ""))) o.mail = Math.max(o.mail, e[m]);
   }
   o.ok = (o.ent === "oui") || o.parc !== null;
   o.aMailer = (o.ent === "oui") && !o.mail && o.parc === null;
@@ -9525,7 +9534,7 @@ var TRI_COLS = {
   profil:    { s:-1, k:function(c){ return c._ev ? c._ev.total : 0; } },
   statut:    { s:-1, k:function(c){ return c.statut === "complet" ? 99 : (Number(c.etape) || 1); } },
   suivi:     { s:1,  k:function(c){ var b = etatDe(c).base; for(var i=0;i<SUIVI.length;i++) if(SUIVI[i].k === b) return i; return 50; } },
-  decision:  { s:1,  k:function(c){ return rangTri(etatDe(c).d1, ["retenu","rdv2","ecarte","indispo_rdv"]); } },
+  decision:  { s:1,  k:function(c){ return rangTri(etatDe(c).d1, ["retenu","rdv2","ecarte","indispo_rdv","indecis"]); } },
   etape6:    { s:1,  k:function(c){ var e = etatDe(c);
                  if(aDeuxiemeRdv(c)){
                    if(e.r2 === "indispo_rdv2") return 3;
