@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- LUMIIA RECRUTE — v7.73 -->
+<!-- LUMIIA RECRUTE — v7.74 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1061,7 +1061,7 @@ body.adm{background:#0d1117;}
 </div>
 
 <div id="admin">
-  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.73</span>
+  <h1 class="bebas" style="color:var(--lime);font-size:2rem">LUMIIA RECRUTE — ADMIN <span class="dim" style="font-size:.8rem" id="adm-ver">v7.74</span>
     <button id="voyant" class="voyant" title="Cliquer pour vérifier tous les accès"><i></i><span id="voyant-t">…</span></button></h1>
   <div id="voyant-p" class="voyant-p hidden"></div>
   <div id="adm-gate" class="card">
@@ -1076,7 +1076,7 @@ body.adm{background:#0d1117;}
 <script>
 "use strict";
 /* ══════════ CONFIG ══════════ */
-var VERSION = "v7.73";
+var VERSION = "v7.74";
 (function(){ var e = document.getElementById("adm-ver"); if(e) e.textContent = VERSION; })();
 /* Parcours JOUR (atelier/travaux) desactive le 18/08/2026.
    Repasser JOUR_ACTIF a true suffit a tout reactiver : quiz, offre et admin sont conserves. */
@@ -6350,11 +6350,16 @@ function blocOkEntretien(){
   var nM = L.filter(function(o){ return o.x.sond; }).length;
   var nR = L.filter(function(o){ return !!o.c.sondage_extras; }).length;
   var nS = L.filter(function(o){ return o.x.sond && !o.c.sondage_extras; }).length;
+  var nFo = L.filter(function(o){ return feteEtat(o.c) === "oui"; }).length;
+  var nFn = L.filter(function(o){ return feteEtat(o.c) === "non"; }).length;
+  var nFa = L.length - nFo - nFn;
   var V = L.filter(function(o){
     if(XT_VUE === "amailer")   return o.x.aMailer;
     if(XT_VUE === "contactes") return !o.x.aMailer;
     if(XT_VUE === "repondu")   return !!o.c.sondage_extras;
     if(XT_VUE === "sansrep")   return o.x.sond && !o.c.sondage_extras;
+    if(XT_VUE === "fete_oui")  return feteEtat(o.c) === "oui";
+    if(XT_VUE === "fete_att")  return !feteEtat(o.c);
     return true;
   });
   XT_OK_LISTE = V.map(function(o){ return o.c; });
@@ -6370,14 +6375,17 @@ function blocOkEntretien(){
     +   opt("contactes", "D\u00e9j\u00e0 contact\u00e9s (" + (L.length - nA) + ")")
     +   opt("sansrep", "Mail reçu, sans réponse (" + nS + ")")
     +   opt("repondu", "Ont répondu au sondage (" + nR + ")")
+    +   opt("fete_oui", "🎉 Viennent à la fête (" + nFo + ")")
+    +   opt("fete_att", "🎉 Fête : présence à confirmer (" + nFa + ")")
     +   opt("tous", "Tous (" + L.length + ")")
     + '</select></label>'
     + '<span class="dim" style="align-self:center">✉ ' + nM + ' ont reçu le sondage · ✓ ' + nR + ' ont répondu</span>'
+    + '<span class="dim" style="align-self:center">🎉 ' + esc(FETE_LBL) + ' : <b style="color:#7ee787">' + nFo + ' viennent</b> · <b style="color:#ff8b81">' + nFn + ' non</b> · ' + nFa + ' à confirmer</span>'
     + ((estAdmin() && V.length) ? '<button class="fraz" id="xt-copie">\u2709 Copier les adresses mail</button>' : '')
     + '</div>';
   if(!V.length) return h + '<div class="dim" style="margin-top:10px">Personne dans cette vue.</div></div>';
   h += '<div class="adm-scroll"><table class="cmp"><thead><tr><th>Candidat</th><th>Contact</th>'
-    + '<th>P\u00e9riodes, rythme (entretien)</th><th>Mail extras</th><th>Réponse sondage</th><th>Parcours</th><th></th></tr></thead><tbody>';
+    + '<th>P\u00e9riodes, rythme (entretien)</th><th>Mail extras</th><th>Réponse sondage</th><th>🎉 ' + esc(FETE_LBL) + '</th><th>Parcours</th><th></th></tr></thead><tbody>';
   V.forEach(function(o){
     var c = o.c, x = o.x;
     h += '<tr class="rxt">'
@@ -6397,6 +6405,11 @@ function blocOkEntretien(){
           ? '<button class="pill2 ' + (c.sondage_extras ? 'hot' : 'no') + '" style="cursor:pointer" data-sdg="' + esc(c._k) + '">'
             + (c.sondage_extras ? '✓ a répondu' : 'pas de réponse') + '</button>'
           : (c.sondage_extras ? '<span class="pill2 hot">✓ a répondu</span>' : '<span class="dim">—</span>')) + '</td>'
+      /* v7.74 — PRESENCE A LA FETE DES EXTRAS. La confirmation arrive par
+         retour de mail : Emmanuel la pointe ici a la main. Un clic fait
+         tourner : a confirmer -> vient -> ne vient pas -> a confirmer.
+         Champ candidats/<id>/fete_extras = { etat:'oui'|'non', ts }. */
+      + '<td>' + feteCell(c) + '</td>'
       + '<td>' + (x.parc === null ? '<span class="dim">\u2014</span>'
                  : '<span class="pill2 ' + (x.parc === "oui" ? "hot" : "wip") + '">'
                    + (x.parc === "oui" ? "statut en place" : (x.parc === "non" ? "sans statut" : "commenc\u00e9")) + '</span>') + '</td>'
@@ -6420,6 +6433,28 @@ function brancherOkEntretien(){
   };
   var fs = document.querySelectorAll("#adm-tab [data-fok]");
   for(var i=0;i<fs.length;i++) fs[i].onclick = function(){ admFiche(LAST_CAND[this.getAttribute("data-fok")]); };
+  var ft = document.querySelectorAll("#adm-tab [data-fete]");
+  for(var f=0;f<ft.length;f++) ft[f].onclick = function(){
+    var k = this.getAttribute("data-fete"), c = LAST_CAND[k]; if(!c) return;
+    var e = feteEtat(c), suiv = !e ? "oui" : (e === "oui" ? "non" : null);
+    var v = suiv ? { etat: suiv, ts: Date.now() } : null;
+    this.disabled = true;
+    majCandidat(k, { fete_extras: v }).then(function(){
+      c.fete_extras = v || undefined; tabExtras();
+    }).catch(function(err){ toast("Non enregistré : " + (err && err.message ? err.message : err)); tabExtras(); });
+  };
+}
+
+/* v7.74 — FETE DES EXTRAS. Libelle unique : changer la date ici suffit. */
+var FETE_LBL = "Fête 11/10";
+function feteEtat(c){ var f = c && c.fete_extras; return (f && (f.etat === "oui" || f.etat === "non")) ? f.etat : ""; }
+function feteCell(c){
+  var e = feteEtat(c);
+  var t = e === "oui" ? "✓ vient" : (e === "non" ? "✗ ne vient pas" : "à confirmer");
+  var cl = e === "oui" ? "hot" : (e === "non" ? "no" : "wip");
+  var d = (e && c.fete_extras.ts) ? '<br><span class="dim" style="font-size:.68rem">pointé le ' + new Date(c.fete_extras.ts).toLocaleDateString("fr-FR") + '</span>' : '';
+  if(!estAdmin()) return '<span class="pill2 ' + cl + '">' + t + '</span>' + d;
+  return '<button class="pill2 ' + cl + '" style="cursor:pointer" title="Cliquer pour changer" data-fete="' + esc(c._k) + '">' + t + '</button>' + d;
 }
 
 function tabExtras(){
